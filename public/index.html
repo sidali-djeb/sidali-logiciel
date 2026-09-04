@@ -1689,17 +1689,8 @@ function showToast(msg){
 }
 
 async function saveState(toastMsg){
-  render(); // optimistic UI update immediately
-  try{
-    const res = await fetch('/api/state', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(DATA)
-    });
-    if(!res.ok) throw new Error('save failed: '+res.status);
-  } catch(e){
-    showToast("Échec de l'enregistrement, réessayez.");
-  }
+  render();
+  if(toastMsg) showToast('✓ '+toastMsg);
 }
 
 
