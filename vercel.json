@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "public": true,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/public/app.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/public/app.html"
+    }
+  ]
+}
