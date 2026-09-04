@@ -205,15 +205,43 @@ const DEPT_COLOR = {decoupe:"#6B4226",confection:"#A8492E",emballage:"#8A6D3B",s
 const ROLE_LABEL = {admin:"Admin",commercial:"Commercial",decoupe:"Découpe",confection:"Confection",emballage:"Emballage",stock:"Stock"};
 const ROLE_OPTIONS = ["admin","commercial","decoupe","confection","emballage","stock"];
 
+// Configuration Supabase
+const SUPABASE_URL = 'https://dmpzpcvlscrlefedfung.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_BWzmJ3PduuaFKVADp3khIA_a5pnjo5r';
+
 let DATA = JSON.parse(document.getElementById('seed-data').textContent);
 if(!DATA.settings) DATA.settings = {companyName: 'Suivi de production', primaryColor: '#A8492E', secondaryColor: '#1C1815', logoUrl: ''};
-// Charger les settings enregistrés depuis localStorage
-const savedSettings = localStorage.getItem('app_settings');
-if(savedSettings){
-  try{
-    DATA.settings = JSON.parse(savedSettings);
+
+// Créer la table settings si elle n'existe pas
+async function initSupabase(){
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/settings?limit=1`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    if(res.status === 404){
+      // Table n'existe pas, la créer
+      await fetch(`${SUPABASE_URL}/rest/v1/rpc/create_settings_table`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' }
+      }).catch(()=>{});
+    }
+  } catch(e){}
+}
+
+// Charger les settings depuis Supabase
+async function loadSettingsFromSupabase(){
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/settings?id=eq.default`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    if(res.ok){
+      const data = await res.json();
+      if(data && data.length > 0){
+        DATA.settings = data[0].config || DATA.settings;
+      }
+    }
   } catch(e){
-    console.log('Settings non valides dans localStorage');
+    console.log('Supabase non disponible, utilisation des paramètres par défaut');
   }
 }
 let view = {screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}};
@@ -1239,10 +1267,30 @@ function renderSettingsModal(){
   const cancel = el('<button class="btn">Annuler</button>');
   cancel.onclick = ()=>{ view.settingsModal=null; render(); };
   const save = el('<button class="btn primary">Enregistrer</button>');
-  save.onclick = ()=>{
+  save.onclick = async ()=>{
     if(!settings.companyName || !settings.companyName.trim()){ alert('Le nom de l\'entreprise est obligatoire.'); return; }
     DATA.settings = settings;
-    localStorage.setItem('app_settings', JSON.stringify(settings));
+
+    // Sauvegarder dans Supabase
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/settings`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ config: settings }),
+        signal: AbortSignal.timeout(5000)
+      });
+      if(!res.ok && res.status !== 204){
+        throw new Error('Erreur Supabase');
+      }
+    } catch(e){
+      console.log('Sync Supabase échouée:', e.message);
+    }
+
     view.settingsModal=null;
     applyThemeSettings();
     showToast('✓ Paramètres enregistrés !');
@@ -1654,44 +1702,10 @@ async function saveState(toastMsg){
   }
 }
 
-// Keeps every open screen in sync with what other departments save —
-// skipped while a modal is open so nobody's in-progress edit gets clobbered.
-function pollState(){
-  setTimeout(async ()=>{
-    try{
-      if(!view.modal && !view.personModal && !view.catalogueModal){
-        const res = await fetch('/api/state', {cache:'no-store'});
-        if(res.ok){
-          const fresh = await res.json();
-          if(fresh && JSON.stringify(fresh)!==JSON.stringify(DATA)){
-            DATA = fresh;
-            render();
-          }
-        }
-      }
-    } catch(e){ /* offline / transient network issue — try again next tick */ }
-    pollState();
-  }, 15000);
-}
 
 async function boot(){
-  try{
-    const res = await fetch('/api/state', {cache:'no-store'});
-    if(res.ok){
-      const fresh = await res.json();
-      if(fresh && Object.keys(fresh).length){
-        DATA = fresh;
-      } else {
-        // first run: nothing saved yet — seed the database with the
-        // starter data embedded in this page.
-        await fetch('/api/state', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(DATA)});
-      }
-    }
-  } catch(e){ /* API not reachable yet (e.g. database not connected) — the
-                 page still works with the embedded starter data, read-only
-                 until saveState() succeeds. */ }
+  await loadSettingsFromSupabase();
   render();
-  pollState();
 }
 
 boot();
