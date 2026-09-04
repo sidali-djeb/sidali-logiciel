@@ -1,0 +1,1581 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suivi Production DJ</title>
+<style>
+:root{
+  --charcoal:#1C1815; --brown:#6B4226; --terracotta:#A8492E; --amber:#8A6D3B;
+  --teal:#4A6C6F; --gray:#666666; --steel:#3E5C76;
+  --green:#1E7A34; --orange:#B5651D; --red:#A42834;
+  --amber-bg:#FFF3CD; --green-bg:#D4EDDA; --orange-bg:#FCE8D6; --red-bg:#F8D7DA; --gray-bg:#E2E2E2;
+  --bg:#F7F5F2; --card:#FFFFFF; --border:#E3DFD9; --text:#1C1815; --text-soft:#6B6560;
+  color-scheme: light;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;}
+.app{min-height:100%;display:flex;flex-direction:column;}
+.topbar{background:var(--charcoal);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:12px;}
+.topbar img{height:34px;width:auto;display:block;}
+.topbar .title{font-size:15px;font-weight:bold;letter-spacing:.3px;}
+.topbar .spacer{flex:1;}
+.topbar button.link{background:none;border:1px solid rgba(255,255,255,.35);color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;}
+.topbar button.link:hover{background:rgba(255,255,255,.12);}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 18px 60px;width:100%;}
+.center-wrap{max-width:420px;margin:60px auto;padding:0 18px;text-align:center;}
+.center-wrap img{width:200px;height:auto;margin-bottom:18px;}
+.center-wrap h1{font-size:19px;margin:0 0 6px;}
+.center-wrap p.sub{color:var(--text-soft);font-size:13px;margin:0 0 28px;}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.role-btn{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 10px;font-size:14px;font-weight:bold;color:var(--charcoal);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+.role-btn:hover{border-color:var(--terracotta);}
+.role-btn.admin{grid-column:1/3;background:var(--charcoal);color:#fff;}
+.pin-pad{margin-top:22px;}
+.pin-display{font-size:28px;letter-spacing:10px;font-weight:bold;min-height:38px;margin-bottom:16px;color:var(--charcoal);}
+.pin-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:260px;margin:0 auto;}
+.pin-keys button{padding:16px 0;font-size:18px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;}
+.pin-keys button:hover{border-color:var(--terracotta);}
+.pin-keys button.wide{grid-column:span 1;color:var(--text-soft);font-size:13px;}
+.pin-error{color:var(--red);font-size:13px;margin-top:10px;min-height:16px;}
+.back-link{background:none;border:none;color:var(--text-soft);font-size:13px;cursor:pointer;margin-top:22px;text-decoration:underline;}
+.login-form{margin-top:18px;text-align:left;}
+.login-field{margin-bottom:14px;}
+.login-field label{display:block;font-size:12px;color:var(--text-soft);margin-bottom:4px;}
+.login-field input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:Arial,sans-serif;}
+.badge{display:inline-block;background:var(--red);color:#fff;font-size:11px;font-weight:bold;border-radius:10px;padding:1px 8px;margin-left:8px;vertical-align:middle;}
+.pill.nouveau{background:var(--steel);color:#fff;}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+.kpi{background:var(--charcoal);color:#fff;border-radius:10px;padding:14px;text-align:center;}
+.kpi .num{font-size:26px;font-weight:bold;}
+.kpi .label{font-size:11px;opacity:.85;margin-top:2px;}
+.kpi.alert{background:var(--red);}
+
+.icon-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:6px;}
+.icon-tile{position:relative;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 10px;text-align:center;cursor:pointer;font-family:Arial,sans-serif;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+.icon-tile:hover{border-color:var(--terracotta);}
+.icon-tile.active{background:var(--terracotta);border-color:var(--terracotta);}
+.icon-tile.active .icon-tile-lbl{color:#fff;}
+.icon-tile.active .icon-tile-ic{color:#fff;}
+.icon-tile-ic{color:var(--charcoal);margin-bottom:8px;display:flex;align-items:center;justify-content:center;}
+.icon-tile-ic svg{width:28px;height:28px;}
+.icon-tile-lbl{font-size:12px;font-weight:bold;color:var(--charcoal);}
+.icon-tile-badge{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;font-size:11px;font-weight:bold;border-radius:10px;padding:1px 7px;}
+.icon-tile.active .icon-tile-badge{background:#fff;color:var(--terracotta);}
+.admin-panel{}
+
+.section-title{background:var(--terracotta);color:#fff;font-weight:bold;font-size:13px;padding:9px 14px;border-radius:8px 8px 0 0;margin-top:26px;}
+.section-body{background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;padding:14px;}
+
+.search-row{display:flex;gap:8px;margin-bottom:4px;}
+.search-row input{flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:#FFF3CD;font-weight:bold;}
+.search-msg{font-size:12px;color:var(--text-soft);font-style:italic;margin:8px 0;}
+
+.fiche{margin-top:10px;}
+.fiche .hero{background:var(--green-bg);border:2px solid var(--green);border-radius:8px;padding:10px 14px;text-align:center;margin-bottom:14px;}
+.fiche .hero .lbl{font-size:11px;font-weight:bold;color:var(--green);text-transform:uppercase;}
+.fiche .hero .val{font-size:20px;font-weight:bold;color:var(--green);margin-top:2px;}
+.grp{margin-bottom:10px;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.grp .grp-head{color:#fff;font-size:12px;font-weight:bold;padding:6px 10px;}
+.grp .row{display:flex;justify-content:space-between;padding:6px 10px;border-top:1px solid var(--border);font-size:13px;}
+.grp .row:first-of-type{border-top:none;}
+.grp .row .k{color:var(--text-soft);}
+.grp .row .v{font-weight:bold;text-align:right;}
+
+.table-wrap{overflow-x:auto;}
+table.main{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.main th{background:var(--charcoal);color:#fff;text-align:left;padding:8px 10px;white-space:nowrap;}
+table.main td{padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
+table.main tr:hover td{background:#FBF9F6;}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;}
+.pill.attente{background:var(--amber-bg);color:var(--amber);}
+.pill.cours{background:var(--orange-bg);color:var(--orange);}
+.pill.prete{background:var(--green-bg);color:var(--green);}
+.pill.probleme,.pill.tissu{background:var(--red-bg);color:var(--red);}
+.pill.annulee{background:var(--gray-bg);color:var(--gray);}
+.btn{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:#fff;font-size:12px;cursor:pointer;font-weight:bold;}
+.btn:hover{border-color:var(--terracotta);}
+.btn.primary{background:var(--terracotta);border-color:var(--terracotta);color:#fff;}
+.btn.small{padding:4px 9px;font-size:11px;}
+.add-row{margin:16px 0;text-align:right;}
+
+.dept-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;}
+.dept-card.urgent{border-left:4px solid var(--red);}
+.dept-card .head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.dept-card .head .ref{font-weight:bold;font-size:15px;}
+.dept-card .head .art{font-size:12px;color:var(--text-soft);}
+.dept-card .urgent-tag{background:var(--red);color:#fff;font-size:10px;font-weight:bold;padding:2px 7px;border-radius:8px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.field-row label{display:block;font-size:11px;color:var(--text-soft);margin-bottom:3px;}
+.field-row select,.field-row input{width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:5px;font-size:13px;font-family:Arial,sans-serif;}
+.dept-card .save-row{text-align:right;margin-top:6px;}
+.empty-msg{color:var(--text-soft);font-size:13px;padding:16px 0;text-align:center;}
+.collapse-toggle{background:none;border:none;color:var(--steel);font-size:12px;cursor:pointer;text-decoration:underline;margin:14px 0 6px;padding:0;}
+.done-list{font-size:12px;color:var(--text-soft);}
+.done-list .item{padding:5px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:30px 14px;overflow-y:auto;z-index:50;}
+.modal{background:#fff;border-radius:10px;max-width:640px;width:100%;padding:20px;margin-bottom:40px;}
+.modal h2{margin:0 0 14px;font-size:16px;}
+.modal .grp-head{color:#fff;font-size:12px;font-weight:bold;padding:6px 10px;border-radius:5px;margin:14px 0 8px;}
+.modal .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;}
+.modal label{display:block;font-size:11px;color:var(--text-soft);margin-bottom:3px;}
+.modal input,.modal select,.modal textarea{width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:5px;font-size:13px;font-family:Arial,sans-serif;}
+.modal .actions{text-align:right;margin-top:16px;display:flex;justify-content:flex-end;gap:8px;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--charcoal);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:80;}
+.readonly-banner{background:var(--amber-bg);color:var(--amber);font-size:12px;padding:8px 14px;text-align:center;}
+.chat-modal{max-width:460px;}
+.chat-list{max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px;background:var(--bg);}
+.chat-msg{background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;max-width:88%;}
+.chat-msg.mine{margin-left:auto;background:var(--amber-bg);border-color:var(--amber);}
+.chat-meta{font-size:11px;color:var(--text-soft);margin-bottom:3px;}
+.chat-text{font-size:13px;white-space:pre-wrap;word-break:break-word;}
+.chat-input-row{display:flex;gap:8px;align-items:flex-end;}
+.chat-input-row textarea{flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:Arial,sans-serif;resize:vertical;}
+</style>
+</head>
+<body>
+<div id="app" class="app"><div style="padding:60px 20px;text-align:center;color:#6B6560;font-family:Arial,sans-serif;font-size:13px;">Chargement…</div></div>
+<script id="seed-data" type="application/json">{"companyTitle": "Suivi de production", "people": [{"id": "p_admin", "name": "Sidali", "email": "sidalidjebari@gmail.com", "role": "admin", "code": "9999", "active": true}, {"id": "p_commercial", "name": "Responsable Commercial", "email": "commercial@example.com", "role": "commercial", "code": "5005", "active": true}, {"id": "p_decoupe", "name": "Responsable Découpe", "email": "decoupe@example.com", "role": "decoupe", "code": "1001", "active": true}, {"id": "p_confection", "name": "Responsable Confection", "email": "confection@example.com", "role": "confection", "code": "2002", "active": true}, {"id": "p_emballage", "name": "Responsable Emballage", "email": "emballage@example.com", "role": "emballage", "code": "3003", "active": true}, {"id": "p_stock", "name": "Responsable Stock", "email": "stock@example.com", "role": "stock", "code": "4004", "active": true}], "lists": {"tailles": ["S", "M", "L", "XL", "XXL"], "tissus": {"ELIXIR": ["NOIR", "BLANC", "GRIS CHINÉ"]}}, "catalogue": [{"id": "prod_1", "article": "T-SHIRT OVERSIZE", "tissu": "ELIXIR", "tailles": ["S", "M", "L", "XL"], "photo": ""}], "commandes": [{"id": "cmd_1", "catalogueId": "prod_1", "reference": "JB00300", "client": "DJEBS STOCK", "article": "T-SHIRT OVERSIZE", "tissu": "ELIXIR", "tailles": {"S": 50, "M": 50, "L": 50, "XL": 50}, "couleur": "NOIR", "quantite": 200, "dateCommande": "2026-09-01", "dateLivraisonPrevue": "", "urgent": false, "decoupe": {"statut": "Prête", "prevueLe": "2026-09-03", "faiteLe": "2026-09-03"}, "confection": {"statut": "En cours", "atelier": "Chaîne 1", "debut": "2026-09-04", "fin": ""}, "emballage": {"statut": "En attente", "debut": "", "fin": ""}, "tissuInfo": {"poidsMatelas": 120.5, "poidsPiece": 0.24, "consoTissu": 118.2}, "notes": "Exemple — remplacez par vos commandes", "stock": {"quantiteRecue": "", "dateReception": ""}, "ecartGere": false, "ecartNotes": []}], "messages": []}</script>
+<script>
+const LOGO_CHARCOAL = "/logo-charcoal.png";
+const LOGO_WHITE = "/logo-white.png";
+
+const STATUS_OPTIONS = ["En attente","En cours","Prête","Problème","Tissu non disponible","Annulée"];
+// Thin-line, single-color icon set (in the spirit of the outline icon pack
+// the user shared) — hand-drawn here as inline SVG so the page stays fully
+// self-contained (no external icon font / CDN).
+const ICONS = {
+  commandes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 10.5h6M9 13.5h6M9 16.5h4"/></svg>',
+  recherche: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.2 15.2 21 21"/><path d="M7.6 10.6l2 2 3.4-3.6"/></svg>',
+  listes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18h1.4a1.6 1.6 0 0 0 1.1-2.7c-.4-.4-.6-.8-.6-1.3a1.6 1.6 0 0 1 1.6-1.6H17a3.4 3.4 0 0 0 3.4-3.4C20.4 6.9 16.7 3 12 3Z"/><circle cx="7.6" cy="10.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="9.6" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.2" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.6" cy="10.8" r="1.1" fill="currentColor" stroke="none"/></svg>',
+  acces: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.2" r="2.6"/><path d="M7 20c0-3 2.2-5 5-5s5 2 5 5"/><circle cx="4.6" cy="9.4" r="1.9"/><path d="M1.2 19.2c0-2.2 1.5-3.8 3.4-3.8"/><circle cx="19.4" cy="9.4" r="1.9"/><path d="M22.8 19.2c0-2.2-1.5-3.8-3.4-3.8"/></svg>',
+  catalogue: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5 12 3l9 4.5-9 4.5-9-4.5Z"/><path d="M3 7.5V16l9 4.5 9-4.5V7.5"/><path d="M7.5 9.75v4.5"/><path d="M16.5 9.75v4.5"/></svg>'
+};
+
+function catalogueById(id){
+  return (DATA.catalogue||[]).find(p=>p.id===id) || null;
+}
+
+// Downscales + re-encodes an uploaded photo client-side before it's embedded
+// as a data: URI in DATA (this page has no separate file/asset store — every
+// image lives inline in the published HTML, so keeping it small matters).
+function resizeImageFile(file, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let w = img.width, h = img.height;
+        if(w>maxDim || h>maxDim){
+          if(w>h){ h = Math.round(h*maxDim/w); w = maxDim; } else { w = Math.round(w*maxDim/h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = ()=>reject(new Error('image load failed'));
+      img.src = reader.result;
+    };
+    reader.onerror = ()=>reject(new Error('file read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function formatTailles(c){
+  const t = c.tailles;
+  if(!t || typeof t!=='object') return '—';
+  const order = (DATA.lists && DATA.lists.tailles) || [];
+  const known = order.filter(sz=>t[sz]!==undefined && t[sz]!=='' && t[sz]!=null);
+  const extra = Object.keys(t).filter(sz=>order.indexOf(sz)===-1 && t[sz]!==undefined && t[sz]!=='' && t[sz]!=null);
+  const parts = known.concat(extra).map(sz=>t[sz]+sz);
+  return parts.length ? parts.join('/') : '—';
+}
+const STATUS_CLASS = {
+  "En attente":"attente","En cours":"cours","Prête":"prete",
+  "Problème":"probleme","Tissu non disponible":"tissu","Annulée":"annulee"
+};
+const DEPT_LABEL = {decoupe:"Découpe",confection:"Confection",emballage:"Emballage",stock:"Stock"};
+const DEPT_COLOR = {decoupe:"#6B4226",confection:"#A8492E",emballage:"#8A6D3B",stock:"#3E5C76"};
+const ROLE_LABEL = {admin:"Admin",commercial:"Commercial",decoupe:"Découpe",confection:"Confection",emballage:"Emballage",stock:"Stock"};
+const ROLE_OPTIONS = ["admin","commercial","decoupe","confection","emballage","stock"];
+
+let DATA = JSON.parse(document.getElementById('seed-data').textContent);
+let view = {screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}};
+
+function fmtDate(d){
+  if(!d) return '—';
+  const parts = d.split('-');
+  if(parts.length!==3) return d;
+  return parts[2]+'/'+parts[1]+'/'+parts[0];
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+function ecartStock(c){
+  if(c.stock.quantiteRecue===''||c.stock.quantiteRecue===null||c.stock.quantiteRecue===undefined) return null;
+  return Number(c.stock.quantiteRecue) - Number(c.quantite);
+}
+function statutReception(c){
+  const e = ecartStock(c);
+  if(e===null) return 'Non reçue';
+  if(e===0) return 'Conforme';
+  return 'Écart : '+(e>0?'+':'')+e+' pièce(s)';
+}
+function moyennePoidsPiece(ref, excludeId){
+  const vals = DATA.commandes.filter(c=>c.reference===ref && c.id!==excludeId && c.tissuInfo.poidsPiece!=='' && c.tissuInfo.poidsPiece!=null).map(c=>Number(c.tissuInfo.poidsPiece));
+  if(vals.length===0) return null;
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+function ecartPoidsPiece(c){
+  const sameRef = DATA.commandes.filter(x=>x.reference===c.reference);
+  if(sameRef.length<2) return null;
+  if(c.tissuInfo.poidsPiece===''||c.tissuInfo.poidsPiece==null) return null;
+  const avg = moyennePoidsPiece(c.reference, null);
+  if(avg===null||avg===0) return null;
+  return (Number(c.tissuInfo.poidsPiece)-avg)/avg;
+}
+
+function pill(status){
+  const cls = STATUS_CLASS[status]||'attente';
+  return '<span class="pill '+cls+'">'+status+'</span>';
+}
+
+function el(html){
+  const d = document.createElement('div');
+  d.innerHTML = html.trim();
+  return d.firstElementChild;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  if(view.screen==='login') app.appendChild(renderLogin());
+  else if(view.screen==='dept') app.appendChild(renderDeptScreen());
+  else if(view.screen==='commercial') app.appendChild(renderCommercialScreen());
+  else if(view.screen==='admin') app.appendChild(renderAdminScreen());
+  if(view.modal) app.appendChild(renderModal());
+  if(view.personModal) app.appendChild(renderPersonModal());
+  if(view.catalogueModal) app.appendChild(renderCatalogueModal());
+  if(view.discussionOpen) app.appendChild(renderDiscussion());
+}
+
+function currentPerson(){
+  return (DATA.people||[]).find(p=>p.id===view.personId) || null;
+}
+
+function findPersonForLogin(idVal, codeVal){
+  const idNorm = (idVal||'').trim().toLowerCase();
+  const codeNorm = (codeVal||'').trim();
+  if(!idNorm || !codeNorm) return null;
+  return (DATA.people||[]).find(p=>
+    p.active!==false && String(p.code)===codeNorm &&
+    ((p.email||'').toLowerCase()===idNorm || (p.name||'').toLowerCase()===idNorm)
+  ) || null;
+}
+
+function renderLogin(){
+  const w = el('<div class="center-wrap"></div>');
+  const img = document.createElement('img');
+  img.src = LOGO_CHARCOAL;
+  w.appendChild(img);
+  w.appendChild(el('<h1>'+DATA.companyTitle+'</h1>'));
+  w.appendChild(el('<p class="sub">Connecte-toi avec ton email (ou ton nom) et ton code personnel</p>'));
+
+  const form = el('<div class="login-form"></div>');
+  const idField = el('<div class="login-field"><label>Email ou nom</label></div>');
+  const idInput = document.createElement('input');
+  idInput.type = 'text';
+  idInput.placeholder = 'ex : sidali@... ou Sidali';
+  idInput.value = view.loginId || '';
+  idInput.oninput = ()=>{ view.loginId = idInput.value; };
+  idField.appendChild(idInput);
+  form.appendChild(idField);
+
+  const codeField = el('<div class="login-field"><label>Code</label></div>');
+  const codeInput = document.createElement('input');
+  codeInput.type = 'password';
+  codeInput.inputMode = 'numeric';
+  codeInput.maxLength = 4;
+  codeInput.placeholder = '••••';
+  codeInput.value = view.loginCode || '';
+  codeInput.oninput = ()=>{ view.loginCode = codeInput.value; };
+  codeField.appendChild(codeInput);
+  form.appendChild(codeField);
+
+  form.appendChild(el('<div class="pin-error">'+(view.loginError||'')+'</div>'));
+
+  const btn = el('<button class="btn primary" style="width:100%;margin-top:4px;">Se connecter</button>');
+  const doLogin = ()=>{
+    const person = findPersonForLogin(idInput.value, codeInput.value);
+    if(!person){
+      view.loginError = 'Email/nom ou code incorrect.';
+      view.loginCode = '';
+      render();
+      return;
+    }
+    view.personId = person.id;
+    view.role = person.role;
+    view.screen = person.role==='admin' ? 'admin' : (person.role==='commercial' ? 'commercial' : 'dept');
+    view.loginId=''; view.loginCode=''; view.loginError='';
+    render();
+  };
+  btn.onclick = doLogin;
+  idInput.onkeydown = (e)=>{ if(e.key==='Enter') codeInput.focus(); };
+  codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
+  form.appendChild(btn);
+  w.appendChild(form);
+  return w;
+}
+
+function topbar(title, badgeCount){
+  const bar = el('<div class="topbar"></div>');
+  const img = document.createElement('img');
+  img.src = LOGO_WHITE;
+  bar.appendChild(img);
+  const person = currentPerson();
+  const badgeHtml = badgeCount ? '<span class="badge">'+badgeCount+'</span>' : '';
+  bar.appendChild(el('<div class="title">'+title+(person?' · '+person.name:'')+badgeHtml+'</div>'));
+  bar.appendChild(el('<div class="spacer"></div>'));
+  const count = (DATA.messages||[]).length;
+  const chat = el('<button class="link">Discussion'+(count?' ('+count+')':'')+'</button>');
+  chat.onclick = ()=>{ view.discussionOpen=true; render(); };
+  bar.appendChild(chat);
+  const out = el('<button class="link">Se déconnecter</button>');
+  out.onclick = ()=>{ view.screen='login'; view.role=null; view.personId=null; view.discussionOpen=false; render(); };
+  bar.appendChild(out);
+  return bar;
+}
+
+function fmtDateTime(iso){
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return '';
+  const pad = n=>String(n).padStart(2,'0');
+  return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+
+function postMessage(text){
+  if(!text || !text.trim()) return;
+  const person = currentPerson();
+  const author = person ? person.name : (ROLE_LABEL[view.role]||'Inconnu');
+  DATA.messages = DATA.messages || [];
+  DATA.messages.push({
+    id: 'msg_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+    author: author, role: view.role, personId: view.personId, text: text.trim(), ts: new Date().toISOString()
+  });
+  if(DATA.messages.length>200) DATA.messages = DATA.messages.slice(-200);
+  saveState('Message envoyé');
+}
+
+function renderDiscussion(){
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal chat-modal"></div>');
+  m.appendChild(el('<h2>Discussion équipe</h2>'));
+  const list = el('<div class="chat-list"></div>');
+  const msgs = (DATA.messages||[]).slice().sort((a,b)=>(a.ts||'').localeCompare(b.ts||''));
+  if(msgs.length===0){
+    list.appendChild(el('<div class="empty-msg">Aucun message pour le moment. Écris le premier ci-dessous.</div>'));
+  } else {
+    msgs.forEach(msg=>{
+      const mine = msg.personId && msg.personId===view.personId;
+      const bubble = el('<div class="chat-msg'+(mine?' mine':'')+'"></div>');
+      bubble.appendChild(el('<div class="chat-meta"><b>'+msg.author+'</b> · '+fmtDateTime(msg.ts)+'</div>'));
+      const textDiv = document.createElement('div');
+      textDiv.className = 'chat-text';
+      textDiv.textContent = msg.text;
+      bubble.appendChild(textDiv);
+      list.appendChild(bubble);
+    });
+  }
+  m.appendChild(list);
+
+  const inputRow = el('<div class="chat-input-row"></div>');
+  const ta = document.createElement('textarea');
+  ta.rows = 2;
+  ta.placeholder = 'Écris un message à toute l\'équipe...';
+  inputRow.appendChild(ta);
+  const sendBtn = el('<button class="btn primary">Envoyer</button>');
+  sendBtn.onclick = ()=>{
+    const t = ta.value;
+    if(!t || !t.trim()) return;
+    view.discussionOpen = false;
+    postMessage(t);
+  };
+  inputRow.appendChild(sendBtn);
+  m.appendChild(inputRow);
+
+  const closeBtn = el('<button class="btn" style="margin-top:10px;">Fermer</button>');
+  closeBtn.onclick = ()=>{ view.discussionOpen=false; render(); };
+  m.appendChild(closeBtn);
+
+  overlay.appendChild(m);
+  overlay.onclick = (e)=>{ if(e.target===overlay){ view.discussionOpen=false; render(); } };
+  return overlay;
+}
+
+// ---------- DEPARTMENT SCREEN ----------
+function isNewForDept(c, dept){
+  // "Notification" signal: an item the department hasn't started touching yet —
+  // either just launched by Commercial, or just handed off by the previous
+  // department (for stock, arrival in the queue at all IS the notification).
+  if(dept==='stock') return true;
+  return c[dept].statut==='En attente';
+}
+
+function renderDeptScreen(){
+  const w = el('<div></div>');
+  const dept = view.role;
+  const active = DATA.commandes.filter(c=>{
+    if(dept==='stock') return c.emballage.statut==='Prête' && (c.stock.quantiteRecue===''||c.stock.quantiteRecue===null);
+    const st = c[dept].statut;
+    return st!=='Prête' && st!=='Annulée';
+  });
+  const newCount = active.filter(c=>isNewForDept(c,dept)).length;
+  const ecarts = dept==='emballage' ? ecartsAGerer() : [];
+  w.appendChild(topbar('Espace '+DEPT_LABEL[view.role], newCount+ecarts.length));
+  const wrap = el('<div class="wrap"></div>');
+
+  if(dept==='emballage' && ecarts.length){
+    wrap.appendChild(el('<div class="section-title" style="background:var(--red);">Écarts de stock à gérer ('+ecarts.length+')</div>'));
+    const ecBody = el('<div class="section-body"></div>');
+    ecarts.forEach(c=>ecBody.appendChild(renderEcartCard(c)));
+    wrap.appendChild(ecBody);
+  }
+
+  active.sort((a,b)=>{
+    if(a.urgent!==b.urgent) return a.urgent? -1:1;
+    const an = isNewForDept(a,dept), bn = isNewForDept(b,dept);
+    if(an!==bn) return an? -1:1;
+    return (a.dateCommande||'').localeCompare(b.dateCommande||'');
+  });
+  wrap.appendChild(el('<div class="section-title">Tâches en cours ('+active.length+')'+(newCount?' — dont '+newCount+' nouvelle(s)':'')+'</div>'));
+  const body = el('<div class="section-body"></div>');
+  if(active.length===0){
+    body.appendChild(el('<div class="empty-msg">Aucune commande en attente pour '+DEPT_LABEL[dept]+'.</div>'));
+  } else {
+    active.forEach(c=>body.appendChild(renderDeptCard(c, dept)));
+  }
+  wrap.appendChild(body);
+
+  const doneList = DATA.commandes.filter(c=>{
+    if(dept==='stock') return c.emballage.statut==='Prête' && c.stock.quantiteRecue!=='' && c.stock.quantiteRecue!=null;
+    return c[dept].statut==='Prête' || c[dept].statut==='Annulée';
+  });
+  const toggle = el('<button class="collapse-toggle">'+(view.showDone[dept]?'Masquer':'Voir')+' les commandes terminées ('+doneList.length+')</button>');
+  toggle.onclick = ()=>{ view.showDone[dept]=!view.showDone[dept]; render(); };
+  wrap.appendChild(toggle);
+  if(view.showDone[dept]){
+    const dl = el('<div class="done-list"></div>');
+    doneList.forEach(c=>{
+      const st = dept==='stock' ? statutReception(c) : c[dept].statut;
+      dl.appendChild(el('<div class="item"><span>'+c.reference+' — '+c.article+'</span><span>'+st+'</span></div>'));
+    });
+    wrap.appendChild(dl);
+  }
+  w.appendChild(wrap);
+  return w;
+}
+
+function ecartsAGerer(){
+  return DATA.commandes.filter(c=>{ const e=ecartStock(c); return e!==null && e!==0 && !c.ecartGere; });
+}
+
+function renderEcartCard(c){
+  const e = ecartStock(c);
+  const card = el('<div class="dept-card" style="border-left:4px solid var(--red);"></div>');
+  const head = el('<div class="head"></div>');
+  head.appendChild(el('<div><div class="ref">'+c.reference+'</div><div class="art">'+c.article+' · '+c.client+'</div></div>'));
+  head.appendChild(el('<span class="pill probleme">'+(e>0?'+':'')+e+' pièce(s)</span>'));
+  card.appendChild(head);
+  card.appendChild(el('<div style="font-size:12px;color:var(--text-soft);margin-bottom:8px;">Commandé : '+c.quantite+' pièces · Reçu : '+c.stock.quantiteRecue+' pièces le '+fmtDate(c.stock.dateReception)+'</div>'));
+
+  const notesWrap = el('<div style="margin-bottom:8px;"></div>');
+  (c.ecartNotes||[]).forEach(n=>{
+    notesWrap.appendChild(el('<div style="font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;margin-bottom:5px;"><b>'+n.author+'</b> · '+fmtDateTime(n.ts)+'<br>'+n.text+'</div>'));
+  });
+  card.appendChild(notesWrap);
+
+  const ta = document.createElement('textarea'); ta.rows=2;
+  ta.placeholder = 'Explique la cause / action prise (obligatoire pour marquer comme géré)...';
+  ta.style.cssText = 'width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:5px;font-size:13px;font-family:Arial,sans-serif;margin-bottom:8px;';
+  card.appendChild(ta);
+
+  function pushNoteIfAny(){
+    const txt = ta.value.trim();
+    if(!txt) return false;
+    c.ecartNotes = c.ecartNotes || [];
+    const person = currentPerson();
+    c.ecartNotes.push({author: person?person.name:(ROLE_LABEL[view.role]||'Inconnu'), text: txt, ts: new Date().toISOString()});
+    return true;
+  }
+
+  const btnRow = el('<div class="save-row"></div>');
+  const addNoteBtn = el('<button class="btn small">+ Ajouter une note</button>');
+  addNoteBtn.onclick = ()=>{
+    if(pushNoteIfAny()) saveState('Note ajoutée pour '+c.reference);
+  };
+  const resolveBtn = el('<button class="btn primary small">Marquer comme géré</button>');
+  resolveBtn.onclick = ()=>{
+    const addedNow = pushNoteIfAny();
+    const hasAnyNote = addedNow || (c.ecartNotes && c.ecartNotes.length>0);
+    if(!hasAnyNote){ alert('Ajoute une note expliquant la cause avant de marquer comme géré.'); return; }
+    c.ecartGere = true;
+    saveState('Écart marqué comme géré : '+c.reference);
+  };
+  btnRow.appendChild(addNoteBtn);
+  btnRow.appendChild(resolveBtn);
+  card.appendChild(btnRow);
+  return card;
+}
+
+function renderDeptCard(c, dept){
+  const card = el('<div class="dept-card'+(c.urgent?' urgent':'')+'"></div>');
+  const head = el('<div class="head"></div>');
+  head.appendChild(el('<div><div class="ref">'+c.reference+'</div><div class="art">'+c.article+' · '+c.client+' · '+c.quantite+' pièces</div></div>'));
+  const tags = el('<div style="display:flex;gap:6px;"></div>');
+  if(isNewForDept(c,dept)) tags.appendChild(el('<span class="pill nouveau">NOUVEAU</span>'));
+  if(c.urgent) tags.appendChild(el('<span class="urgent-tag">URGENT</span>'));
+  head.appendChild(tags);
+  card.appendChild(head);
+
+  if(dept==='stock'){
+    const row = el('<div class="field-row"></div>');
+    const f1 = el('<div><label>Quantité reçue (pièces)</label></div>');
+    const inp1 = document.createElement('input'); inp1.type='number'; inp1.value=c.stock.quantiteRecue;
+    f1.appendChild(inp1); row.appendChild(f1);
+    const f2 = el('<div><label>Date de réception</label></div>');
+    const inp2 = document.createElement('input'); inp2.type='date'; inp2.value=c.stock.dateReception||'';
+    f2.appendChild(inp2); row.appendChild(f2);
+    card.appendChild(row);
+    const saveRow = el('<div class="save-row"></div>');
+    const btn = el('<button class="btn primary">Enregistrer</button>');
+    btn.onclick = ()=>{
+      c.stock.quantiteRecue = inp1.value===''?'':Number(inp1.value);
+      c.stock.dateReception = inp2.value;
+      const e = ecartStock(c);
+      if(e!==null && e!==0){
+        // a fresh (or changed) discrepancy always needs fresh attention,
+        // even if a previous reception on this order had been marked "géré"
+        c.ecartGere = false;
+      }
+      saveState('Réception stock enregistrée pour '+c.reference);
+    };
+    saveRow.appendChild(btn);
+    card.appendChild(saveRow);
+    return card;
+  }
+
+  const d = c[dept];
+  const row1 = el('<div class="field-row"></div>');
+  const f1 = el('<div><label>Statut '+DEPT_LABEL[dept]+'</label></div>');
+  const sel = document.createElement('select');
+  STATUS_OPTIONS.forEach(o=>{
+    const opt = document.createElement('option'); opt.value=o; opt.textContent=o;
+    if(o===d.statut) opt.selected=true;
+    sel.appendChild(opt);
+  });
+  f1.appendChild(sel); row1.appendChild(f1);
+  card.appendChild(row1);
+
+  const row2 = el('<div class="field-row"></div>');
+  let dateInputs = [];
+  if(dept==='decoupe'){
+    const f2 = el('<div><label>Découpe prévue le</label></div>');
+    const i2 = document.createElement('input'); i2.type='date'; i2.value=d.prevueLe||''; f2.appendChild(i2); row2.appendChild(f2);
+    const f3 = el('<div><label>Découpe faite le</label></div>');
+    const i3 = document.createElement('input'); i3.type='date'; i3.value=d.faiteLe||''; f3.appendChild(i3); row2.appendChild(f3);
+    dateInputs = [['prevueLe',i2],['faiteLe',i3]];
+  } else if(dept==='confection'){
+    const f2 = el('<div><label>Atelier / Chaîne</label></div>');
+    const i2 = document.createElement('input'); i2.type='text'; i2.value=d.atelier||''; f2.appendChild(i2); row2.appendChild(f2);
+    const f3 = el('<div><label>Début</label></div>');
+    const i3 = document.createElement('input'); i3.type='date'; i3.value=d.debut||''; f3.appendChild(i3); row2.appendChild(f3);
+    dateInputs = [['atelier',i2],['debut',i3]];
+  } else if(dept==='emballage'){
+    const f2 = el('<div><label>Début</label></div>');
+    const i2 = document.createElement('input'); i2.type='date'; i2.value=d.debut||''; f2.appendChild(i2); row2.appendChild(f2);
+    const f3 = el('<div><label>Fin</label></div>');
+    const i3 = document.createElement('input'); i3.type='date'; i3.value=d.fin||''; f3.appendChild(i3); row2.appendChild(f3);
+    dateInputs = [['debut',i2],['fin',i3]];
+  }
+  card.appendChild(row2);
+
+  let extraRow=null, i4=null;
+  if(dept==='confection'){
+    extraRow = el('<div class="field-row"></div>');
+    const f4 = el('<div><label>Fin</label></div>');
+    i4 = document.createElement('input'); i4.type='date'; i4.value=d.fin||''; f4.appendChild(i4); extraRow.appendChild(f4);
+    card.appendChild(extraRow);
+  }
+
+  const saveRow = el('<div class="save-row"></div>');
+  const btn = el('<button class="btn primary">Enregistrer</button>');
+  btn.onclick = ()=>{
+    d.statut = sel.value;
+    dateInputs.forEach(([key,inp])=>{ d[key]=inp.value; });
+    if(dept==='confection' && i4) d.fin = i4.value;
+    saveState('Mis à jour : '+c.reference);
+  };
+  saveRow.appendChild(btn);
+  card.appendChild(saveRow);
+  return card;
+}
+
+// ---------- COMMERCIAL SCREEN ----------
+function renderCommercialScreen(){
+  const w = el('<div></div>');
+  const ecarts = ecartsAGerer();
+  w.appendChild(topbar('Espace Commercial', ecarts.length));
+  const wrap = el('<div class="wrap"></div>');
+
+  if(ecarts.length){
+    wrap.appendChild(el('<div class="section-title" style="background:var(--red);">Écarts de stock à gérer ('+ecarts.length+')</div>'));
+    const ecBody = el('<div class="section-body"></div>');
+    ecarts.forEach(c=>ecBody.appendChild(renderEcartCard(c)));
+    wrap.appendChild(ecBody);
+  }
+
+  wrap.appendChild(el('<div class="section-title">Lancer une commande</div>'));
+  const launchBody = el('<div class="section-body"></div>');
+  launchBody.appendChild(el('<div class="empty-msg" style="padding:4px 0 12px;">Une fois lancée, la commande apparaît immédiatement (avec la mention NOUVEAU) dans l\'espace Découpe, puis suit son parcours Confection → Emballage → Stock.</div>'));
+  const addRow = el('<div class="add-row" style="margin:0;"></div>');
+  const addBtn = el('<button class="btn primary">+ Lancer une commande</button>');
+  addBtn.onclick = ()=>{ view.modal = {mode:'create', data:blankCommande()}; render(); };
+  addRow.appendChild(addBtn);
+  launchBody.appendChild(addRow);
+  wrap.appendChild(launchBody);
+
+  wrap.appendChild(el('<div class="section-title">Recherche commande par référence</div>'));
+  const searchBody = el('<div class="section-body"></div>');
+  const sRow = el('<div class="search-row"></div>');
+  const sInput = document.createElement('input');
+  sInput.placeholder='Tape une référence (ex : JB00300)';
+  sInput.value = view.searchRef;
+  sInput.oninput = ()=>{ view.searchRef = sInput.value; renderSearchResult(resultBox); };
+  sRow.appendChild(sInput);
+  searchBody.appendChild(sRow);
+  const resultBox = el('<div></div>');
+  searchBody.appendChild(resultBox);
+  wrap.appendChild(searchBody);
+  renderSearchResult(resultBox);
+
+  wrap.appendChild(el('<div class="section-title">Commandes lancées ('+DATA.commandes.length+')</div>'));
+  const tableBody = el('<div class="section-body"></div>');
+  tableBody.appendChild(renderTable());
+  wrap.appendChild(tableBody);
+
+  w.appendChild(wrap);
+  return w;
+}
+
+function chip(text, onRemove){
+  const c = el('<span style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:3px 6px 3px 10px;font-size:12px;display:inline-flex;align-items:center;gap:6px;"></span>');
+  c.appendChild(document.createTextNode(text));
+  const rm = el('<button style="border:none;background:none;color:var(--red);cursor:pointer;font-weight:bold;font-size:13px;line-height:1;padding:0 2px;">×</button>');
+  rm.onclick = onRemove;
+  c.appendChild(rm);
+  return c;
+}
+
+function renderListsManager(){
+  const wrap = el('<div></div>');
+  DATA.lists = DATA.lists || {tailles:[], tissus:{}};
+  DATA.lists.tailles = DATA.lists.tailles || [];
+  DATA.lists.tissus = DATA.lists.tissus || {};
+
+  // ---- Tailles ----
+  wrap.appendChild(el('<div style="font-size:13px;font-weight:bold;margin-bottom:8px;">Tailles disponibles</div>'));
+  const tailleChips = el('<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>');
+  DATA.lists.tailles.forEach(sz=>{
+    tailleChips.appendChild(chip(sz, ()=>{
+      DATA.lists.tailles = DATA.lists.tailles.filter(x=>x!==sz);
+      saveState('Taille supprimée : '+sz);
+    }));
+  });
+  wrap.appendChild(tailleChips);
+  const addTailleRow = el('<div style="display:flex;gap:6px;margin-bottom:20px;"></div>');
+  const tailleInp = document.createElement('input'); tailleInp.placeholder='Nouvelle taille (ex : 3XL)'; tailleInp.style.maxWidth='220px';
+  const addTailleBtn = el('<button class="btn small">+ Ajouter</button>');
+  const doAddTaille = ()=>{
+    const v = tailleInp.value.trim();
+    if(!v) return;
+    if(!DATA.lists.tailles.includes(v)){ DATA.lists.tailles.push(v); saveState('Taille ajoutée : '+v); }
+  };
+  addTailleBtn.onclick = doAddTaille;
+  tailleInp.onkeydown = (e)=>{ if(e.key==='Enter') doAddTaille(); };
+  addTailleRow.appendChild(tailleInp); addTailleRow.appendChild(addTailleBtn);
+  wrap.appendChild(addTailleRow);
+
+  // ---- Tissus & leurs couleurs ----
+  wrap.appendChild(el('<div style="font-size:13px;font-weight:bold;margin-bottom:8px;">Tissus & couleurs (chaque tissu a sa propre liste de couleurs)</div>'));
+  Object.keys(DATA.lists.tissus).forEach(t=>{
+    const box = el('<div style="border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:10px;"></div>');
+    const head = el('<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"></div>');
+    head.appendChild(el('<b style="font-size:13px;">'+t+'</b>'));
+    const delTissuBtn = el('<button class="btn small" style="color:#A42834;border-color:#A42834;">Supprimer ce tissu</button>');
+    delTissuBtn.onclick = ()=>{
+      if(confirm('Supprimer le tissu "'+t+'" et sa liste de couleurs ?')){
+        delete DATA.lists.tissus[t];
+        saveState('Tissu supprimé : '+t);
+      }
+    };
+    head.appendChild(delTissuBtn);
+    box.appendChild(head);
+    const colorChips = el('<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>');
+    (DATA.lists.tissus[t]||[]).forEach(c=>{
+      colorChips.appendChild(chip(c, ()=>{
+        DATA.lists.tissus[t] = DATA.lists.tissus[t].filter(x=>x!==c);
+        saveState('Couleur supprimée de '+t+' : '+c);
+      }));
+    });
+    box.appendChild(colorChips);
+    const addColorRow = el('<div style="display:flex;gap:6px;"></div>');
+    const colorInp = document.createElement('input'); colorInp.placeholder='Nouvelle couleur pour '+t;
+    const addColorBtn = el('<button class="btn small">+ Ajouter couleur</button>');
+    const doAddColor = ()=>{
+      const v = colorInp.value.trim().toUpperCase();
+      if(!v) return;
+      DATA.lists.tissus[t] = DATA.lists.tissus[t] || [];
+      if(!DATA.lists.tissus[t].includes(v)){ DATA.lists.tissus[t].push(v); saveState('Couleur ajoutée à '+t+' : '+v); }
+    };
+    addColorBtn.onclick = doAddColor;
+    colorInp.onkeydown = (e)=>{ if(e.key==='Enter') doAddColor(); };
+    addColorRow.appendChild(colorInp); addColorRow.appendChild(addColorBtn);
+    box.appendChild(addColorRow);
+    wrap.appendChild(box);
+  });
+  const addTissuRow = el('<div style="display:flex;gap:6px;"></div>');
+  const tissuInp = document.createElement('input'); tissuInp.placeholder='Nouveau tissu (ex : SOIE)';
+  const addTissuBtn = el('<button class="btn primary small">+ Ajouter un tissu</button>');
+  const doAddTissu = ()=>{
+    const v = tissuInp.value.trim().toUpperCase();
+    if(!v) return;
+    if(!DATA.lists.tissus[v]){ DATA.lists.tissus[v]=[]; saveState('Tissu ajouté : '+v); }
+  };
+  addTissuBtn.onclick = doAddTissu;
+  tissuInp.onkeydown = (e)=>{ if(e.key==='Enter') doAddTissu(); };
+  addTissuRow.appendChild(tissuInp); addTissuRow.appendChild(addTissuBtn);
+  wrap.appendChild(addTissuRow);
+
+  return wrap;
+}
+
+// ---------- ADMIN SCREEN ----------
+function renderAdminScreen(){
+  const w = el('<div></div>');
+  w.appendChild(topbar('Espace Admin'));
+  const wrap = el('<div class="wrap"></div>');
+
+  const total = DATA.commandes.length;
+  const urgentes = DATA.commandes.filter(c=>c.urgent).length;
+  const ecarts = DATA.commandes.filter(c=>{const s=statutReception(c); return s.indexOf('Écart')===0;}).length;
+  const alertes = DATA.commandes.filter(c=>{const e=ecartPoidsPiece(c); return e!==null && Math.abs(e)>0.1;}).length;
+  const kpi = el('<div class="kpi-row"></div>');
+  kpi.appendChild(el('<div class="kpi"><div class="num">'+total+'</div><div class="label">Commandes</div></div>'));
+  kpi.appendChild(el('<div class="kpi'+(urgentes>0?' alert':'')+'"><div class="num">'+urgentes+'</div><div class="label">Urgentes</div></div>'));
+  kpi.appendChild(el('<div class="kpi'+(ecarts>0?' alert':'')+'"><div class="num">'+ecarts+'</div><div class="label">Écarts stock</div></div>'));
+  kpi.appendChild(el('<div class="kpi'+(alertes>0?' alert':'')+'"><div class="num">'+alertes+'</div><div class="label">Alertes poids/pièce</div></div>'));
+  wrap.appendChild(kpi);
+
+  // ---- Icon navigation : clique une icône, le détail s'affiche juste en dessous ----
+  const tiles = [
+    {key:'commandes', label:'Commandes', badge: DATA.commandes.length},
+    {key:'recherche', label:'Recherche par référence', badge: null},
+    {key:'catalogue', label:'Catalogue produits', badge: (DATA.catalogue||[]).length},
+    {key:'listes', label:'Tailles / Tissus / Couleurs', badge: null},
+    {key:'acces', label:'Gérer les accès', badge: (DATA.people||[]).length}
+  ];
+  const iconGrid = el('<div class="icon-grid"></div>');
+  tiles.forEach(it=>{
+    const isOpen = !!view.adminOpen[it.key];
+    const tile = el('<button class="icon-tile'+(isOpen?' active':'')+'"></button>');
+    tile.appendChild(el('<div class="icon-tile-ic">'+ICONS[it.key]+'</div>'));
+    tile.appendChild(el('<div class="icon-tile-lbl">'+it.label+'</div>'));
+    if(it.badge!=null) tile.appendChild(el('<div class="icon-tile-badge">'+it.badge+'</div>'));
+    tile.onclick = ()=>{ view.adminOpen[it.key] = !isOpen; render(); };
+    iconGrid.appendChild(tile);
+  });
+  wrap.appendChild(iconGrid);
+
+  const panel = el('<div class="admin-panel"></div>');
+
+  if(view.adminOpen.recherche){
+    panel.appendChild(el('<div class="section-title">Recherche commande par référence</div>'));
+    const searchBody = el('<div class="section-body"></div>');
+    const sRow = el('<div class="search-row"></div>');
+    const sInput = document.createElement('input');
+    sInput.placeholder='Tape une référence (ex : JB00300)';
+    sInput.value = view.searchRef;
+    sInput.oninput = ()=>{ view.searchRef = sInput.value; renderSearchResult(resultBox); };
+    sRow.appendChild(sInput);
+    searchBody.appendChild(sRow);
+    const resultBox = el('<div></div>');
+    searchBody.appendChild(resultBox);
+    panel.appendChild(searchBody);
+    renderSearchResult(resultBox);
+  }
+  if(view.adminOpen.commandes){
+    panel.appendChild(el('<div class="section-title">Toutes les commandes</div>'));
+    const tableBody = el('<div class="section-body"></div>');
+    const addRow = el('<div class="add-row"></div>');
+    const addBtn = el('<button class="btn primary">+ Nouvelle commande</button>');
+    addBtn.onclick = ()=>{ view.modal = {mode:'create', data:blankCommande()}; render(); };
+    addRow.appendChild(addBtn);
+    tableBody.appendChild(addRow);
+    tableBody.appendChild(renderTable());
+    panel.appendChild(tableBody);
+  }
+  if(view.adminOpen.catalogue){
+    panel.appendChild(el('<div class="section-title">Catalogue produits</div>'));
+    const catBody = el('<div class="section-body"></div>');
+    catBody.appendChild(el('<div class="empty-msg" style="padding:0 0 12px;text-align:left;">Les produits ajoutés ici apparaissent dans une liste que le Commercial peut choisir en lançant une commande (article, tissu et tailles pré-remplis automatiquement).</div>'));
+    const catAddRow = el('<div class="add-row"></div>');
+    const catAddBtn = el('<button class="btn primary">+ Ajouter un produit</button>');
+    catAddBtn.onclick = ()=>{ view.catalogueModal = {mode:'create', data:blankCatalogueItem()}; render(); };
+    catAddRow.appendChild(catAddBtn);
+    catBody.appendChild(catAddRow);
+    catBody.appendChild(renderCatalogueTable());
+    panel.appendChild(catBody);
+  }
+  if(view.adminOpen.listes){
+    panel.appendChild(el('<div class="section-title">Gérer les listes (tailles, tissus & couleurs)</div>'));
+    const listsBody = el('<div class="section-body"></div>');
+    listsBody.appendChild(renderListsManager());
+    panel.appendChild(listsBody);
+  }
+  if(view.adminOpen.acces){
+    panel.appendChild(el('<div class="section-title">Gérer les accès</div>'));
+    const accessBody = el('<div class="section-body"></div>');
+    const accessAddRow = el('<div class="add-row"></div>');
+    const accessAddBtn = el('<button class="btn primary">+ Ajouter une personne</button>');
+    accessAddBtn.onclick = ()=>{ view.personModal = {mode:'create', data:blankPerson()}; render(); };
+    accessAddRow.appendChild(accessAddBtn);
+    accessBody.appendChild(accessAddRow);
+    accessBody.appendChild(renderPeopleTable());
+    panel.appendChild(accessBody);
+  }
+  wrap.appendChild(panel);
+
+  w.appendChild(wrap);
+  return w;
+}
+
+function blankPerson(){
+  return {id:'p_'+Date.now(), name:'', email:'', role:'decoupe', code:'', active:true};
+}
+
+function renderPeopleTable(){
+  const wrap = document.createElement('div'); wrap.className='table-wrap';
+  const t = document.createElement('table'); t.className='main';
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  ['Nom','Email','Rôle','Code','Actif',''].forEach(h=>{
+    const th = document.createElement('th'); th.textContent=h; headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  t.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  (DATA.people||[]).forEach(p=>{
+    const tr = document.createElement('tr');
+    function td(text){ const cell=document.createElement('td'); cell.textContent=text; tr.appendChild(cell); }
+    td(p.name||'—');
+    td(p.email||'—');
+    td(ROLE_LABEL[p.role]||p.role);
+    td(p.code||'—');
+    td(p.active!==false ? 'Oui' : 'Non');
+    const editTd = document.createElement('td');
+    const b = document.createElement('button'); b.className='btn small'; b.textContent='Modifier';
+    b.onclick = ()=>{ view.personModal = {mode:'edit', data:JSON.parse(JSON.stringify(p))}; render(); };
+    editTd.appendChild(b);
+    tr.appendChild(editTd);
+    tbody.appendChild(tr);
+  });
+  t.appendChild(tbody);
+  wrap.appendChild(t);
+  return wrap;
+}
+
+function renderPersonModal(){
+  const {mode, data} = view.personModal;
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal"></div>');
+  m.appendChild(el('<h2>'+(mode==='create'?'Ajouter une personne':'Modifier '+(data.name||'cette personne'))+'</h2>'));
+
+  function frow(fields){
+    const row = el('<div class="frow"></div>');
+    fields.forEach(f=>row.appendChild(f));
+    m.appendChild(row);
+  }
+  function field(labelText, value, onchange, type){
+    const wrap = el('<div></div>');
+    wrap.appendChild(el('<label>'+labelText+'</label>'));
+    let inp;
+    if(type==='role-select'){
+      inp = document.createElement('select');
+      ROLE_OPTIONS.forEach(r=>{
+        const opt=document.createElement('option'); opt.value=r; opt.textContent=ROLE_LABEL[r];
+        if(r===value) opt.selected=true; inp.appendChild(opt);
+      });
+    } else {
+      inp = document.createElement('input');
+      if(type) inp.type=type;
+      inp.value = value===null||value===undefined?'':value;
+    }
+    inp.oninput = ()=>onchange(inp.value);
+    wrap.appendChild(inp);
+    return wrap;
+  }
+  frow([
+    field('Nom', data.name, v=>data.name=v),
+    field('Email', data.email, v=>data.email=v, 'email')
+  ]);
+  frow([
+    field('Rôle / département', data.role, v=>data.role=v, 'role-select'),
+    field('Code (4 chiffres)', data.code, v=>data.code=v)
+  ]);
+  const activeWrap = el('<div style="margin:6px 0 10px;"></div>');
+  const activeLabel = el('<label style="display:flex;align-items:center;gap:6px;font-size:13px;"></label>');
+  const activeInp = document.createElement('input'); activeInp.type='checkbox'; activeInp.checked = data.active!==false;
+  activeInp.onchange = ()=>data.active=activeInp.checked;
+  activeLabel.appendChild(activeInp);
+  activeLabel.appendChild(document.createTextNode('Accès actif (décoche pour bloquer sans supprimer)'));
+  activeWrap.appendChild(activeLabel);
+  m.appendChild(activeWrap);
+
+  function countActiveAdmins(excludeId){
+    return (DATA.people||[]).filter(p=>p.role==='admin' && p.active!==false && p.id!==excludeId).length;
+  }
+
+  const actions = el('<div class="actions"></div>');
+  const cancel = el('<button class="btn">Annuler</button>');
+  cancel.onclick = ()=>{ view.personModal=null; render(); };
+  const save = el('<button class="btn primary">Enregistrer</button>');
+  save.onclick = ()=>{
+    if(!data.name || !data.name.trim()){ alert('Le nom est obligatoire.'); return; }
+    if(!data.email || !data.email.trim()){ alert("L'email est obligatoire."); return; }
+    if(!data.code || !String(data.code).trim()){ alert('Le code est obligatoire.'); return; }
+    const wouldBeAdmin = data.role==='admin' && data.active!==false;
+    if(!wouldBeAdmin && countActiveAdmins(data.id)===0 && (DATA.people||[]).some(p=>p.id===data.id && p.role==='admin')){
+      alert("Impossible : il doit rester au moins un accès Admin actif.");
+      return;
+    }
+    if(mode==='create'){
+      DATA.people = DATA.people || [];
+      DATA.people.push(data);
+      view.personModal=null;
+      saveState('Accès ajouté pour '+data.name);
+    } else {
+      const idx = (DATA.people||[]).findIndex(x=>x.id===data.id);
+      if(idx>=0) DATA.people[idx]=data;
+      view.personModal=null;
+      saveState('Accès modifié pour '+data.name);
+    }
+  };
+  const del = mode==='edit' ? el('<button class="btn" style="color:#A42834;border-color:#A42834;">Supprimer</button>') : null;
+  if(del){
+    del.onclick = ()=>{
+      if(data.role==='admin' && countActiveAdmins(data.id)===0){
+        alert("Impossible de supprimer : il doit rester au moins un accès Admin actif.");
+        return;
+      }
+      if(confirm("Supprimer l'accès de "+data.name+' ?')){
+        DATA.people = (DATA.people||[]).filter(x=>x.id!==data.id);
+        view.personModal=null;
+        saveState('Accès supprimé pour '+data.name);
+      }
+    };
+  }
+  if(del) actions.appendChild(del);
+  actions.appendChild(cancel);
+  actions.appendChild(save);
+  m.appendChild(actions);
+
+  overlay.appendChild(m);
+  overlay.onclick = (e)=>{ if(e.target===overlay){ view.personModal=null; render(); } };
+  return overlay;
+}
+
+// ---------- CATALOGUE PRODUITS ----------
+function blankCatalogueItem(){
+  return {id:'prod_'+Date.now(), article:'', tissu:'', tailles:[], photo:''};
+}
+
+function renderCatalogueTable(){
+  const wrap = document.createElement('div'); wrap.className='table-wrap';
+  const t = document.createElement('table'); t.className='main';
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  ['Photo','Article','Tissu','Tailles disponibles',''].forEach(h=>{
+    const th = document.createElement('th'); th.textContent=h; headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  t.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  (DATA.catalogue||[]).forEach(p=>{
+    const tr = document.createElement('tr');
+    const photoTd = document.createElement('td');
+    if(p.photo){
+      const img = document.createElement('img');
+      img.src = p.photo; img.style.cssText='width:36px;height:36px;object-fit:cover;border-radius:5px;border:1px solid var(--border);display:block;';
+      photoTd.appendChild(img);
+    } else {
+      photoTd.appendChild(el('<div style="width:36px;height:36px;border-radius:5px;background:var(--bg);border:1px solid var(--border);"></div>'));
+    }
+    tr.appendChild(photoTd);
+    function td(text){ const cell=document.createElement('td'); cell.textContent=text; tr.appendChild(cell); }
+    td(p.article||'—');
+    td(p.tissu||'—');
+    td((p.tailles||[]).join(' / ')||'—');
+    const editTd = document.createElement('td');
+    const b = document.createElement('button'); b.className='btn small'; b.textContent='Modifier';
+    b.onclick = ()=>{ view.catalogueModal = {mode:'edit', data:JSON.parse(JSON.stringify(p))}; render(); };
+    editTd.appendChild(b);
+    tr.appendChild(editTd);
+    tbody.appendChild(tr);
+  });
+  t.appendChild(tbody);
+  wrap.appendChild(t);
+  return wrap;
+}
+
+function renderCatalogueModal(){
+  const {mode, data} = view.catalogueModal;
+  data.tailles = data.tailles || [];
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal"></div>');
+  m.appendChild(el('<h2>'+(mode==='create'?'Ajouter un produit au catalogue':'Modifier '+(data.article||'ce produit'))+'</h2>'));
+
+  function frow(fields){
+    const row = el('<div class="frow"></div>');
+    fields.forEach(f=>row.appendChild(f));
+    m.appendChild(row);
+  }
+  const articleWrap = el('<div></div>');
+  articleWrap.appendChild(el('<label>Nom du produit</label>'));
+  const articleInp = document.createElement('input'); articleInp.value = data.article||'';
+  articleInp.oninput = ()=>data.article=articleInp.value;
+  articleWrap.appendChild(articleInp);
+
+  const tissuWrap = el('<div></div>');
+  tissuWrap.appendChild(el('<label>Tissu associé</label>'));
+  const tissuSel = document.createElement('select');
+  const emptyOpt = document.createElement('option'); emptyOpt.value=''; emptyOpt.textContent='— Sélectionner —';
+  if(!data.tissu) emptyOpt.selected=true; tissuSel.appendChild(emptyOpt);
+  Object.keys(DATA.lists.tissus||{}).forEach(t=>{
+    const opt=document.createElement('option'); opt.value=t; opt.textContent=t;
+    if(t===data.tissu) opt.selected=true; tissuSel.appendChild(opt);
+  });
+  tissuSel.onchange = ()=>data.tissu=tissuSel.value;
+  tissuWrap.appendChild(tissuSel);
+
+  frow([articleWrap, tissuWrap]);
+
+  m.appendChild(el('<label style="display:block;font-size:11px;color:var(--text-soft);margin:2px 0 6px;">Tailles disponibles pour ce produit</label>'));
+  const sizeWrap = el('<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>');
+  (DATA.lists.tailles||[]).forEach(sz=>{
+    const lab = el('<label style="display:flex;align-items:center;gap:5px;font-size:12px;border:1px solid var(--border);border-radius:5px;padding:5px 9px;"></label>');
+    const chk = document.createElement('input'); chk.type='checkbox'; chk.checked = data.tailles.includes(sz);
+    chk.onchange = ()=>{
+      if(chk.checked){ if(!data.tailles.includes(sz)) data.tailles.push(sz); }
+      else { data.tailles = data.tailles.filter(x=>x!==sz); }
+    };
+    lab.appendChild(chk);
+    lab.appendChild(document.createTextNode(sz));
+    sizeWrap.appendChild(lab);
+  });
+  m.appendChild(sizeWrap);
+
+  m.appendChild(el('<label style="display:block;font-size:11px;color:var(--text-soft);margin-bottom:6px;">Photo du produit</label>'));
+  const photoRow = el('<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;"></div>');
+  const photoPreview = document.createElement('div');
+  photoPreview.style.cssText = 'width:64px;height:64px;border-radius:8px;border:1px solid var(--border);background:var(--bg);overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
+  if(data.photo){
+    const img = document.createElement('img'); img.src=data.photo; img.style.cssText='width:100%;height:100%;object-fit:cover;';
+    photoPreview.appendChild(img);
+  }
+  photoRow.appendChild(photoPreview);
+  const photoCtrls = el('<div></div>');
+  const photoInput = document.createElement('input'); photoInput.type='file'; photoInput.accept='image/*';
+  photoInput.onchange = async ()=>{
+    const f = photoInput.files[0];
+    if(!f) return;
+    try{
+      data.photo = await resizeImageFile(f, 480, 0.72);
+      render();
+    }catch(e){ alert("Impossible de charger cette image."); }
+  };
+  photoCtrls.appendChild(photoInput);
+  if(data.photo){
+    const rmBtn = el('<button class="btn small" style="margin-left:8px;">Retirer</button>');
+    rmBtn.onclick = ()=>{ data.photo=''; render(); };
+    photoCtrls.appendChild(rmBtn);
+  }
+  photoRow.appendChild(photoCtrls);
+  m.appendChild(photoRow);
+
+  const actions = el('<div class="actions"></div>');
+  const cancel = el('<button class="btn">Annuler</button>');
+  cancel.onclick = ()=>{ view.catalogueModal=null; render(); };
+  const save = el('<button class="btn primary">Enregistrer</button>');
+  save.onclick = ()=>{
+    if(!data.article || !data.article.trim()){ alert('Le nom du produit est obligatoire.'); return; }
+    if(mode==='create'){
+      DATA.catalogue = DATA.catalogue || [];
+      DATA.catalogue.push(data);
+      view.catalogueModal=null;
+      saveState('Produit ajouté au catalogue : '+data.article);
+    } else {
+      const idx = (DATA.catalogue||[]).findIndex(x=>x.id===data.id);
+      if(idx>=0) DATA.catalogue[idx]=data;
+      view.catalogueModal=null;
+      saveState('Produit modifié : '+data.article);
+    }
+  };
+  const del = mode==='edit' ? el('<button class="btn" style="color:#A42834;border-color:#A42834;">Supprimer</button>') : null;
+  if(del){
+    del.onclick = ()=>{
+      if(confirm('Supprimer "'+data.article+'" du catalogue ?')){
+        DATA.catalogue = (DATA.catalogue||[]).filter(x=>x.id!==data.id);
+        view.catalogueModal=null;
+        saveState('Produit supprimé du catalogue : '+data.article);
+      }
+    };
+  }
+  if(del) actions.appendChild(del);
+  actions.appendChild(cancel);
+  actions.appendChild(save);
+  m.appendChild(actions);
+
+  overlay.appendChild(m);
+  overlay.onclick = (e)=>{ if(e.target===overlay){ view.catalogueModal=null; render(); } };
+  return overlay;
+}
+
+function renderSearchResult(box){
+  box.innerHTML='';
+  const ref = (view.searchRef||'').trim();
+  if(!ref){ box.appendChild(el('<div class="search-msg">Tape une référence ci-dessus.</div>')); return; }
+  const matches = DATA.commandes.filter(c=>c.reference.toLowerCase()===ref.toLowerCase());
+  if(matches.length===0){ box.appendChild(el('<div class="search-msg">Aucune commande trouvée pour cette référence.</div>')); return; }
+  const c = matches[matches.length-1];
+  box.appendChild(el('<div class="search-msg">'+matches.length+' commande(s) trouvée(s) — détails de la plus récente :</div>'));
+  box.appendChild(renderFiche(c));
+}
+
+function renderFiche(c){
+  const f = el('<div class="fiche"></div>');
+  const hero = el('<div class="hero"><div class="lbl">Date de livraison prévue</div><div class="val">'+(c.dateLivraisonPrevue?fmtDate(c.dateLivraisonPrevue):'—')+'</div></div>');
+  f.appendChild(hero);
+  const catProd = c.catalogueId ? catalogueById(c.catalogueId) : null;
+  if(catProd && catProd.photo){
+    const photoWrap = el('<div style="text-align:center;margin-bottom:12px;"></div>');
+    const img = document.createElement('img');
+    img.src = catProd.photo;
+    img.style.cssText = 'width:96px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--border);';
+    photoWrap.appendChild(img);
+    f.appendChild(photoWrap);
+  }
+
+  function grp(title,color,rows){
+    const g = el('<div class="grp"></div>');
+    g.appendChild(el('<div class="grp-head" style="background:'+color+'">'+title+'</div>'));
+    rows.forEach(([k,v])=>g.appendChild(el('<div class="row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>')));
+    f.appendChild(g);
+  }
+  grp('Identité article / commande','#1C1815',[
+    ['Référence',c.reference],['Client',c.client],['Article',c.article],['Tissu',c.tissu],
+    ['Tailles',formatTailles(c)],['Couleur',c.couleur],['Quantité',c.quantite+' pièces'],
+    ['Date commande',fmtDate(c.dateCommande)],['Urgent',c.urgent?'Oui':'Non']
+  ]);
+  grp('Découpe','#6B4226',[
+    ['Statut',pill(c.decoupe.statut)],['Prévue le',fmtDate(c.decoupe.prevueLe)],['Faite le',fmtDate(c.decoupe.faiteLe)]
+  ]);
+  grp('Confection','#A8492E',[
+    ['Statut',pill(c.confection.statut)],['Atelier / Chaîne',c.confection.atelier||'—'],
+    ['Début',fmtDate(c.confection.debut)],['Fin',fmtDate(c.confection.fin)]
+  ]);
+  grp('Emballage','#8A6D3B',[
+    ['Statut',pill(c.emballage.statut)],['Début',fmtDate(c.emballage.debut)],['Fin',fmtDate(c.emballage.fin)]
+  ]);
+  const ep = ecartPoidsPiece(c);
+  grp('Tissu / Matière','#4A6C6F',[
+    ['Poids matelas (kg)',c.tissuInfo.poidsMatelas||'—'],['Poids/pièce (kg)',c.tissuInfo.poidsPiece||'—'],
+    ['Conso tissu (kg)',c.tissuInfo.consoTissu||'—'],
+    ['Écart vs moyenne',ep===null?'—':(Math.round(ep*1000)/10)+'%']
+  ]);
+  grp('Notes','#666666',[['Notes',c.notes||'—']]);
+  const stockRows = [
+    ['Quantité reçue',c.stock.quantiteRecue===''?'—':c.stock.quantiteRecue],
+    ['Date réception',fmtDate(c.stock.dateReception)],
+    ['Écart (pièces)',ecartStock(c)===null?'—':ecartStock(c)],
+    ['Statut réception',statutReception(c)]
+  ];
+  const ecVal = ecartStock(c);
+  if(ecVal!==null && ecVal!==0){
+    stockRows.push(['Écart géré ?', c.ecartGere ? 'Oui' : 'Non — en attente (Emballage / Commercial)']);
+    const lastNote = (c.ecartNotes && c.ecartNotes.length) ? c.ecartNotes[c.ecartNotes.length-1] : null;
+    if(lastNote) stockRows.push(['Dernière note', lastNote.author+' : '+lastNote.text]);
+  }
+  grp('Stock','#3E5C76', stockRows);
+  const editBtn = el('<button class="btn primary" style="margin-top:6px;">Modifier cette commande</button>');
+  editBtn.onclick = ()=>{ view.modal = {mode:'edit', data:JSON.parse(JSON.stringify(c))}; render(); };
+  f.appendChild(editBtn);
+  return f;
+}
+
+function renderTable(){
+  // Table-structural elements (thead/tr/td) cannot be created via the el()
+  // innerHTML-on-a-<div> trick — the HTML parser drops them outside a real
+  // <table> context. Build them with createElement instead.
+  const wrap = document.createElement('div'); wrap.className = 'table-wrap';
+  const t = document.createElement('table'); t.className = 'main';
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  ['Référence','Article','Client','Qté','Découpe','Confection','Emballage','Livraison prévue',''].forEach(h=>{
+    const th = document.createElement('th'); th.textContent = h; headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  t.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  DATA.commandes.slice().reverse().forEach(c=>{
+    const tr = document.createElement('tr');
+    function td(html){ const cell=document.createElement('td'); cell.innerHTML=html; tr.appendChild(cell); }
+    td('<b>'+c.reference+'</b>'+(c.urgent?' <span class="pill probleme">URG</span>':''));
+    td(c.article);
+    td(c.client);
+    td(String(c.quantite));
+    td(pill(c.decoupe.statut));
+    td(pill(c.confection.statut));
+    td(pill(c.emballage.statut));
+    td(c.dateLivraisonPrevue?fmtDate(c.dateLivraisonPrevue):'—');
+    const editTd = document.createElement('td');
+    const b = document.createElement('button'); b.className='btn small'; b.textContent='Modifier';
+    b.onclick = ()=>{ view.modal = {mode:'edit', data:JSON.parse(JSON.stringify(c))}; render(); };
+    editTd.appendChild(b);
+    tr.appendChild(editTd);
+    tbody.appendChild(tr);
+  });
+  t.appendChild(tbody);
+  wrap.appendChild(t);
+  return wrap;
+}
+
+function blankCommande(){
+  return {
+    id: 'cmd_'+Date.now(), catalogueId:'', reference:'', client:'', article:'', tissu:'', tailles:{}, couleur:'',
+    quantite:'', dateCommande: todayISO(), dateLivraisonPrevue:'', urgent:false,
+    decoupe:{statut:'En attente',prevueLe:'',faiteLe:''},
+    confection:{statut:'En attente',atelier:'',debut:'',fin:''},
+    emballage:{statut:'En attente',debut:'',fin:''},
+    tissuInfo:{poidsMatelas:'',poidsPiece:'',consoTissu:''},
+    notes:'', stock:{quantiteRecue:'',dateReception:''}, ecartGere:false, ecartNotes:[]
+  };
+}
+
+function renderModal(){
+  const {mode, data} = view.modal;
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal"></div>');
+  m.appendChild(el('<h2>'+(mode==='create'?'Nouvelle commande':'Modifier '+data.reference)+'</h2>'));
+
+  function frow(fields){
+    const row = el('<div class="frow"></div>');
+    fields.forEach(f=>row.appendChild(f));
+    m.appendChild(row);
+  }
+  function field(labelText, value, onchange, type, optsOverride){
+    const wrap = el('<div></div>');
+    wrap.appendChild(el('<label>'+labelText+'</label>'));
+    const inp = document.createElement(type==='select'?'select':'input');
+    if(type && type!=='select') inp.type=type;
+    if(type==='select'){
+      const opts = optsOverride || STATUS_OPTIONS;
+      if(optsOverride){
+        const empty=document.createElement('option'); empty.value=''; empty.textContent='— Sélectionner —';
+        if(!value) empty.selected=true; inp.appendChild(empty);
+      }
+      opts.forEach(o=>{
+        const opt=document.createElement('option'); opt.value=o; opt.textContent=o;
+        if(o===value) opt.selected=true; inp.appendChild(opt);
+      });
+    } else {
+      inp.value = value===null||value===undefined?'':value;
+    }
+    inp.oninput = ()=>onchange(inp.value);
+    wrap.appendChild(inp);
+    return wrap;
+  }
+  function tissuSelectField(){
+    const wrap = el('<div></div>');
+    wrap.appendChild(el('<label>Tissu</label>'));
+    const inp = document.createElement('select');
+    const empty=document.createElement('option'); empty.value=''; empty.textContent='— Sélectionner —';
+    if(!data.tissu) empty.selected=true; inp.appendChild(empty);
+    Object.keys(DATA.lists.tissus||{}).forEach(t=>{
+      const opt=document.createElement('option'); opt.value=t; opt.textContent=t;
+      if(t===data.tissu) opt.selected=true; inp.appendChild(opt);
+    });
+    inp.onchange = ()=>{
+      data.tissu = inp.value;
+      // couleur is scoped to the chosen tissu — clear it if it no longer applies
+      if(!inp.value || !((DATA.lists.tissus[inp.value]||[]).includes(data.couleur))) data.couleur='';
+      render();
+    };
+    wrap.appendChild(inp);
+    return wrap;
+  }
+  function couleurSelectField(){
+    const wrap = el('<div></div>');
+    wrap.appendChild(el('<label>Couleur'+(data.tissu?'':' (choisis un tissu d\'abord)')+'</label>'));
+    const inp = document.createElement('select');
+    inp.disabled = !data.tissu;
+    const colors = (data.tissu && DATA.lists.tissus[data.tissu]) || [];
+    const empty=document.createElement('option'); empty.value=''; empty.textContent='— Sélectionner —';
+    if(!data.couleur) empty.selected=true; inp.appendChild(empty);
+    colors.forEach(c=>{
+      const opt=document.createElement('option'); opt.value=c; opt.textContent=c;
+      if(c===data.couleur) opt.selected=true; inp.appendChild(opt);
+    });
+    inp.onchange = ()=>{ data.couleur = inp.value; };
+    wrap.appendChild(inp);
+    return wrap;
+  }
+
+  if((DATA.catalogue||[]).length){
+    m.appendChild(el('<div class="grp-head" style="background:#4A6C6F">Produit du catalogue (optionnel)</div>'));
+    const catWrap = el('<div style="margin-bottom:10px;"></div>');
+    const catSel = document.createElement('select');
+    const catEmpty = document.createElement('option'); catEmpty.value=''; catEmpty.textContent='— Commande libre (sans produit du catalogue) —';
+    if(!data.catalogueId) catEmpty.selected=true; catSel.appendChild(catEmpty);
+    (DATA.catalogue||[]).forEach(p=>{
+      const opt = document.createElement('option'); opt.value=p.id; opt.textContent=p.article;
+      if(p.id===data.catalogueId) opt.selected=true; catSel.appendChild(opt);
+    });
+    catSel.onchange = ()=>{
+      data.catalogueId = catSel.value;
+      const prod = catalogueById(catSel.value);
+      if(prod){
+        data.article = prod.article;
+        if(prod.tissu && DATA.lists.tissus[prod.tissu]){
+          data.tissu = prod.tissu;
+          if(!(DATA.lists.tissus[prod.tissu]||[]).includes(data.couleur)) data.couleur='';
+        }
+        // drop any chosen size that isn't offered by this product
+        const allowed = prod.tailles||[];
+        Object.keys(data.tailles||{}).forEach(sz=>{ if(allowed.indexOf(sz)===-1) delete data.tailles[sz]; });
+      }
+      render();
+    };
+    catWrap.appendChild(catSel);
+    if(data.catalogueId){
+      const prod = catalogueById(data.catalogueId);
+      if(prod && prod.photo){
+        const img = document.createElement('img');
+        img.src = prod.photo;
+        img.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--border);margin-top:8px;display:block;';
+        catWrap.appendChild(img);
+      }
+    }
+    m.appendChild(catWrap);
+  }
+
+  m.appendChild(el('<div class="grp-head" style="background:#1C1815">Identité article / commande</div>'));
+  frow([
+    field('Référence', data.reference, v=>data.reference=v),
+    field('Client', data.client, v=>data.client=v)
+  ]);
+  frow([
+    field('Article', data.article, v=>data.article=v),
+    tissuSelectField()
+  ]);
+  frow([
+    couleurSelectField()
+  ]);
+  m.appendChild(el('<label style="display:block;font-size:11px;color:var(--text-soft);margin-bottom:5px;">Répartition par taille (coche + quantité)</label>'));
+  const sizeGrid = el('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-bottom:8px;"></div>');
+  data.tailles = data.tailles || {};
+  const sizeOptions = (data.catalogueId && catalogueById(data.catalogueId)) ? (catalogueById(data.catalogueId).tailles||[]) : (DATA.lists.tailles||[]);
+  sizeOptions.forEach(sz=>{
+    const cell = el('<div style="border:1px solid var(--border);border-radius:5px;padding:6px;"></div>');
+    const lab = el('<label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:bold;margin-bottom:4px;"></label>');
+    const chk = document.createElement('input'); chk.type='checkbox';
+    chk.checked = data.tailles[sz]!==undefined && data.tailles[sz]!=='' && data.tailles[sz]!=null;
+    lab.appendChild(chk);
+    lab.appendChild(document.createTextNode(sz));
+    cell.appendChild(lab);
+    const qtyInp = document.createElement('input'); qtyInp.type='number'; qtyInp.min='0';
+    qtyInp.value = data.tailles[sz]!==undefined ? data.tailles[sz] : '';
+    qtyInp.disabled = !chk.checked;
+    qtyInp.oninput = ()=>{ data.tailles[sz] = qtyInp.value===''?'':Number(qtyInp.value); };
+    chk.onchange = ()=>{
+      qtyInp.disabled = !chk.checked;
+      if(!chk.checked){ delete data.tailles[sz]; qtyInp.value=''; }
+      else if(qtyInp.value===''){ qtyInp.focus(); }
+    };
+    cell.appendChild(qtyInp);
+    sizeGrid.appendChild(cell);
+  });
+  m.appendChild(sizeGrid);
+  frow([
+    field('Quantité (pièces)', data.quantite, v=>data.quantite=v===''?'':Number(v), 'number'),
+    field('Date commande', data.dateCommande, v=>data.dateCommande=v, 'date')
+  ]);
+  frow([
+    field('Date de livraison prévue', data.dateLivraisonPrevue, v=>data.dateLivraisonPrevue=v, 'date')
+  ]);
+  const urgWrap = el('<div style="margin:6px 0 10px;"></div>');
+  const urgLabel = el('<label style="display:flex;align-items:center;gap:6px;font-size:13px;"></label>');
+  const urgInp = document.createElement('input'); urgInp.type='checkbox'; urgInp.checked=!!data.urgent;
+  urgInp.onchange = ()=>data.urgent=urgInp.checked;
+  urgLabel.appendChild(urgInp);
+  urgLabel.appendChild(document.createTextNode('Commande urgente'));
+  urgWrap.appendChild(urgLabel);
+  m.appendChild(urgWrap);
+
+  m.appendChild(el('<div class="grp-head" style="background:#6B4226">Découpe</div>'));
+  frow([
+    field('Statut', data.decoupe.statut, v=>data.decoupe.statut=v, 'select'),
+    field('Prévue le', data.decoupe.prevueLe, v=>data.decoupe.prevueLe=v, 'date')
+  ]);
+  frow([ field('Faite le', data.decoupe.faiteLe, v=>data.decoupe.faiteLe=v, 'date') ]);
+
+  m.appendChild(el('<div class="grp-head" style="background:#A8492E">Confection</div>'));
+  frow([
+    field('Statut', data.confection.statut, v=>data.confection.statut=v, 'select'),
+    field('Atelier / Chaîne', data.confection.atelier, v=>data.confection.atelier=v)
+  ]);
+  frow([
+    field('Début', data.confection.debut, v=>data.confection.debut=v, 'date'),
+    field('Fin', data.confection.fin, v=>data.confection.fin=v, 'date')
+  ]);
+
+  m.appendChild(el('<div class="grp-head" style="background:#8A6D3B">Emballage</div>'));
+  frow([
+    field('Statut', data.emballage.statut, v=>data.emballage.statut=v, 'select'),
+    field('Début', data.emballage.debut, v=>data.emballage.debut=v, 'date')
+  ]);
+  frow([ field('Fin', data.emballage.fin, v=>data.emballage.fin=v, 'date') ]);
+
+  m.appendChild(el('<div class="grp-head" style="background:#4A6C6F">Tissu / Matière</div>'));
+  frow([
+    field('Poids matelas (kg)', data.tissuInfo.poidsMatelas, v=>data.tissuInfo.poidsMatelas=v===''?'':Number(v), 'number'),
+    field('Poids/pièce (kg)', data.tissuInfo.poidsPiece, v=>data.tissuInfo.poidsPiece=v===''?'':Number(v), 'number')
+  ]);
+  frow([ field('Conso tissu (kg)', data.tissuInfo.consoTissu, v=>data.tissuInfo.consoTissu=v===''?'':Number(v), 'number') ]);
+
+  m.appendChild(el('<div class="grp-head" style="background:#666666">Notes</div>'));
+  const notesWrap = el('<div style="margin-bottom:8px;"></div>');
+  const notesArea = document.createElement('textarea'); notesArea.rows=2; notesArea.value=data.notes||'';
+  notesArea.oninput = ()=>data.notes=notesArea.value;
+  notesWrap.appendChild(notesArea);
+  m.appendChild(notesWrap);
+
+  m.appendChild(el('<div class="grp-head" style="background:#3E5C76">Stock</div>'));
+  frow([
+    field('Quantité reçue', data.stock.quantiteRecue, v=>data.stock.quantiteRecue=v===''?'':Number(v), 'number'),
+    field('Date réception', data.stock.dateReception, v=>data.stock.dateReception=v, 'date')
+  ]);
+
+  const actions = el('<div class="actions"></div>');
+  const cancel = el('<button class="btn">Annuler</button>');
+  cancel.onclick = ()=>{ view.modal=null; render(); };
+  const save = el('<button class="btn primary">Enregistrer</button>');
+  save.onclick = ()=>{
+    if(!data.reference || !data.reference.trim()){ alert('La référence est obligatoire.'); return; }
+    if(mode==='create'){
+      DATA.commandes.push(data);
+      view.modal=null;
+      saveState('Nouvelle commande ajoutée : '+data.reference);
+    } else {
+      const idx = DATA.commandes.findIndex(x=>x.id===data.id);
+      if(idx>=0) DATA.commandes[idx]=data;
+      view.modal=null;
+      saveState('Commande modifiée : '+data.reference);
+    }
+  };
+  const del = mode==='edit' ? el('<button class="btn" style="color:#A42834;border-color:#A42834;">Supprimer</button>') : null;
+  if(del){
+    del.onclick = ()=>{
+      if(confirm('Supprimer définitivement la commande '+data.reference+' ?')){
+        DATA.commandes = DATA.commandes.filter(x=>x.id!==data.id);
+        view.modal=null;
+        saveState('Commande supprimée : '+data.reference);
+      }
+    };
+  }
+  if(del) actions.appendChild(del);
+  actions.appendChild(cancel);
+  actions.appendChild(save);
+  m.appendChild(actions);
+
+  overlay.appendChild(m);
+  overlay.onclick = (e)=>{ if(e.target===overlay){ view.modal=null; render(); } };
+  return overlay;
+}
+
+// ---------- PERSISTENCE ----------
+function showToast(msg){
+  const t = el('<div class="toast">'+msg+'</div>');
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3200);
+}
+
+async function saveState(toastMsg){
+  render(); // optimistic UI update immediately
+  try{
+    const res = await fetch('/api/state', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(DATA)
+    });
+    if(!res.ok) throw new Error('save failed: '+res.status);
+  } catch(e){
+    showToast("Échec de l'enregistrement, réessayez.");
+  }
+}
+
+// Keeps every open screen in sync with what other departments save —
+// skipped while a modal is open so nobody's in-progress edit gets clobbered.
+function pollState(){
+  setTimeout(async ()=>{
+    try{
+      if(!view.modal && !view.personModal && !view.catalogueModal){
+        const res = await fetch('/api/state', {cache:'no-store'});
+        if(res.ok){
+          const fresh = await res.json();
+          if(fresh && JSON.stringify(fresh)!==JSON.stringify(DATA)){
+            DATA = fresh;
+            render();
+          }
+        }
+      }
+    } catch(e){ /* offline / transient network issue — try again next tick */ }
+    pollState();
+  }, 15000);
+}
+
+async function boot(){
+  try{
+    const res = await fetch('/api/state', {cache:'no-store'});
+    if(res.ok){
+      const fresh = await res.json();
+      if(fresh && Object.keys(fresh).length){
+        DATA = fresh;
+      } else {
+        // first run: nothing saved yet — seed the database with the
+        // starter data embedded in this page.
+        await fetch('/api/state', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(DATA)});
+      }
+    }
+  } catch(e){ /* API not reachable yet (e.g. database not connected) — the
+                 page still works with the embedded starter data, read-only
+                 until saveState() succeeds. */ }
+  render();
+  pollState();
+}
+
+boot();
+</script>
+</body>
+</html>
