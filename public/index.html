@@ -174,8 +174,10 @@ function resizeImageFile(file, maxDim, quality){
         }
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/png'));
       };
       img.onerror = ()=>reject(new Error('image load failed'));
       img.src = reader.result;
@@ -205,6 +207,15 @@ const ROLE_OPTIONS = ["admin","commercial","decoupe","confection","emballage","s
 
 let DATA = JSON.parse(document.getElementById('seed-data').textContent);
 if(!DATA.settings) DATA.settings = {companyName: 'Suivi de production', primaryColor: '#A8492E', secondaryColor: '#1C1815', logoUrl: ''};
+// Charger les settings enregistrés depuis localStorage
+const savedSettings = localStorage.getItem('app_settings');
+if(savedSettings){
+  try{
+    DATA.settings = JSON.parse(savedSettings);
+  } catch(e){
+    console.log('Settings non valides dans localStorage');
+  }
+}
 let view = {screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}};
 
 function fmtDate(d){
@@ -1205,17 +1216,18 @@ function renderSettingsModal(){
   logoInput.type = 'file';
   logoInput.accept = 'image/*';
   logoInput.style.marginBottom = '8px';
-  logoInput.onchange = ()=>{
+  logoInput.onchange = async ()=>{
     const file = logoInput.files[0];
     if(!file) return;
-    const reader = new FileReader();
-    reader.onload = (e)=>{
-      settings.logoUrl = e.target.result;
+    try{
+      const compressed = await resizeImageFile(file, 200, 0.8);
+      settings.logoUrl = compressed;
       DATA.settings = settings;
       logoPreview.innerHTML = '<img src="'+settings.logoUrl+'" style="height:50px;max-width:150px;border-radius:6px;border:1px solid var(--border);">';
       logoPreview.style.marginTop = '8px';
-    };
-    reader.readAsDataURL(file);
+    }catch(err){
+      alert('Erreur lors du chargement du logo. Essaie une autre image.');
+    }
   };
   logoWrap.appendChild(logoInput);
   const logoPreview = el('<div></div>');
@@ -1230,9 +1242,11 @@ function renderSettingsModal(){
   save.onclick = ()=>{
     if(!settings.companyName || !settings.companyName.trim()){ alert('Le nom de l\'entreprise est obligatoire.'); return; }
     DATA.settings = settings;
+    localStorage.setItem('app_settings', JSON.stringify(settings));
     view.settingsModal=null;
     applyThemeSettings();
-    saveState('Paramètres personnalisés');
+    showToast('✓ Paramètres enregistrés !');
+    render();
   };
   actions.appendChild(cancel);
   actions.appendChild(save);
