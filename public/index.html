@@ -1198,9 +1198,30 @@ function renderSettingsModal(){
     field('Couleur primaire (ex: #A8492E)', settings.primaryColor, v=>{settings.primaryColor=v; DATA.settings=settings;}, 'text'),
     field('Couleur secondaire (ex: #1C1815)', settings.secondaryColor, v=>{settings.secondaryColor=v; DATA.settings=settings;}, 'text')
   ]);
-  frow([
-    field('URL du logo (facultatif)', settings.logoUrl, v=>{settings.logoUrl=v; DATA.settings=settings;}, 'text')
-  ]);
+
+  const logoWrap = el('<div style="margin:6px 0 10px;"></div>');
+  logoWrap.appendChild(el('<label style="display:block;font-size:12px;color:var(--text-soft);margin-bottom:6px;font-weight:bold;">Logo (image)</label>'));
+  const logoInput = document.createElement('input');
+  logoInput.type = 'file';
+  logoInput.accept = 'image/*';
+  logoInput.style.marginBottom = '8px';
+  logoInput.onchange = ()=>{
+    const file = logoInput.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      settings.logoUrl = e.target.result;
+      DATA.settings = settings;
+      logoPreview.innerHTML = '<img src="'+settings.logoUrl+'" style="height:50px;max-width:150px;border-radius:6px;border:1px solid var(--border);">';
+      logoPreview.style.marginTop = '8px';
+    };
+    reader.readAsDataURL(file);
+  };
+  logoWrap.appendChild(logoInput);
+  const logoPreview = el('<div></div>');
+  if(settings.logoUrl && settings.logoUrl.startsWith('data:')) logoPreview.innerHTML = '<img src="'+settings.logoUrl+'" style="height:50px;max-width:150px;border-radius:6px;border:1px solid var(--border);">';
+  logoWrap.appendChild(logoPreview);
+  m.appendChild(logoWrap);
 
   const actions = el('<div class="actions"></div>');
   const cancel = el('<button class="btn">Annuler</button>');
@@ -1229,6 +1250,11 @@ function applyThemeSettings(){
   if(settings.secondaryColor) root.style.setProperty('--charcoal', settings.secondaryColor);
   const title = document.querySelector('.topbar .title');
   if(title && settings.companyName) title.textContent = settings.companyName;
+  if(settings.logoUrl){
+    document.querySelectorAll('img[src*="logo"]').forEach(img=>{
+      img.src = settings.logoUrl;
+    });
+  }
 }
 
 function renderSearchResult(box){
