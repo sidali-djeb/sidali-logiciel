@@ -1688,14 +1688,48 @@ function showToast(msg){
   setTimeout(()=>t.remove(), 3200);
 }
 
+async function loadDataFromSupabase(){
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    if(res.ok){
+      const data = await res.json();
+      if(data && data.length > 0 && data[0].data){
+        DATA = data[0].data;
+      }
+    }
+  } catch(e){
+    console.log('Supabase non disponible, utilisation des données locales');
+  }
+}
+
+async function saveToSupabase(){
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ data: DATA })
+    });
+    return res.ok;
+  } catch(e){
+    console.log('Erreur Supabase:', e.message);
+    return false;
+  }
+}
+
 async function saveState(toastMsg){
   render();
+  await saveToSupabase();
   if(toastMsg) showToast('✓ '+toastMsg);
 }
 
-
 async function boot(){
-  await loadSettingsFromSupabase();
+  await loadDataFromSupabase();
   render();
 }
 
