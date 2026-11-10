@@ -216,13 +216,13 @@ if(!DATA.settings) DATA.settings = {companyName: 'Suivi de production', primaryC
 async function initSupabase(){
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/settings?limit=1`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      headers: { 'apikey': SUPABASE_KEY }
     });
     if(res.status === 404){
       // Table n'existe pas, la créer
       await fetch(`${SUPABASE_URL}/rest/v1/rpc/create_settings_table`, {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' }
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' }
       }).catch(()=>{});
     }
   } catch(e){}
@@ -232,7 +232,7 @@ async function initSupabase(){
 async function loadSettingsFromSupabase(){
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/settings?id=eq.default`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      headers: { 'apikey': SUPABASE_KEY }
     });
     if(res.ok){
       const data = await res.json();
@@ -324,6 +324,7 @@ function renderLogin(){
   img.src = LOGO_CHARCOAL;
   w.appendChild(img);
   w.appendChild(el('<h1>'+DATA.companyTitle+'</h1>'));
+  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 2 · références automatiques JB0001…</div>'));
   w.appendChild(el('<p class="sub">Connecte-toi avec ton email (ou ton nom) et ton code personnel</p>'));
 
   const form = el('<div class="login-form"></div>');
@@ -362,6 +363,7 @@ function renderLogin(){
     view.role = person.role;
     view.screen = person.role==='admin' ? 'admin' : (person.role==='commercial' ? 'commercial' : 'dept');
     view.loginId=''; view.loginCode=''; view.loginError='';
+    saveSession(person.id);
     render();
   };
   btn.onclick = doLogin;
@@ -386,7 +388,7 @@ function topbar(title, badgeCount){
   chat.onclick = ()=>{ view.discussionOpen=true; render(); };
   bar.appendChild(chat);
   const out = el('<button class="link">Se déconnecter</button>');
-  out.onclick = ()=>{ view.screen='login'; view.role=null; view.personId=null; view.discussionOpen=false; render(); };
+  out.onclick = ()=>{ clearSession(); view.screen='login'; view.role=null; view.personId=null; view.discussionOpen=false; render(); };
   bar.appendChild(out);
   return bar;
 }
@@ -693,7 +695,7 @@ function renderCommercialScreen(){
   const searchBody = el('<div class="section-body"></div>');
   const sRow = el('<div class="search-row"></div>');
   const sInput = document.createElement('input');
-  sInput.placeholder='Tape une référence (ex : JB00300)';
+  sInput.placeholder='Tape une référence (ex : JB0001)';
   sInput.value = view.searchRef;
   sInput.oninput = ()=>{ view.searchRef = sInput.value; renderSearchResult(resultBox); };
   sRow.appendChild(sInput);
@@ -849,7 +851,7 @@ function renderAdminScreen(){
     const searchBody = el('<div class="section-body"></div>');
     const sRow = el('<div class="search-row"></div>');
     const sInput = document.createElement('input');
-    sInput.placeholder='Tape une référence (ex : JB00300)';
+    sInput.placeholder='Tape une référence (ex : JB0001)';
     sInput.value = view.searchRef;
     sInput.oninput = ()=>{ view.searchRef = sInput.value; renderSearchResult(resultBox); };
     sRow.appendChild(sInput);
@@ -1277,7 +1279,6 @@ function renderSettingsModal(){
         method: 'PATCH',
         headers: {
           'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal'
         },
@@ -1428,9 +1429,25 @@ function renderTable(){
   return wrap;
 }
 
+// Numérotation automatique des références : JB0001, JB0002, ... à l'infini.
+// On prend le plus grand numéro JB existant et on ajoute 1 (4 chiffres minimum,
+// puis JB10000, JB10001... sans limite). Le champ reste modifiable à la main
+// (par exemple pour relancer une référence déjà existante).
+function nextReference(){
+  let max = 0;
+  (DATA.commandes||[]).forEach(c=>{
+    const m = /^JB(\d+)$/i.exec(String(c.reference||'').trim());
+    if(m){
+      const n = parseInt(m[1], 10);
+      if(n > max) max = n;
+    }
+  });
+  return 'JB' + String(max + 1).padStart(4, '0');
+}
+
 function blankCommande(){
   return {
-    id: 'cmd_'+Date.now(), catalogueId:'', reference:'', client:'', article:'', tissu:'', tailles:{}, couleur:'',
+    id: 'cmd_'+Date.now(), catalogueId:'', reference: nextReference(), client:'', article:'', tissu:'', tailles:{}, couleur:'',
     quantite:'', dateCommande: todayISO(), dateLivraisonPrevue:'', urgent:false,
     decoupe:{statut:'En attente',prevueLe:'',faiteLe:''},
     confection:{statut:'En attente',atelier:'',debut:'',fin:''},
@@ -1549,7 +1566,7 @@ function renderModal(){
 
   m.appendChild(el('<div class="grp-head" style="background:#1C1815">Identité article / commande</div>'));
   frow([
-    field('Référence', data.reference, v=>data.reference=v),
+    field(mode==='create' ? 'Référence (automatique, modifiable)' : 'Référence', data.reference, v=>data.reference=v),
     field('Client', data.client, v=>data.client=v)
   ]);
   frow([
@@ -1688,19 +1705,24 @@ function showToast(msg){
   setTimeout(()=>t.remove(), 3200);
 }
 
+// Lecture : la clé publishable s'envoie uniquement dans l'en-tête apikey.
+// Pas d'en-tête Authorization : la clé sb_publishable_ n'est pas un JWT.
 async function loadDataFromSupabase(){
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      headers: { 'apikey': SUPABASE_KEY }
     });
-    if(res.ok){
-      const data = await res.json();
-      if(data && data.length > 0 && data[0].data){
-        DATA = data[0].data;
-      }
+    if(!res.ok){
+      console.log('Chargement Supabase échoué:', res.status, await res.text());
+      return;
+    }
+    const rows = await res.json();
+    if(rows && rows.length && rows[0].data){
+      // on garde les valeurs par défaut pour toute clé absente de la base
+      DATA = Object.assign({}, DATA, rows[0].data);
     }
   } catch(e){
-    console.log('Supabase non disponible, utilisation des données locales');
+    console.log('Supabase non disponible:', e.message);
   }
 }
 
@@ -1710,12 +1732,16 @@ async function saveToSupabase(){
       method: 'PATCH',
       headers: {
         'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
       },
       body: JSON.stringify({ data: DATA })
     });
-    return res.ok;
+    if(!res.ok){
+      console.log('Enregistrement Supabase échoué:', res.status, await res.text());
+      return false;
+    }
+    return true;
   } catch(e){
     console.log('Erreur Supabase:', e.message);
     return false;
@@ -1724,12 +1750,35 @@ async function saveToSupabase(){
 
 async function saveState(toastMsg){
   render();
-  await saveToSupabase();
+  const ok = await saveToSupabase();
+  if(!ok){
+    showToast("⚠ Échec de l'enregistrement, vérifiez la connexion");
+    return;
+  }
   if(toastMsg) showToast('✓ '+toastMsg);
+}
+
+// Session : on garde la personne connectée même si on actualise la page.
+function saveSession(id){
+  try { localStorage.setItem('dj_session', id); } catch(e){}
+}
+function clearSession(){
+  try { localStorage.removeItem('dj_session'); } catch(e){}
+}
+function restoreSession(){
+  let id = null;
+  try { id = localStorage.getItem('dj_session'); } catch(e){}
+  if(!id) return;
+  const person = (DATA.people||[]).find(p=>p.id===id && p.active!==false);
+  if(!person){ clearSession(); return; }
+  view.personId = person.id;
+  view.role = person.role;
+  view.screen = person.role==='admin' ? 'admin' : (person.role==='commercial' ? 'commercial' : 'dept');
 }
 
 async function boot(){
   await loadDataFromSupabase();
+  restoreSession();
   render();
 }
 
