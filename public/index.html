@@ -139,8 +139,26 @@ table.main tr:hover td{background:#FBF9F6;}
 <div id="app" class="app"><div style="padding:60px 20px;text-align:center;color:#6B6560;font-family:Arial,sans-serif;font-size:13px;">Chargement…</div></div>
 <script id="seed-data" type="application/json">{"companyTitle": "Suivi de production", "people": [{"id": "p_admin", "name": "Sidali", "email": "sidalidjebari@gmail.com", "role": "admin", "code": "9999", "active": true}, {"id": "p_commercial", "name": "Responsable Commercial", "email": "commercial@example.com", "role": "commercial", "code": "5005", "active": true}, {"id": "p_decoupe", "name": "Responsable Découpe", "email": "decoupe@example.com", "role": "decoupe", "code": "1001", "active": true}, {"id": "p_confection", "name": "Responsable Confection", "email": "confection@example.com", "role": "confection", "code": "2002", "active": true}, {"id": "p_emballage", "name": "Responsable Emballage", "email": "emballage@example.com", "role": "emballage", "code": "3003", "active": true}, {"id": "p_stock", "name": "Responsable Stock", "email": "stock@example.com", "role": "stock", "code": "4004", "active": true}], "lists": {"tailles": ["S", "M", "L", "XL", "XXL"], "tissus": {"ELIXIR": ["NOIR", "BLANC", "GRIS CHINÉ"]}}, "catalogue": [{"id": "prod_1", "article": "T-SHIRT OVERSIZE", "tissu": "ELIXIR", "tailles": ["S", "M", "L", "XL"], "photo": ""}], "commandes": [{"id": "cmd_1", "catalogueId": "prod_1", "reference": "JB00300", "client": "DJEBS STOCK", "article": "T-SHIRT OVERSIZE", "tissu": "ELIXIR", "tailles": {"S": 50, "M": 50, "L": 50, "XL": 50}, "couleur": "NOIR", "quantite": 200, "dateCommande": "2026-09-01", "dateLivraisonPrevue": "", "urgent": false, "decoupe": {"statut": "Prête", "prevueLe": "2026-09-03", "faiteLe": "2026-09-03"}, "confection": {"statut": "En cours", "atelier": "Chaîne 1", "debut": "2026-09-04", "fin": ""}, "emballage": {"statut": "En attente", "debut": "", "fin": ""}, "tissuInfo": {"poidsMatelas": 120.5, "poidsPiece": 0.24, "consoTissu": 118.2}, "notes": "Exemple — remplacez par vos commandes", "stock": {"quantiteRecue": "", "dateReception": ""}, "ecartGere": false, "ecartNotes": []}], "messages": []}</script>
 <script>
-const LOGO_CHARCOAL = "/logo-charcoal.png";
-const LOGO_WHITE = "/logo-white.png";
+// Logo : celui chargé dans Paramètres (Admin → Paramètres & Thème → Logo),
+// sinon un logo « DJ » par défaut dessiné en SVG (aucun fichier image nécessaire).
+function logoEl(height, onDark){
+  const url = (DATA.settings && DATA.settings.logoUrl) || '';
+  let node;
+  if(url){
+    node = document.createElement('img');
+    node.src = url;
+    node.alt = 'Logo';
+    node.style.cssText = 'height:'+height+'px;width:auto;max-width:'+(height*4)+'px;object-fit:contain;display:block;';
+  } else {
+    node = el('<div style="height:'+height+'px;width:'+height+'px;border-radius:'+Math.round(height*0.22)+'px;background:#A8492E;color:#fff;font-weight:bold;font-family:Arial,sans-serif;font-size:'+Math.round(height*0.42)+'px;letter-spacing:1px;display:flex;align-items:center;justify-content:center;">DJ</div>');
+  }
+  if(onDark){
+    const chip = el('<div style="background:#fff;border-radius:8px;padding:3px 6px;display:flex;align-items:center;"></div>');
+    chip.appendChild(node);
+    return chip;
+  }
+  return node;
+}
 
 const STATUS_OPTIONS = ["En attente","En cours","Prête","Problème","Tissu non disponible","Annulée"];
 // Thin-line, single-color icon set (in the spirit of the outline icon pack
@@ -320,11 +338,11 @@ function findPersonForLogin(idVal, codeVal){
 
 function renderLogin(){
   const w = el('<div class="center-wrap"></div>');
-  const img = document.createElement('img');
-  img.src = LOGO_CHARCOAL;
-  w.appendChild(img);
+  const logoWrap = el('<div style="display:flex;justify-content:center;margin-bottom:16px;"></div>');
+  logoWrap.appendChild(logoEl(84, false));
+  w.appendChild(logoWrap);
   w.appendChild(el('<h1>'+DATA.companyTitle+'</h1>'));
-  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 2 · références automatiques JB0001…</div>'));
+  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 3 · références automatiques + logo</div>'));
   w.appendChild(el('<p class="sub">Connecte-toi avec ton email (ou ton nom) et ton code personnel</p>'));
 
   const form = el('<div class="login-form"></div>');
@@ -376,9 +394,7 @@ function renderLogin(){
 
 function topbar(title, badgeCount){
   const bar = el('<div class="topbar"></div>');
-  const img = document.createElement('img');
-  img.src = LOGO_WHITE;
-  bar.appendChild(img);
+  bar.appendChild(logoEl(34, true));
   const person = currentPerson();
   const badgeHtml = badgeCount ? '<span class="badge">'+badgeCount+'</span>' : '';
   bar.appendChild(el('<div class="title">'+title+(person?' · '+person.name:'')+badgeHtml+'</div>'));
@@ -1273,29 +1289,8 @@ function renderSettingsModal(){
     if(!settings.companyName || !settings.companyName.trim()){ alert('Le nom de l\'entreprise est obligatoire.'); return; }
     DATA.settings = settings;
 
-    // Sauvegarder dans Supabase
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/settings`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({ config: settings }),
-        signal: AbortSignal.timeout(5000)
-      });
-      if(!res.ok && res.status !== 204){
-        throw new Error('Erreur Supabase');
-      }
-    } catch(e){
-      console.log('Sync Supabase échouée:', e.message);
-    }
-
     view.settingsModal=null;
-    applyThemeSettings();
-    showToast('✓ Paramètres enregistrés !');
-    render();
+    saveState('Paramètres enregistrés');
   };
   actions.appendChild(cancel);
   actions.appendChild(save);
@@ -1313,11 +1308,6 @@ function applyThemeSettings(){
   if(settings.secondaryColor) root.style.setProperty('--charcoal', settings.secondaryColor);
   const title = document.querySelector('.topbar .title');
   if(title && settings.companyName) title.textContent = settings.companyName;
-  if(settings.logoUrl){
-    document.querySelectorAll('img[src*="logo"]').forEach(img=>{
-      img.src = settings.logoUrl;
-    });
-  }
 }
 
 function renderSearchResult(box){
