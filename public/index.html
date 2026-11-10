@@ -338,7 +338,7 @@ function renderLogin(){
   logoWrap.appendChild(logoEl(120, false));
   w.appendChild(logoWrap);
   w.appendChild(el('<h1>'+DATA.companyTitle+'</h1>'));
-  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 4 · logo JB djeb\'s + couleurs</div>'));
+  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 5 · un onglet à la fois</div>'));
   w.appendChild(el('<p class="sub">Connecte-toi avec ton email (ou ton nom) et ton code personnel</p>'));
 
   const form = el('<div class="login-form"></div>');
@@ -851,7 +851,7 @@ function renderAdminScreen(){
     tile.appendChild(el('<div class="icon-tile-ic">'+ICONS[it.key]+'</div>'));
     tile.appendChild(el('<div class="icon-tile-lbl">'+it.label+'</div>'));
     if(it.badge!=null) tile.appendChild(el('<div class="icon-tile-badge">'+it.badge+'</div>'));
-    tile.onclick = ()=>{ view.adminOpen[it.key] = !isOpen; render(); };
+    tile.onclick = ()=>{ view.adminOpen = isOpen ? {} : {[it.key]: true}; render(); };
     iconGrid.appendChild(tile);
   });
   wrap.appendChild(iconGrid);
