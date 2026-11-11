@@ -129,6 +129,18 @@ table.main tr:hover td{background:#FBF9F6;}
 .dept-det .full{grid-column:1/-1;}
 .dept-det .sz{display:inline-block;background:#fff;border:1px solid var(--border);border-radius:6px;padding:2px 7px;margin:3px 4px 0 0;font-size:12px;font-weight:bold;}
 .dept-det .note{font-size:12px;font-weight:normal;white-space:pre-wrap;}
+.mat-res{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 11px;margin:2px 0 10px;}
+.mat-line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:3px 0;}
+.mat-line span{color:var(--text-soft);}
+.mat-line.big{border-top:1px solid var(--border);margin-top:4px;padding-top:7px;font-size:14px;}
+.mat-line.big span{color:var(--text);font-weight:bold;}
+.mat-line b{white-space:nowrap;}
+.mat-line.big b{color:#001D51;font-size:17px;}
+.mat-formula{font-size:11px;color:var(--text-soft);margin-top:4px;}
+.dept-qr{display:flex;gap:12px;align-items:center;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin:0 0 10px;background:#fff;}
+.dept-qr-img{flex:0 0 auto;line-height:0;}
+.dept-qr-txt{display:flex;flex-direction:column;gap:6px;align-items:flex-start;font-size:12px;}
+.dept-qr-txt span{color:var(--text-soft);}
 .track-box{margin-top:30px;padding:16px;border:1px solid var(--border);border-radius:12px;background:#fff;text-align:left;box-shadow:0 1px 3px rgba(0,0,0,.05);}
 .track-box h2{font-size:16px;margin:0 0 4px;color:#001D51;}
 .track-box p{font-size:12px;color:var(--text-soft);margin:0 0 10px;}
@@ -1346,7 +1358,7 @@ function renderLogin(){
   logoWrap.appendChild(logoEl(120, false));
   w.appendChild(logoWrap);
   w.appendChild(el('<h1>'+DATA.companyTitle+'</h1>'));
-  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 14 · discussion en direct + privé</div>'));
+  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 16 · conso globale (formule)</div>'));
   // Client arrivé par le QR de sa commande : on affiche d'abord le suivi
   const trackFirst = !!view.trackId;
   if(trackFirst) w.appendChild(renderTrackBlock());
@@ -1826,6 +1838,69 @@ function renderEcartCard(c){
   return card;
 }
 
+// ---------- TISSU / MATIÈRE : champs + consommation globale du produit ----------
+// Formule : Consommation par pièce = poids/pièce + côte/pièce + accessoires/pièce
+//           Consommation globale   = consommation par pièce × nombre réel de pièces
+// (si le nombre réel n'est pas encore saisi, on prend la quantité commandée)
+function matNum(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function matHas(v){ return v!=='' && v!==null && v!==undefined; }
+function consoGlobale(ti, quantite){
+  ti = ti || {};
+  const reel = matHas(ti.nombreReel);
+  const nb = reel ? matNum(ti.nombreReel) : matNum(quantite);
+  const parPiece = matNum(ti.poidsPiece) + matNum(ti.poidsCote) + matNum(ti.poidsAccessoires);
+  return {parPiece:parPiece, nb:nb, total:parPiece*nb, reel:reel};
+}
+function fmtKg(n){ return (Math.round(n*1000)/1000).toLocaleString('fr-FR', {maximumFractionDigits:3}); }
+const MAT_FIELDS = [
+  ['poidsMatelas','Poids matelas (kg)'],
+  ['poidsTrace','Poids tracé (kg)'],
+  ['poidsPiece','Poids / pièce (kg)'],
+  ['poidsCote','Côte / pièce (kg)'],
+  ['poidsAccessoires','Accessoires / pièce (kg)'],
+  ['nombreReel','Nombre réel de pièces']
+];
+// Retourne {node, read}. read() donne les valeurs saisies ; onInput(valeurs) est appelé à chaque frappe.
+function matiereBlock(ti, quantite, onInput){
+  ti = ti || {};
+  const box = el('<div></div>');
+  const inputs = {};
+  let row = null;
+  MAT_FIELDS.forEach(([key,label], i)=>{
+    if(i%2===0){ row = el('<div class="field-row"></div>'); box.appendChild(row); }
+    const f = el('<div><label>'+label+'</label></div>');
+    const inp = document.createElement('input'); inp.type='number'; inp.step='any'; inp.min='0'; inp.inputMode='decimal';
+    inp.value = matHas(ti[key]) ? ti[key] : '';
+    if(key==='nombreReel' && matHas(quantite)) inp.placeholder = 'commandé : '+quantite;
+    f.appendChild(inp); row.appendChild(f); inputs[key] = inp;
+  });
+  const res = el('<div class="mat-res"></div>');
+  box.appendChild(res);
+  function read(){
+    const o = {};
+    Object.keys(inputs).forEach(k=>{ o[k] = inputs[k].value==='' ? '' : Number(inputs[k].value); });
+    return o;
+  }
+  function update(){
+    const v = read();
+    const g = consoGlobale(v, quantite);
+    res.innerHTML = '';
+    const l1 = el('<div class="mat-line"><span>Consommation par pièce</span><b></b></div>');
+    l1.lastChild.textContent = fmtKg(g.parPiece)+' kg';
+    const l2 = el('<div class="mat-line big"><span>Consommation globale du produit</span><b></b></div>');
+    l2.lastChild.textContent = fmtKg(g.total)+' kg';
+    res.appendChild(l1); res.appendChild(l2);
+    const f = el('<div class="mat-formula"></div>');
+    f.textContent = '(poids/pièce + côte + accessoires) × '+fmtKg(g.nb)+' pièces'+(g.reel?' (nombre réel)':' (quantité commandée)');
+    res.appendChild(f);
+    if(onInput) onInput(v);
+  }
+  Object.keys(inputs).forEach(k=>{ inputs[k].oninput = update; });
+  // calcul initial sans déclencher onInput
+  const keep = onInput; onInput = null; update(); onInput = keep;
+  return {node:box, read:read};
+}
+
 // Informations utiles à chaque département (affichées sur chaque carte de tâche)
 function renderDeptDetails(c, dept){
   const box = el('<div class="dept-det"></div>');
@@ -1845,12 +1920,20 @@ function renderDeptDetails(c, dept){
     keys.forEach(k=>{ const sp=document.createElement('span'); sp.className='sz'; sp.textContent = k+' × '+c.tailles[k]; v.appendChild(sp); });
     d.appendChild(v); box.appendChild(d);
   }
+  const prod = c.catalogueId ? catalogueById(c.catalogueId) : null;
   if(dept==='decoupe'){
+    item('Référence patron', prod && prod.refPatron);
     item('Tissu', c.tissu);
     item('Couleur', c.couleur);
     item('Quantité à couper', has(c.quantite)?c.quantite+' pièces':'');
+    if(prod && has(prod.consoMoyenne)){
+      const u = prod.consoUnite||'kg';
+      item('Conso moyenne', prod.consoMoyenne+' '+u+' / pièce');
+      if(Number(c.quantite)>0) item('Conso estimée (commande)', (Math.round(Number(prod.consoMoyenne)*Number(c.quantite)*10)/10).toLocaleString('fr-FR')+' '+u);
+    }
     tailles();
   } else if(dept==='confection'){
+    item('Référence patron', prod && prod.refPatron);
     item('Tissu', c.tissu);
     item('Couleur', c.couleur);
     item('Quantité à confectionner', has(c.quantite)?c.quantite+' pièces':'');
@@ -1888,6 +1971,18 @@ function renderDeptCard(c, dept){
   head.appendChild(tags);
   card.appendChild(head);
   card.appendChild(renderDeptDetails(c, dept));
+  if(dept==='decoupe'){
+    const qrRow = el('<div class="dept-qr"></div>');
+    const qrBox = el('<div class="dept-qr-img"></div>');
+    qrBox.innerHTML = qrSvg(orderUrl(c), 104);
+    qrRow.appendChild(qrBox);
+    const qrTxt = el('<div class="dept-qr-txt"><b>Code QR de la commande</b><span>À coller sur le lot : scanne-le pour retrouver la commande.</span></div>');
+    const pr = el('<button class="btn small">Imprimer l\'étiquette</button>');
+    pr.onclick = ()=>printLabel(c);
+    qrTxt.appendChild(pr);
+    qrRow.appendChild(qrTxt);
+    card.appendChild(qrRow);
+  }
 
   if(dept==='stock'){
     const row = el('<div class="field-row"></div>');
@@ -1951,20 +2046,13 @@ function renderDeptCard(c, dept){
   }
   card.appendChild(row2);
 
-  // Découpe : remplit Tissu / Matière (poids matelas, poids par pièce, conso tissu)
-  let matInputs = [];
+  // Découpe : remplit Tissu / Matière (poids, côte, accessoires, nombre réel → consommation globale)
+  let matBlock = null;
   if(dept==='decoupe'){
-    c.tissuInfo = c.tissuInfo || {poidsMatelas:'',poidsPiece:'',consoTissu:''};
+    c.tissuInfo = c.tissuInfo || {};
     card.appendChild(el('<div style="background:#4A6C6F;color:#fff;font-weight:bold;font-size:13px;padding:6px 10px;border-radius:6px;margin:10px 0 8px;">Tissu / Matière</div>'));
-    const mrow1 = el('<div class="field-row"></div>');
-    const mrow2 = el('<div class="field-row"></div>');
-    [['poidsMatelas','Poids matelas (kg)',mrow1],['poidsPiece','Poids / pièce (kg)',mrow1],['consoTissu','Conso tissu (kg)',mrow2]].forEach(([key,label,row])=>{
-      const f = el('<div><label>'+label+'</label></div>');
-      const inp = document.createElement('input'); inp.type='number'; inp.step='any'; inp.min='0'; inp.inputMode='decimal';
-      inp.value = c.tissuInfo[key]===undefined||c.tissuInfo[key]===null ? '' : c.tissuInfo[key];
-      f.appendChild(inp); row.appendChild(f); matInputs.push([key, inp]);
-    });
-    card.appendChild(mrow1); card.appendChild(mrow2);
+    matBlock = matiereBlock(c.tissuInfo, c.quantite);
+    card.appendChild(matBlock.node);
   }
 
   let extraRow=null, i4=null;
@@ -1981,7 +2069,7 @@ function renderDeptCard(c, dept){
     d.statut = sel.value;
     dateInputs.forEach(([key,inp])=>{ d[key]=inp.value; });
     if(dept==='confection' && i4) d.fin = i4.value;
-    matInputs.forEach(([key,inp])=>{ c.tissuInfo[key] = inp.value===''?'':Number(inp.value); });
+    if(matBlock){ Object.assign(c.tissuInfo, matBlock.read()); c.tissuInfo.consoGlobale = consoGlobale(c.tissuInfo, c.quantite).total; }
     saveState('Mis à jour : '+c.reference);
   };
   saveRow.appendChild(btn);
@@ -2407,7 +2495,7 @@ function renderPersonModal(){
 
 // ---------- CATALOGUE PRODUITS ----------
 function blankCatalogueItem(){
-  return {id:'prod_'+Date.now(), article:'', tissu:'', tailles:[], photo:''};
+  return {id:'prod_'+Date.now(), article:'', tissu:'', tailles:[], photo:'', refPatron:'', consoMoyenne:'', consoUnite:'kg'};
 }
 
 function renderCatalogueTable(){
@@ -2415,7 +2503,7 @@ function renderCatalogueTable(){
   const t = document.createElement('table'); t.className='main';
   const thead = document.createElement('thead');
   const headRow = document.createElement('tr');
-  ['Photo','Article','Tissu','Tailles disponibles',''].forEach(h=>{
+  ['Photo','Article','Réf. patron','Tissu','Conso moyenne','Tailles disponibles',''].forEach(h=>{
     const th = document.createElement('th'); th.textContent=h; headRow.appendChild(th);
   });
   thead.appendChild(headRow);
@@ -2434,7 +2522,9 @@ function renderCatalogueTable(){
     tr.appendChild(photoTd);
     function td(text){ const cell=document.createElement('td'); cell.textContent=text; tr.appendChild(cell); }
     td(p.article||'—');
+    td(p.refPatron||'—');
     td(p.tissu||'—');
+    td((p.consoMoyenne!==''&&p.consoMoyenne!=null) ? p.consoMoyenne+' '+(p.consoUnite||'kg')+' / pièce' : '—');
     td((p.tailles||[]).join(' / ')||'—');
     const editTd = document.createElement('td');
     const b = document.createElement('button'); b.className='btn small'; b.textContent='Modifier';
@@ -2479,6 +2569,25 @@ function renderCatalogueModal(){
   tissuWrap.appendChild(tissuSel);
 
   frow([articleWrap, tissuWrap]);
+
+  // Référence du patron + consommation moyenne de tissu par pièce
+  const patWrap = el('<div></div>');
+  patWrap.appendChild(el('<label>Référence patron</label>'));
+  const patInp = document.createElement('input'); patInp.value = data.refPatron||''; patInp.placeholder = 'ex : PAT-HOOD-012';
+  patInp.oninput = ()=>data.refPatron = patInp.value;
+  patWrap.appendChild(patInp);
+  const cWrap = el('<div></div>');
+  cWrap.appendChild(el('<label>Consommation moyenne de tissu (par pièce)</label>'));
+  const cRow = el('<div style="display:flex;gap:6px;"></div>');
+  const cInp = document.createElement('input'); cInp.type='number'; cInp.step='any'; cInp.min='0'; cInp.inputMode='decimal';
+  cInp.value = (data.consoMoyenne===undefined||data.consoMoyenne===null) ? '' : data.consoMoyenne;
+  cInp.oninput = ()=>{ data.consoMoyenne = cInp.value===''?'':Number(cInp.value); };
+  const cUnit = document.createElement('select'); cUnit.style.cssText='width:76px;flex:0 0 76px;';
+  ['kg','m'].forEach(u=>{ const o=document.createElement('option'); o.value=u; o.textContent=u; if((data.consoUnite||'kg')===u) o.selected=true; cUnit.appendChild(o); });
+  cUnit.onchange = ()=>{ data.consoUnite = cUnit.value; };
+  cRow.appendChild(cInp); cRow.appendChild(cUnit);
+  cWrap.appendChild(cRow);
+  frow([patWrap, cWrap]);
 
   m.appendChild(el('<label style="display:block;font-size:11px;color:var(--text-soft);margin:2px 0 6px;">Tailles disponibles pour ce produit</label>'));
   const sizeWrap = el('<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>');
@@ -3450,6 +3559,11 @@ function renderFiche(c){
   info.appendChild(el('<div class="fb-val">'+(c.dateLivraisonPrevue?fmtDate(c.dateLivraisonPrevue):'—')+'</div>'));
   if(canManagePay()){
     const com = commercialOf(c);
+    { const g = consoGlobale(c.tissuInfo, c.quantite);
+      if(g.total>0){
+        info.appendChild(el('<div class="fb-lbl" style="margin-top:12px;">Conso. globale du produit</div>'));
+        const gv = el('<div class="fb-val" style="font-size:14px;"></div>'); gv.textContent = fmtKg(g.total)+' kg'; info.appendChild(gv);
+      } }
     info.appendChild(el('<div class="fb-lbl" style="margin-top:12px;">Commercial responsable</div>'));
     info.appendChild(el('<div class="fb-val" style="font-size:14px;">'+(com?esc(com.name):'<span style="color:var(--red);">Non assigné</span>')+'</div>'));
     const pi = payInfo(c);
@@ -3546,7 +3660,7 @@ function blankCommande(){
     decoupe:{statut:'En attente',prevueLe:'',faiteLe:''},
     confection:{statut:'En attente',atelier:'',debut:'',fin:''},
     emballage:{statut:'En attente',debut:'',fin:''},
-    tissuInfo:{poidsMatelas:'',poidsPiece:'',consoTissu:''},
+    tissuInfo:{poidsMatelas:'',poidsTrace:'',poidsPiece:'',poidsCote:'',poidsAccessoires:'',nombreReel:'',consoTissu:''},
     notes:'', stock:{quantiteRecue:'',dateReception:''}, ecartGere:false, ecartNotes:[],
     paiement:{total:'', versements:[]}
   };
@@ -3752,11 +3866,9 @@ function renderModal(){
 
   if(mode==='edit'){
     m.appendChild(el('<div class="grp-head" style="background:#4A6C6F">Tissu / Matière (rempli par la Découpe)</div>'));
-    frow([
-      field('Poids matelas (kg)', data.tissuInfo.poidsMatelas, v=>data.tissuInfo.poidsMatelas=v===''?'':Number(v), 'number'),
-      field('Poids/pièce (kg)', data.tissuInfo.poidsPiece, v=>data.tissuInfo.poidsPiece=v===''?'':Number(v), 'number')
-    ]);
-    frow([ field('Conso tissu (kg)', data.tissuInfo.consoTissu, v=>data.tissuInfo.consoTissu=v===''?'':Number(v), 'number') ]);
+    data.tissuInfo = data.tissuInfo || {};
+    const mb = matiereBlock(data.tissuInfo, data.quantite, v=>{ Object.assign(data.tissuInfo, v); data.tissuInfo.consoGlobale = consoGlobale(data.tissuInfo, data.quantite).total; });
+    m.appendChild(mb.node);
   }
 
   m.appendChild(el('<div class="grp-head" style="background:#666666">Notes</div>'));
