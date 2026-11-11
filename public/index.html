@@ -123,6 +123,21 @@ table.main tr:hover td{background:#FBF9F6;}
 .modal label{display:block;font-size:11px;color:var(--text-soft);margin-bottom:3px;}
 .modal input,.modal select,.modal textarea{width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:5px;font-size:13px;font-family:Arial,sans-serif;}
 .modal .actions{text-align:right;margin-top:16px;display:flex;justify-content:flex-end;gap:8px;}
+.dept-det{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin:8px 0 10px;}
+.dept-det .k{color:var(--text-soft);font-size:11px;}
+.dept-det .v{font-size:13px;font-weight:bold;color:var(--text);}
+.dept-det .full{grid-column:1/-1;}
+.dept-det .sz{display:inline-block;background:#fff;border:1px solid var(--border);border-radius:6px;padding:2px 7px;margin:3px 4px 0 0;font-size:12px;font-weight:bold;}
+.dept-det .note{font-size:12px;font-weight:normal;white-space:pre-wrap;}
+.track-box{margin-top:30px;padding:16px;border:1px solid var(--border);border-radius:12px;background:#fff;text-align:left;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.track-box h2{font-size:16px;margin:0 0 4px;color:#001D51;}
+.track-box p{font-size:12px;color:var(--text-soft);margin:0 0 10px;}
+.track-card{margin-top:10px;}
+.track-msg{margin:-6px 0 10px;padding:9px 12px;border-radius:8px;background:#FFF3CD;font-size:13px;text-align:center;}
+.track-msg.ok{background:#E3F3E7;color:#1E7A34;font-weight:bold;}
+.track-info{display:grid;gap:6px;}
+.track-info div{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 0;border-top:1px solid var(--border);}
+.track-info span{color:var(--text-soft);}
 .journey{display:flex;align-items:flex-start;margin:4px 0 18px;padding:14px 6px 8px;background:#fff;border:1px solid var(--border);border-radius:10px;}
 .jstep{flex:1;text-align:center;position:relative;min-width:0;}
 .jstep+.jstep::before{content:"";position:absolute;top:31px;left:-50%;width:100%;height:3px;background:#C9D3E0;z-index:0;}
@@ -1246,7 +1261,7 @@ async function loadSettingsFromSupabase(){
     console.log('Supabase non disponible, utilisation des paramètres par défaut');
   }
 }
-let view = {screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout'};
+let view = {screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', trackRef:'', trackId:null, trackSearched:false};
 
 function fmtDate(d){
   if(!d) return '—';
@@ -1330,8 +1345,11 @@ function renderLogin(){
   logoWrap.appendChild(logoEl(120, false));
   w.appendChild(logoWrap);
   w.appendChild(el('<h1>'+DATA.companyTitle+'</h1>'));
-  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 10 · statistiques</div>'));
-  w.appendChild(el('<p class="sub">Connecte-toi avec ton email (ou ton nom) et ton code personnel</p>'));
+  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 13 · Découpe remplit tissu/matière</div>'));
+  // Client arrivé par le QR de sa commande : on affiche d'abord le suivi
+  const trackFirst = !!view.trackId;
+  if(trackFirst) w.appendChild(renderTrackBlock());
+  w.appendChild(el('<p class="sub" style="'+(trackFirst?'margin-top:26px;':'')+'">'+(trackFirst?'<b>Espace équipe</b> — ':'')+'Connecte-toi avec ton email (ou ton nom) et ton code personnel</p>'));
 
   const form = el('<div class="login-form"></div>');
   const idField = el('<div class="login-field"><label>Email ou nom</label></div>');
@@ -1378,7 +1396,76 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w.appendChild(form);
+  if(!trackFirst) w.appendChild(renderTrackBlock());
   return w;
+}
+
+// ---------- SUIVI CLIENT (sans compte) ----------
+function commercialOf(c){
+  return (DATA.people||[]).find(p=>p.id===c.commercialId) || null;
+}
+function publicSteps(c){
+  return journeySteps(c).map(st=>{
+    // côté client : pas de vocabulaire interne (problème, écart de stock)
+    if(st.state==='prob') return Object.assign({}, st, {state:'cours', text:'En traitement'});
+    return st;
+  });
+}
+function renderTrackResult(box){
+  box.innerHTML = '';
+  let c = null;
+  const ref = (view.trackRef||'').trim();
+  if(view.trackId){ c = (DATA.commandes||[]).find(x=>x.id===view.trackId) || null; }
+  else if(ref){
+    const ms = (DATA.commandes||[]).filter(x=>String(x.reference||'').trim().toLowerCase()===ref.toLowerCase());
+    c = ms.length ? ms[ms.length-1] : null;
+  }
+  if(!c){
+    if(view.trackSearched || view.trackId) box.appendChild(el('<div class="search-msg" style="color:var(--red);">Aucune commande trouvée avec cette référence. Vérifiez la référence ou contactez votre commercial.</div>'));
+    return;
+  }
+  const steps = publicSteps(c);
+  const allDone = steps.every(x=>x.state==='done');
+  const cur = steps.find(x=>x.state!=='done');
+  const card = el('<div class="track-card"></div>');
+  card.appendChild(el('<div style="font-size:22px;font-weight:bold;text-align:center;">'+esc(c.reference)+'</div>'));
+  card.appendChild(el('<div style="font-size:13px;color:var(--text-soft);text-align:center;margin:2px 0 10px;">'+esc(c.article)+(c.quantite?' · '+esc(c.quantite)+' pièces':'')+'</div>'));
+  card.appendChild(renderJourney(c, steps));
+  card.appendChild(el('<div class="track-msg'+(allDone?' ok':'')+'">'+(allDone?'✓ Votre commande est terminée.':'Étape en cours : <b>'+esc(cur.label)+'</b> ('+esc(cur.text.toLowerCase())+')')+'</div>'));
+  const info = el('<div class="track-info"></div>');
+  info.appendChild(el('<div><span>Date de commande</span><b>'+(c.dateCommande?fmtDate(c.dateCommande):'—')+'</b></div>'));
+  info.appendChild(el('<div><span>Livraison prévue</span><b>'+(c.dateLivraisonPrevue?fmtDate(c.dateLivraisonPrevue):'—')+'</b></div>'));
+  const com = commercialOf(c);
+  if(com) info.appendChild(el('<div><span>Votre commercial</span><b>'+esc(com.name)+'</b></div>'));
+  card.appendChild(info);
+  box.appendChild(card);
+}
+function renderTrackBlock(){
+  const box = el('<div class="track-box"></div>');
+  box.appendChild(el('<h2>Suivre ma commande</h2>'));
+  box.appendChild(el('<p>Entrez la référence de votre commande (ex : JB0001). Pas besoin de compte.</p>'));
+  const row = el('<div class="search-row" style="margin:0 0 8px;"></div>');
+  const inp = document.createElement('input');
+  inp.placeholder = 'Référence (ex : JB0001)';
+  inp.value = view.trackRef || '';
+  const result = el('<div></div>');
+  const go = async ()=>{
+    view.trackRef = inp.value; view.trackId = null; view.trackSearched = true;
+    if(!view.trackRef.trim()){ renderTrackResult(result); return; }
+    result.innerHTML = '<div class="search-msg">Recherche…</div>';
+    await loadDataFromSupabase();
+    renderTrackResult(result);
+  };
+  inp.oninput = ()=>{ view.trackRef = inp.value; };
+  inp.onkeydown = (e)=>{ if(e.key==='Enter') go(); };
+  row.appendChild(inp);
+  const b = el('<button class="btn primary">Suivre</button>');
+  b.onclick = go;
+  row.appendChild(b);
+  box.appendChild(row);
+  box.appendChild(result);
+  renderTrackResult(result);
+  return box;
 }
 
 function topbar(title, badgeCount){
@@ -1593,6 +1680,58 @@ function renderEcartCard(c){
   return card;
 }
 
+// Informations utiles à chaque département (affichées sur chaque carte de tâche)
+function renderDeptDetails(c, dept){
+  const box = el('<div class="dept-det"></div>');
+  const ti = c.tissuInfo || {};
+  const has = v => v!=='' && v!==null && v!==undefined;
+  function item(label, value, full){
+    if(!has(value)) return;
+    const d = el('<div'+(full?' class="full"':'')+'><div class="k">'+esc(label)+'</div></div>');
+    const v = document.createElement('div'); v.className='v'; v.textContent = String(value);
+    d.appendChild(v); box.appendChild(d);
+  }
+  function tailles(){
+    const keys = Object.keys(c.tailles||{}).filter(k=>has(c.tailles[k]) && Number(c.tailles[k])>0);
+    if(!keys.length) return;
+    const d = el('<div class="full"><div class="k">Répartition par taille</div></div>');
+    const v = document.createElement('div');
+    keys.forEach(k=>{ const sp=document.createElement('span'); sp.className='sz'; sp.textContent = k+' × '+c.tailles[k]; v.appendChild(sp); });
+    d.appendChild(v); box.appendChild(d);
+  }
+  if(dept==='decoupe'){
+    item('Tissu', c.tissu);
+    item('Couleur', c.couleur);
+    item('Quantité à couper', has(c.quantite)?c.quantite+' pièces':'');
+    tailles();
+  } else if(dept==='confection'){
+    item('Tissu', c.tissu);
+    item('Couleur', c.couleur);
+    item('Quantité à confectionner', has(c.quantite)?c.quantite+' pièces':'');
+    item('Découpe faite le', c.decoupe && c.decoupe.faiteLe ? fmtDate(c.decoupe.faiteLe) : '');
+    item('Livraison prévue', c.dateLivraisonPrevue ? fmtDate(c.dateLivraisonPrevue) : '');
+    tailles();
+  } else if(dept==='emballage'){
+    item('Couleur', c.couleur);
+    item('Quantité à emballer', has(c.quantite)?c.quantite+' pièces':'');
+    item('Confection terminée le', c.confection && c.confection.fin ? fmtDate(c.confection.fin) : '');
+    item('Livraison prévue', c.dateLivraisonPrevue ? fmtDate(c.dateLivraisonPrevue) : '');
+    tailles();
+  } else if(dept==='stock'){
+    item('Couleur', c.couleur);
+    item('Quantité commandée', has(c.quantite)?c.quantite+' pièces':'');
+    item('Emballage terminé le', c.emballage && c.emballage.fin ? fmtDate(c.emballage.fin) : '');
+    item('Livraison prévue', c.dateLivraisonPrevue ? fmtDate(c.dateLivraisonPrevue) : '');
+    tailles();
+  }
+  if(c.notes && String(c.notes).trim()){
+    const d = el('<div class="full"><div class="k">Notes</div></div>');
+    const v = document.createElement('div'); v.className='v note'; v.textContent = c.notes;
+    d.appendChild(v); box.appendChild(d);
+  }
+  return box;
+}
+
 function renderDeptCard(c, dept){
   const card = el('<div class="dept-card'+(c.urgent?' urgent':'')+'"></div>');
   const head = el('<div class="head"></div>');
@@ -1602,6 +1741,7 @@ function renderDeptCard(c, dept){
   if(c.urgent) tags.appendChild(el('<span class="urgent-tag">URGENT</span>'));
   head.appendChild(tags);
   card.appendChild(head);
+  card.appendChild(renderDeptDetails(c, dept));
 
   if(dept==='stock'){
     const row = el('<div class="field-row"></div>');
@@ -1665,6 +1805,22 @@ function renderDeptCard(c, dept){
   }
   card.appendChild(row2);
 
+  // Découpe : remplit Tissu / Matière (poids matelas, poids par pièce, conso tissu)
+  let matInputs = [];
+  if(dept==='decoupe'){
+    c.tissuInfo = c.tissuInfo || {poidsMatelas:'',poidsPiece:'',consoTissu:''};
+    card.appendChild(el('<div style="background:#4A6C6F;color:#fff;font-weight:bold;font-size:13px;padding:6px 10px;border-radius:6px;margin:10px 0 8px;">Tissu / Matière</div>'));
+    const mrow1 = el('<div class="field-row"></div>');
+    const mrow2 = el('<div class="field-row"></div>');
+    [['poidsMatelas','Poids matelas (kg)',mrow1],['poidsPiece','Poids / pièce (kg)',mrow1],['consoTissu','Conso tissu (kg)',mrow2]].forEach(([key,label,row])=>{
+      const f = el('<div><label>'+label+'</label></div>');
+      const inp = document.createElement('input'); inp.type='number'; inp.step='any'; inp.min='0'; inp.inputMode='decimal';
+      inp.value = c.tissuInfo[key]===undefined||c.tissuInfo[key]===null ? '' : c.tissuInfo[key];
+      f.appendChild(inp); row.appendChild(f); matInputs.push([key, inp]);
+    });
+    card.appendChild(mrow1); card.appendChild(mrow2);
+  }
+
   let extraRow=null, i4=null;
   if(dept==='confection'){
     extraRow = el('<div class="field-row"></div>');
@@ -1679,6 +1835,7 @@ function renderDeptCard(c, dept){
     d.statut = sel.value;
     dateInputs.forEach(([key,inp])=>{ d[key]=inp.value; });
     if(dept==='confection' && i4) d.fin = i4.value;
+    matInputs.forEach(([key,inp])=>{ c.tissuInfo[key] = inp.value===''?'':Number(inp.value); });
     saveState('Mis à jour : '+c.reference);
   };
   saveRow.appendChild(btn);
@@ -1730,9 +1887,18 @@ function renderCommercialScreen(){
   payBody.appendChild(renderPaymentsPanel());
   wrap.appendChild(payBody);
 
-  wrap.appendChild(el('<div class="section-title">Commandes lancées ('+DATA.commandes.length+')</div>'));
+  const mine = DATA.commandes.filter(c=>c.commercialId===view.personId).length;
+  const onlyMine = view.cmdFilter!=='toutes';
+  wrap.appendChild(el('<div class="section-title">Commandes lancées ('+(onlyMine?mine+' à moi sur ':'')+DATA.commandes.length+')</div>'));
   const tableBody = el('<div class="section-body"></div>');
-  tableBody.appendChild(renderTable());
+  const fRow = el('<div style="display:flex;gap:6px;margin-bottom:10px;"></div>');
+  [['mes','Mes commandes ('+mine+')'],['toutes','Toutes ('+DATA.commandes.length+')']].forEach(([key,label])=>{
+    const b = el('<button class="btn small'+(view.cmdFilter===key?' primary':'')+'">'+label+'</button>');
+    b.onclick = ()=>{ view.cmdFilter = key; render(); };
+    fRow.appendChild(b);
+  });
+  tableBody.appendChild(fRow);
+  tableBody.appendChild(renderTable(onlyMine));
   wrap.appendChild(tableBody);
 
   w.appendChild(wrap);
@@ -2583,9 +2749,9 @@ function journeySteps(c){
   steps.push(Object.assign({key:'stock', label:'Stock'}, st));
   return steps;
 }
-function renderJourney(c){
+function renderJourney(c, stepsOverride){
   const wrap = el('<div class="journey"></div>');
-  const steps = journeySteps(c);
+  const steps = stepsOverride || journeySteps(c);
   steps.forEach((st,i)=>{
     const prevDone = i>0 && steps[i-1].state==='done';
     const d = el('<div class="jstep '+st.state+(prevDone?' linedone':'')+'"></div>');
@@ -3137,6 +3303,9 @@ function renderFiche(c){
   info.appendChild(el('<div class="fb-lbl">Livraison prévue</div>'));
   info.appendChild(el('<div class="fb-val">'+(c.dateLivraisonPrevue?fmtDate(c.dateLivraisonPrevue):'—')+'</div>'));
   if(canManagePay()){
+    const com = commercialOf(c);
+    info.appendChild(el('<div class="fb-lbl" style="margin-top:12px;">Commercial responsable</div>'));
+    info.appendChild(el('<div class="fb-val" style="font-size:14px;">'+(com?esc(com.name):'<span style="color:var(--red);">Non assigné</span>')+'</div>'));
     const pi = payInfo(c);
     info.appendChild(el('<div class="fb-lbl" style="margin-top:12px;">Paiement</div>'));
     info.appendChild(el('<div style="margin-top:4px;">'+payPill(pi.statut)+(pi.total>0 && pi.reste>0 ? ' <span style="font-size:12px;color:var(--text-soft);">reste '+fmtDA(pi.reste)+'</span>' : '')+'</div>'));
@@ -3167,7 +3336,7 @@ function renderFiche(c){
   return f;
 }
 
-function renderTable(){
+function renderTable(onlyMine){
   // Table-structural elements (thead/tr/td) cannot be created via the el()
   // innerHTML-on-a-<div> trick — the HTML parser drops them outside a real
   // <table> context. Build them with createElement instead.
@@ -3175,18 +3344,19 @@ function renderTable(){
   const t = document.createElement('table'); t.className = 'main';
   const thead = document.createElement('thead');
   const headRow = document.createElement('tr');
-  ['Référence','Article','Client','Qté','Découpe','Confection','Emballage','Livraison prévue',''].forEach(h=>{
+  ['Référence','Article','Client','Responsable','Qté','Découpe','Confection','Emballage','Livraison prévue',''].forEach(h=>{
     const th = document.createElement('th'); th.textContent = h; headRow.appendChild(th);
   });
   thead.appendChild(headRow);
   t.appendChild(thead);
   const tbody = document.createElement('tbody');
-  DATA.commandes.slice().reverse().forEach(c=>{
+  DATA.commandes.slice().reverse().filter(c=>!onlyMine || c.commercialId===view.personId).forEach(c=>{
     const tr = document.createElement('tr');
     function td(html){ const cell=document.createElement('td'); cell.innerHTML=html; tr.appendChild(cell); }
     td('<b>'+c.reference+'</b>'+(c.urgent?' <span class="pill probleme">URG</span>':''));
     td(c.article);
-    td(c.client);
+    td(esc(c.client));
+    { const cm = commercialOf(c); td(cm?esc(cm.name):'<span style="color:var(--red);">—</span>'); }
     td(String(c.quantite));
     td(pill(c.decoupe.statut));
     td(pill(c.confection.statut));
@@ -3225,7 +3395,7 @@ function nextReference(){
 
 function blankCommande(){
   return {
-    id: 'cmd_'+Date.now(), catalogueId:'', reference: nextReference(), client:'', article:'', tissu:'', tailles:{}, couleur:'',
+    id: 'cmd_'+Date.now(), catalogueId:'', reference: nextReference(), client:'', commercialId:(view.role==='commercial' ? view.personId : ''), article:'', tissu:'', tailles:{}, couleur:'',
     quantite:'', dateCommande: todayISO(), dateLivraisonPrevue:'', urgent:false,
     decoupe:{statut:'En attente',prevueLe:'',faiteLe:''},
     confection:{statut:'En attente',atelier:'',debut:'',fin:''},
@@ -3348,6 +3518,20 @@ function renderModal(){
     field(mode==='create' ? 'Référence (automatique, modifiable)' : 'Référence', data.reference, v=>data.reference=v),
     field('Client', data.client, v=>data.client=v)
   ]);
+  // Commercial responsable du suivi de cette commande
+  const comWrap = el('<div></div>');
+  comWrap.appendChild(el('<label>Commercial responsable (suit la commande)</label>'));
+  const comSel = document.createElement('select');
+  const comEmpty = document.createElement('option'); comEmpty.value=''; comEmpty.textContent='— Choisir un commercial —';
+  comSel.appendChild(comEmpty);
+  (DATA.people||[]).filter(p=>p.role==='commercial' && (p.active!==false || p.id===data.commercialId)).forEach(p=>{
+    const o = document.createElement('option'); o.value = p.id; o.textContent = p.name;
+    if(p.id===data.commercialId) o.selected = true;
+    comSel.appendChild(o);
+  });
+  comSel.onchange = ()=>{ data.commercialId = comSel.value; };
+  comWrap.appendChild(comSel);
+  const comRow = el('<div class="frow"></div>'); comRow.appendChild(comWrap); m.appendChild(comRow);
   frow([
     field('Article', data.article, v=>data.article=v),
     tissuSelectField()
@@ -3420,12 +3604,14 @@ function renderModal(){
   ]);
   frow([ field('Fin', data.emballage.fin, v=>data.emballage.fin=v, 'date') ]);
 
-  m.appendChild(el('<div class="grp-head" style="background:#4A6C6F">Tissu / Matière</div>'));
-  frow([
-    field('Poids matelas (kg)', data.tissuInfo.poidsMatelas, v=>data.tissuInfo.poidsMatelas=v===''?'':Number(v), 'number'),
-    field('Poids/pièce (kg)', data.tissuInfo.poidsPiece, v=>data.tissuInfo.poidsPiece=v===''?'':Number(v), 'number')
-  ]);
-  frow([ field('Conso tissu (kg)', data.tissuInfo.consoTissu, v=>data.tissuInfo.consoTissu=v===''?'':Number(v), 'number') ]);
+  if(mode==='edit'){
+    m.appendChild(el('<div class="grp-head" style="background:#4A6C6F">Tissu / Matière (rempli par la Découpe)</div>'));
+    frow([
+      field('Poids matelas (kg)', data.tissuInfo.poidsMatelas, v=>data.tissuInfo.poidsMatelas=v===''?'':Number(v), 'number'),
+      field('Poids/pièce (kg)', data.tissuInfo.poidsPiece, v=>data.tissuInfo.poidsPiece=v===''?'':Number(v), 'number')
+    ]);
+    frow([ field('Conso tissu (kg)', data.tissuInfo.consoTissu, v=>data.tissuInfo.consoTissu=v===''?'':Number(v), 'number') ]);
+  }
 
   m.appendChild(el('<div class="grp-head" style="background:#666666">Notes</div>'));
   const notesWrap = el('<div style="margin-bottom:8px;"></div>');
@@ -3451,6 +3637,7 @@ function renderModal(){
   const save = el('<button class="btn primary">Enregistrer</button>');
   save.onclick = ()=>{
     if(!data.reference || !data.reference.trim()){ alert('La référence est obligatoire.'); return; }
+    if(mode==='create' && !data.commercialId){ alert('Choisis le commercial responsable de cette commande.'); return; }
     if(mode==='create'){
       DATA.commandes.push(data);
       view.modal=null;
@@ -3564,6 +3751,11 @@ async function boot(){
   try{ view.scanId = new URLSearchParams(location.search).get('cmd'); }catch(e){}
   await loadDataFromSupabase();
   restoreSession();
+  if(!view.personId && view.scanId){
+    // visiteur sans compte (client) : le QR ouvre le suivi de la commande
+    const c = (DATA.commandes||[]).find(x=>x.id===view.scanId);
+    if(c){ view.trackId = c.id; view.trackRef = c.reference; view.trackSearched = true; }
+  }
   applyScan();
   render();
 }
