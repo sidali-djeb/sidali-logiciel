@@ -129,6 +129,12 @@ table.main tr:hover td{background:#FBF9F6;}
 .dept-det .full{grid-column:1/-1;}
 .dept-det .sz{display:inline-block;background:#fff;border:1px solid var(--border);border-radius:6px;padding:2px 7px;margin:3px 4px 0 0;font-size:12px;font-weight:bold;}
 .dept-det .note{font-size:12px;font-weight:normal;white-space:pre-wrap;}
+.mat-cmp{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.5;background:#fff;border:1px solid var(--border);}
+.mat-cmp.ok{background:#E3F3E7;border-color:#9AD0A7;color:#1E5E2C;}
+.mat-cmp.sur{background:#FBE4E6;border-color:#E39AA1;color:#8C1F2B;}
+.mat-cmp.sous{background:#FFF0D6;border-color:#E6C27A;color:#7A4A00;}
+.conso-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#FBE4E6;border:1px solid #E39AA1;color:#8C1F2B;border-radius:8px;padding:10px 12px;margin:0 0 12px;font-size:13px;}
+.chat-msg.alertmsg{background:#FBE4E6;border-color:#E39AA1;border-left:4px solid #A42834;}
 .mat-res{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 11px;margin:2px 0 10px;}
 .mat-line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:3px 0;}
 .mat-line span{color:var(--text-soft);}
@@ -1178,6 +1184,7 @@ const ICONS = {
   commandes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 10.5h6M9 13.5h6M9 16.5h4"/></svg>',
   recherche: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.2 15.2 21 21"/><path d="M7.6 10.6l2 2 3.4-3.6"/></svg>',
   listes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18h1.4a1.6 1.6 0 0 0 1.1-2.7c-.4-.4-.6-.8-.6-1.3a1.6 1.6 0 0 1 1.6-1.6H17a3.4 3.4 0 0 0 3.4-3.4C20.4 6.9 16.7 3 12 3Z"/><circle cx="7.6" cy="10.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="9.6" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.2" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.6" cy="10.8" r="1.1" fill="currentColor" stroke="none"/></svg>',
+  conso: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M5 7h14M7 7l-3.5 7a3.5 3.5 0 0 0 7 0L7 7ZM17 7l-3.5 7a3.5 3.5 0 0 0 7 0L17 7ZM8 21h8"/></svg>',
   stats: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/><path d="M20 8l-4 4-4-5-4 4" opacity=".0"/></svg>',
   paiements: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.4"/><path d="M6 6V5a1 1 0 0 1 1-1h8"/></svg>',
   acces: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.2" r="2.6"/><path d="M7 20c0-3 2.2-5 5-5s5 2 5 5"/><circle cx="4.6" cy="9.4" r="1.9"/><path d="M1.2 19.2c0-2.2 1.5-3.8 3.4-3.8"/><circle cx="19.4" cy="9.4" r="1.9"/><path d="M22.8 19.2c0-2.2-1.5-3.8-3.4-3.8"/></svg>',
@@ -1358,7 +1365,7 @@ function renderLogin(){
   logoWrap.appendChild(logoEl(120, false));
   w.appendChild(logoWrap);
   w.appendChild(el('<h1>'+DATA.companyTitle+'</h1>'));
-  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 16 · conso globale (formule)</div>'));
+  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 17 · suivi conso + alertes admin</div>'));
   // Client arrivé par le QR de sa commande : on affiche d'abord le suivi
   const trackFirst = !!view.trackId;
   if(trackFirst) w.appendChild(renderTrackBlock());
@@ -1512,10 +1519,12 @@ function fmtDateTime(iso){
 // Un message sans "to" est pour toute l'équipe. Avec "to" (id d'une personne), c'est un message
 // privé entre l'admin et cette personne : seuls eux deux le voient dans l'application.
 function chatMsgVisible(m){
+  if(m.alert) return view.role==='admin';        // alertes système : réservées à l'admin
   const me = view.personId;
   return !m.to || m.personId===me || m.to===me;
 }
 function chatThreadOf(m){
+  if(m.alert) return 'alertes';
   if(!m.to) return 'team';
   return m.personId===view.personId ? m.to : m.personId;
 }
@@ -1523,7 +1532,9 @@ function chatThreads(){
   // liste des conversations proposées : équipe + (admin : toutes les personnes | autres : les admins)
   const me = view.personId;
   const people = (DATA.people||[]).filter(p=>p.active!==false && p.id!==me && (view.role==='admin' || p.role==='admin'));
-  return [{key:'team', label:'Toute l\'équipe'}].concat(people.map(p=>({key:p.id, label:'Privé · '+p.name+' ('+(ROLE_LABEL[p.role]||p.role)+')'})));
+  const base = [{key:'team', label:'Toute l\'équipe'}];
+  if(view.role==='admin') base.push({key:'alertes', label:'⚠ Alertes (consommation tissu)'});
+  return base.concat(people.map(p=>({key:p.id, label:'Privé · '+p.name+' ('+(ROLE_LABEL[p.role]||p.role)+')'})));
 }
 function chatSeenLoad(){
   const k = 'dj_chat_seen_'+view.personId;
@@ -1581,11 +1592,11 @@ function chatFillList(list){
   list.innerHTML = '';
   const msgs = chatThreadMsgs(key);
   if(msgs.length===0){
-    list.appendChild(el('<div class="empty-msg">'+(key==='team'?'Aucun message pour le moment. Écris le premier ci-dessous.':'Aucun message privé pour le moment.')+'</div>'));
+    list.appendChild(el('<div class="empty-msg">'+(key==='team'?'Aucun message pour le moment. Écris le premier ci-dessous.':(key==='alertes'?'Aucune alerte pour le moment.':'Aucun message privé pour le moment.'))+'</div>'));
   } else {
     msgs.forEach(msg=>{
       const mine = msg.personId && msg.personId===view.personId;
-      const bubble = el('<div class="chat-msg'+(mine?' mine':'')+(msg.to?' priv':'')+'"></div>');
+      const bubble = el('<div class="chat-msg'+(mine?' mine':'')+(msg.to?' priv':'')+(msg.alert?' alertmsg':'')+'"></div>');
       const meta = document.createElement('div'); meta.className='chat-meta';
       const b = document.createElement('b'); b.textContent = msg.author; meta.appendChild(b);
       meta.appendChild(document.createTextNode(' · '+fmtDateTime(msg.ts)));
@@ -1602,6 +1613,7 @@ function chatFillList(list){
 }
 // Met à jour le bouton du haut et, si la discussion est ouverte, la liste — sans la recréer
 function refreshChatUI(){
+  updateConsoBanner();
   const btn = document.getElementById('chatBtn');
   if(btn) btn.innerHTML = chatBtnHtml();
   if(view.discussionOpen){
@@ -1684,6 +1696,7 @@ function renderDiscussion(){
   const ta = document.createElement('textarea');
   ta.rows = 2;
   const setPlaceholder = ()=>{
+    inputRow.style.display = view.chatWith==='alertes' ? 'none' : 'flex';
     const th = chatThreads().find(t=>t.key===view.chatWith);
     ta.placeholder = view.chatWith==='team' ? 'Écris un message à toute l\'équipe...' : 'Message privé — '+(th?th.label.replace('Privé · ',''):'')+'...';
   };
@@ -1852,6 +1865,54 @@ function consoGlobale(ti, quantite){
   return {parPiece:parPiece, nb:nb, total:parPiece*nb, reel:reel};
 }
 function fmtKg(n){ return (Math.round(n*1000)/1000).toLocaleString('fr-FR', {maximumFractionDigits:3}); }
+function consoSeuil(){
+  const v = parseFloat((DATA.settings||{}).consoSeuil);
+  return isNaN(v) || v<0 ? 5 : v;
+}
+// Compare la conso moyenne du catalogue (kg / pièce) à la conso globale réelle saisie par la Découpe
+function consoCore(moy, ti, quantite){
+  const g = consoGlobale(ti, quantite);
+  if(!(g.parPiece>0)) return null;
+  const attendu = Number(moy) * g.nb;
+  if(!(attendu>0)) return null;
+  const ecart = g.total - attendu, pct = ecart/attendu*100, seuil = consoSeuil();
+  return {moy:Number(moy), parPiece:g.parPiece, nb:g.nb, attendu:attendu, total:g.total, ecart:ecart, pct:pct, seuil:seuil,
+          status: Math.abs(pct)<=seuil ? 'ok' : (pct>0 ? 'sur' : 'sous')};
+}
+function consoCompare(c){
+  const prod = c.catalogueId ? catalogueById(c.catalogueId) : null;
+  if(!prod || !matHas(prod.consoMoyenne)) return null;
+  if((prod.consoUnite||'kg')!=='kg') return null;     // comparaison seulement en kg
+  const r = consoCore(prod.consoMoyenne, c.tissuInfo, c.quantite);
+  if(r) r.prod = prod;
+  return r;
+}
+function fmtSigned(n, digits){ const v = Math.round(n*Math.pow(10,digits))/Math.pow(10,digits); return (v>0?'+':'')+v.toLocaleString('fr-FR',{maximumFractionDigits:digits}); }
+function consoLabel(st){ return st==='ok' ? 'Normal' : (st==='sur' ? 'Surconsommation' : 'Sous-consommation'); }
+function consoPill(st){
+  const col = st==='ok' ? ['#E3F3E7','#1E7A34'] : (st==='sur' ? ['#FBE4E6','#A42834'] : ['#FFF0D6','#B26A00']);
+  return '<span class="pill" style="background:'+col[0]+';color:'+col[1]+';">'+(st==='ok'?'':'⚠ ')+consoLabel(st)+'</span>';
+}
+function consoAlertText(c, r, who){
+  return '⚠ '+c.reference+' · '+(c.article||'')+' — '+consoLabel(r.status)+' de tissu : attendu '+fmtKg(r.attendu)+' kg ('+fmtKg(r.moy)+' kg × '+fmtKg(r.nb)+' pièces), réel '+fmtKg(r.total)+' kg → écart '+fmtSigned(r.ecart,2)+' kg ('+fmtSigned(r.pct,1)+' %), seuil ±'+fmtKg(r.seuil)+' %.'+(who?' Saisi par '+who+'.':'');
+}
+// Envoie un message d'alerte à l'admin (fil « Alertes ») quand l'écart dépasse le seuil
+function maybeSendConsoAlert(c){
+  const r = consoCompare(c);
+  if(!r || r.status==='ok'){ c.consoAlerteKey = ''; return false; }
+  const key = r.status+':'+(Math.round(r.pct*10)/10);
+  if(c.consoAlerteKey===key) return false;         // déjà signalé pour ces valeurs
+  c.consoAlerteKey = key;
+  const person = currentPerson();
+  DATA.messages = DATA.messages || [];
+  DATA.messages.push({
+    id:'msg_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+    author:'Alerte consommation', role:'system', personId:'system', alert:true, orderId:c.id,
+    text: consoAlertText(c, r, person?person.name:''), ts:new Date().toISOString()
+  });
+  if(DATA.messages.length>200) DATA.messages = DATA.messages.slice(-200);
+  return true;
+}
 const MAT_FIELDS = [
   ['poidsMatelas','Poids matelas (kg)'],
   ['poidsTrace','Poids tracé (kg)'],
@@ -1861,7 +1922,7 @@ const MAT_FIELDS = [
   ['nombreReel','Nombre réel de pièces']
 ];
 // Retourne {node, read}. read() donne les valeurs saisies ; onInput(valeurs) est appelé à chaque frappe.
-function matiereBlock(ti, quantite, onInput){
+function matiereBlock(ti, quantite, onInput, moyenne){
   ti = ti || {};
   const box = el('<div></div>');
   const inputs = {};
@@ -1893,6 +1954,17 @@ function matiereBlock(ti, quantite, onInput){
     const f = el('<div class="mat-formula"></div>');
     f.textContent = '(poids/pièce + côte + accessoires) × '+fmtKg(g.nb)+' pièces'+(g.reel?' (nombre réel)':' (quantité commandée)');
     res.appendChild(f);
+    if(moyenne!==undefined && moyenne!==null && moyenne!==''){
+      const r = consoCore(moyenne, v, quantite);
+      const cmp = el('<div class="mat-cmp"></div>');
+      if(!r){ cmp.className='mat-cmp'; cmp.textContent = 'Conso moyenne du catalogue : '+fmtKg(moyenne)+' kg / pièce — remplis les poids pour voir l\'écart.'; }
+      else {
+        cmp.className = 'mat-cmp '+r.status;
+        cmp.innerHTML = '<b>Suivi consommation</b><br>Attendu (moyenne catalogue) : '+fmtKg(r.attendu)+' kg<br>Réel (conso globale) : '+fmtKg(r.total)+' kg<br><b>Écart : '+fmtSigned(r.ecart,2)+' kg ('+fmtSigned(r.pct,1)+' %)</b> — '+consoLabel(r.status)
+          + (r.status!=='ok' ? '<br>⚠ Au-dessus du seuil de ±'+fmtKg(r.seuil)+' % : l\'admin sera alerté à l\'enregistrement.' : '');
+      }
+      res.appendChild(cmp);
+    }
     if(onInput) onInput(v);
   }
   Object.keys(inputs).forEach(k=>{ inputs[k].oninput = update; });
@@ -2051,7 +2123,9 @@ function renderDeptCard(c, dept){
   if(dept==='decoupe'){
     c.tissuInfo = c.tissuInfo || {};
     card.appendChild(el('<div style="background:#4A6C6F;color:#fff;font-weight:bold;font-size:13px;padding:6px 10px;border-radius:6px;margin:10px 0 8px;">Tissu / Matière</div>'));
-    matBlock = matiereBlock(c.tissuInfo, c.quantite);
+    const _prod = c.catalogueId ? catalogueById(c.catalogueId) : null;
+    const _moy = (_prod && matHas(_prod.consoMoyenne) && (_prod.consoUnite||'kg')==='kg') ? _prod.consoMoyenne : null;
+    matBlock = matiereBlock(c.tissuInfo, c.quantite, null, _moy);
     card.appendChild(matBlock.node);
   }
 
@@ -2070,7 +2144,8 @@ function renderDeptCard(c, dept){
     dateInputs.forEach(([key,inp])=>{ d[key]=inp.value; });
     if(dept==='confection' && i4) d.fin = i4.value;
     if(matBlock){ Object.assign(c.tissuInfo, matBlock.read()); c.tissuInfo.consoGlobale = consoGlobale(c.tissuInfo, c.quantite).total; }
-    saveState('Mis à jour : '+c.reference);
+    const alerted = matBlock ? maybeSendConsoAlert(c) : false;
+    saveState('Mis à jour : '+c.reference+(alerted?' — alerte envoyée à l\'admin':''));
   };
   saveRow.appendChild(btn);
   card.appendChild(saveRow);
@@ -2232,6 +2307,89 @@ function renderListsManager(){
 }
 
 // ---------- ADMIN SCREEN ----------
+// ---------- SUIVI CONSOMMATION TISSU : moyenne du catalogue vs consommation globale réelle ----------
+function buildConsoBanner(n){
+  const ban = el('<div class="conso-banner" id="consoBanner"></div>');
+  ban.appendChild(el('<div>⚠ <b>'+n+' nouvelle(s) alerte(s)</b> de consommation de tissu</div>'));
+  const bb = el('<button class="btn small primary">Voir les alertes</button>');
+  bb.onclick = ()=>{ view.chatWith='alertes'; view.discussionOpen=true; render(); };
+  ban.appendChild(bb);
+  return ban;
+}
+// met à jour le bandeau sans recréer la page (appelé quand de nouveaux messages arrivent)
+function updateConsoBanner(){
+  if(view.role!=='admin' || view.screen!=='admin') return;
+  const kpi = document.querySelector('.kpi-row'); if(!kpi) return;
+  const n = chatUnread()['alertes'] || 0;
+  let ban = document.getElementById('consoBanner');
+  if(!n){ if(ban) ban.remove(); return; }
+  if(!ban){ ban = buildConsoBanner(n); kpi.insertAdjacentElement('afterend', ban); }
+  else ban.querySelector('b').textContent = n+' nouvelle(s) alerte(s)';
+}
+function consoAlertCount(){
+  return (DATA.commandes||[]).filter(c=>{ const r = consoCompare(c); return r && r.status!=='ok'; }).length;
+}
+function renderConsoPanel(){
+  const root = el('<div></div>');
+  const seuil = consoSeuil();
+  root.appendChild(el('<div class="empty-msg" style="padding:0 0 12px;text-align:left;">Compare la <b>consommation moyenne</b> du catalogue (par pièce) à la <b>consommation globale réelle</b> saisie par la Découpe (poids/pièce + côte + accessoires, × nombre réel). Alerte au-delà de <b>±'+fmtKg(seuil)+' %</b> (réglable dans Paramètres).</div>'));
+  function table(heads){
+    const wrap = document.createElement('div'); wrap.className='table-wrap';
+    const t = document.createElement('table'); t.className='main';
+    const th = document.createElement('thead'); const hr = document.createElement('tr');
+    heads.forEach(h=>{ const c=document.createElement('th'); c.textContent=h; hr.appendChild(c); });
+    th.appendChild(hr); t.appendChild(th);
+    const tb = document.createElement('tbody'); t.appendChild(tb); wrap.appendChild(t);
+    return {wrap:wrap, tb:tb};
+  }
+  function row(tb, cells){
+    const tr = document.createElement('tr');
+    cells.forEach(h=>{ const td=document.createElement('td'); td.innerHTML = h; tr.appendChild(td); });
+    tb.appendChild(tr);
+  }
+  const comps = [];
+  (DATA.commandes||[]).forEach(c=>{ const r = consoCompare(c); if(r) comps.push({c:c, r:r}); });
+
+  // --- par produit
+  root.appendChild(el('<div style="font-weight:bold;font-size:13px;margin:4px 0 8px;">Par produit</div>'));
+  const tp = table(['Produit','Conso moyenne (catalogue)','Conso réelle moyenne','Écart','Commandes','Statut']);
+  let anyProd = false;
+  (DATA.catalogue||[]).forEach(p=>{
+    if(!matHas(p.consoMoyenne)) return;
+    anyProd = true;
+    const mine = comps.filter(x=>x.c.catalogueId===p.id);
+    if((p.consoUnite||'kg')!=='kg'){
+      row(tp.tb, ['<b>'+esc(p.article)+'</b>', esc(p.consoMoyenne)+' '+esc(p.consoUnite)+' / pièce','—','—', String((DATA.commandes||[]).filter(c=>c.catalogueId===p.id).length), '<span style="color:var(--text-soft);font-size:12px;">unité « m » : comparaison impossible</span>']);
+      return;
+    }
+    if(!mine.length){
+      row(tp.tb, ['<b>'+esc(p.article)+'</b>', fmtKg(p.consoMoyenne)+' kg / pièce','—','—','0','<span style="color:var(--text-soft);font-size:12px;">pas encore de données</span>']);
+      return;
+    }
+    const sumTot = mine.reduce((a,x)=>a+x.r.total,0), sumNb = mine.reduce((a,x)=>a+x.r.nb,0), sumAtt = mine.reduce((a,x)=>a+x.r.attendu,0);
+    const reel = sumNb>0 ? sumTot/sumNb : 0;
+    const pct = sumAtt>0 ? (sumTot-sumAtt)/sumAtt*100 : 0;
+    const st = Math.abs(pct)<=seuil ? 'ok' : (pct>0?'sur':'sous');
+    row(tp.tb, ['<b>'+esc(p.article)+'</b>', fmtKg(p.consoMoyenne)+' kg / pièce', fmtKg(reel)+' kg / pièce', '<b style="color:'+(st==='ok'?'#1E7A34':'#A42834')+';">'+fmtSigned(pct,1)+' %</b>', String(mine.length), consoPill(st)]);
+  });
+  if(!anyProd) root.appendChild(el('<div class="empty-msg" style="text-align:left;">Aucun produit du catalogue n\'a de consommation moyenne. Renseigne-la dans « Catalogue produits ».</div>'));
+  else root.appendChild(tp.wrap);
+
+  // --- par commande
+  root.appendChild(el('<div style="font-weight:bold;font-size:13px;margin:16px 0 8px;">Par commande (plus gros écarts en premier)</div>'));
+  if(!comps.length){
+    root.appendChild(el('<div class="empty-msg" style="text-align:left;">Aucune commande comparable pour l\'instant : il faut un produit du catalogue avec une conso moyenne (en kg) et les poids saisis par la Découpe.</div>'));
+  } else {
+    const tc = table(['Référence','Produit','Attendu','Réel','Écart','Écart %','Statut']);
+    comps.sort((a,b)=>Math.abs(b.r.pct)-Math.abs(a.r.pct)).forEach(x=>{
+      const col = x.r.status==='ok' ? '#1E7A34' : '#A42834';
+      row(tc.tb, ['<b>'+esc(x.c.reference)+'</b>', esc(x.c.article), fmtKg(x.r.attendu)+' kg', fmtKg(x.r.total)+' kg', '<span style="color:'+col+';">'+fmtSigned(x.r.ecart,2)+' kg</span>', '<b style="color:'+col+';">'+fmtSigned(x.r.pct,1)+' %</b>', consoPill(x.r.status)]);
+    });
+    root.appendChild(tc.wrap);
+  }
+  return root;
+}
+
 function renderAdminScreen(){
   const w = el('<div></div>');
   w.appendChild(topbar('Espace Admin'));
@@ -2246,12 +2404,21 @@ function renderAdminScreen(){
   kpi.appendChild(el('<div class="kpi'+(urgentes>0?' alert':'')+'"><div class="num">'+urgentes+'</div><div class="label">Urgentes</div></div>'));
   kpi.appendChild(el('<div class="kpi'+(ecarts>0?' alert':'')+'"><div class="num">'+ecarts+'</div><div class="label">Écarts stock</div></div>'));
   kpi.appendChild(el('<div class="kpi'+(alertes>0?' alert':'')+'"><div class="num">'+alertes+'</div><div class="label">Alertes poids/pièce</div></div>'));
+  const nbConso = consoAlertCount();
+  kpi.appendChild(el('<div class="kpi'+(nbConso>0?' alert':'')+'"><div class="num">'+nbConso+'</div><div class="label">Alertes conso tissu</div></div>'));
   wrap.appendChild(kpi);
+
+  // Bandeau : alertes de consommation non lues
+  const unAl = chatUnread()['alertes'] || 0;
+  if(unAl>0){
+    wrap.appendChild(buildConsoBanner(unAl));
+  }
 
   // ---- Icon navigation : clique une icône, le détail s'affiche juste en dessous ----
   const tiles = [
     {key:'commandes', label:'Commandes', badge: DATA.commandes.length},
     {key:'stats', label:'Statistiques', badge: null},
+    {key:'conso', label:'Consommation tissu', badge: nbConso},
     {key:'recherche', label:'Recherche par référence', badge: null},
     {key:'paiements', label:'Paiements', badge: nbNonSoldes()},
     {key:'catalogue', label:'Catalogue produits', badge: (DATA.catalogue||[]).length},
@@ -2328,6 +2495,12 @@ function renderAdminScreen(){
     info.innerHTML = '<strong>Entreprise:</strong> '+(DATA.settings.companyName||'—')+'<br/><strong>Couleur primaire:</strong> <span style="display:inline-block;width:20px;height:20px;background:'+(DATA.settings.primaryColor||'#DBC4A0')+';border:1px solid var(--border);vertical-align:middle;"></span><br/><strong>Couleur secondaire:</strong> <span style="display:inline-block;width:20px;height:20px;background:'+(DATA.settings.secondaryColor||'#001D51')+';border:1px solid var(--border);vertical-align:middle;"></span>';
     settingsBody.appendChild(info);
     panel.appendChild(settingsBody);
+  }
+  if(view.adminOpen.conso){
+    panel.appendChild(el('<div class="section-title">Suivi de la consommation de tissu par produit</div>'));
+    const cBody = el('<div class="section-body"></div>');
+    cBody.appendChild(renderConsoPanel());
+    panel.appendChild(cBody);
   }
   if(view.adminOpen.stats){
     panel.appendChild(el('<div class="section-title">Statistiques du site</div>'));
@@ -2577,7 +2750,7 @@ function renderCatalogueModal(){
   patInp.oninput = ()=>data.refPatron = patInp.value;
   patWrap.appendChild(patInp);
   const cWrap = el('<div></div>');
-  cWrap.appendChild(el('<label>Consommation moyenne de tissu (par pièce)</label>'));
+  cWrap.appendChild(el('<label>Conso moyenne par pièce (tissu + côte + accessoires)</label>'));
   const cRow = el('<div style="display:flex;gap:6px;"></div>');
   const cInp = document.createElement('input'); cInp.type='number'; cInp.step='any'; cInp.min='0'; cInp.inputMode='decimal';
   cInp.value = (data.consoMoyenne===undefined||data.consoMoyenne===null) ? '' : data.consoMoyenne;
@@ -2699,6 +2872,10 @@ function renderSettingsModal(){
   frow([
     field('Couleur primaire (ex: #DBC4A0)', settings.primaryColor, v=>{settings.primaryColor=v; DATA.settings=settings;}, 'text'),
     field('Couleur secondaire (ex: #001D51)', settings.secondaryColor, v=>{settings.secondaryColor=v; DATA.settings=settings;}, 'text')
+  ]);
+
+  frow([
+    field('Seuil d\'alerte conso tissu (écart en %)', settings.consoSeuil===undefined?5:settings.consoSeuil, v=>{settings.consoSeuil=(v===''?'':Number(v)); DATA.settings=settings;}, 'number')
   ]);
 
   const logoWrap = el('<div style="margin:6px 0 10px;"></div>');
