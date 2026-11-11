@@ -218,6 +218,7 @@ table.main tr:hover td{background:#FBF9F6;}
 .chat-list{max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px;background:var(--bg);}
 .chat-msg{background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;max-width:88%;}
 .chat-msg.mine{margin-left:auto;background:var(--amber-bg);border-color:var(--amber);}
+.chat-msg.priv{border-left:3px solid #001D51;}
 .chat-meta{font-size:11px;color:var(--text-soft);margin-bottom:3px;}
 .chat-text{font-size:13px;white-space:pre-wrap;word-break:break-word;}
 .chat-input-row{display:flex;gap:8px;align-items:flex-end;}
@@ -1261,7 +1262,7 @@ async function loadSettingsFromSupabase(){
     console.log('Supabase non disponible, utilisation des paramètres par défaut');
   }
 }
-let view = {screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', trackRef:'', trackId:null, trackSearched:false};
+let view = {screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, trackRef:'', trackId:null, trackSearched:false};
 
 function fmtDate(d){
   if(!d) return '—';
@@ -1345,7 +1346,7 @@ function renderLogin(){
   logoWrap.appendChild(logoEl(120, false));
   w.appendChild(logoWrap);
   w.appendChild(el('<h1>'+DATA.companyTitle+'</h1>'));
-  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 13 · Découpe remplit tissu/matière</div>'));
+  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 14 · discussion en direct + privé</div>'));
   // Client arrivé par le QR de sa commande : on affiche d'abord le suivi
   const trackFirst = !!view.trackId;
   if(trackFirst) w.appendChild(renderTrackBlock());
@@ -1475,12 +1476,12 @@ function topbar(title, badgeCount){
   const badgeHtml = badgeCount ? '<span class="badge">'+badgeCount+'</span>' : '';
   bar.appendChild(el('<div class="title">'+title+(person?' · '+person.name:'')+badgeHtml+'</div>'));
   bar.appendChild(el('<div class="spacer"></div>'));
-  const count = (DATA.messages||[]).length;
   const scanTop = el('<button class="link">Scanner QR</button>');
   scanTop.onclick = ()=>{ view.scanModal = true; render(); };
   bar.appendChild(scanTop);
-  const chat = el('<button class="link">Discussion'+(count?' ('+count+')':'')+'</button>');
-  chat.onclick = ()=>{ view.discussionOpen=true; render(); };
+  const chat = el('<button class="link" id="chatBtn"></button>');
+  chat.innerHTML = chatBtnHtml();
+  chat.onclick = ()=>{ view.discussionOpen=true; render(); pollMessages(); };
   bar.appendChild(chat);
   const out = el('<button class="link">Se déconnecter</button>');
   out.onclick = ()=>{ stopScanner(); view.scanModal=false; clearSession(); view.screen='login'; view.role=null; view.personId=null; view.discussionOpen=false; render(); };
@@ -1495,32 +1496,88 @@ function fmtDateTime(iso){
   return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes());
 }
 
-function postMessage(text){
-  if(!text || !text.trim()) return;
-  const person = currentPerson();
-  const author = person ? person.name : (ROLE_LABEL[view.role]||'Inconnu');
-  DATA.messages = DATA.messages || [];
-  DATA.messages.push({
-    id: 'msg_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
-    author: author, role: view.role, personId: view.personId, text: text.trim(), ts: new Date().toISOString()
-  });
-  if(DATA.messages.length>200) DATA.messages = DATA.messages.slice(-200);
-  saveState('Message envoyé');
+// ---------- DISCUSSION (équipe + conversations privées, mise à jour en direct) ----------
+// Un message sans "to" est pour toute l'équipe. Avec "to" (id d'une personne), c'est un message
+// privé entre l'admin et cette personne : seuls eux deux le voient dans l'application.
+function chatMsgVisible(m){
+  const me = view.personId;
+  return !m.to || m.personId===me || m.to===me;
 }
-
-function renderDiscussion(){
-  const overlay = el('<div class="modal-overlay"></div>');
-  const m = el('<div class="modal chat-modal"></div>');
-  m.appendChild(el('<h2>Discussion équipe</h2>'));
-  const list = el('<div class="chat-list"></div>');
-  const msgs = (DATA.messages||[]).slice().sort((a,b)=>(a.ts||'').localeCompare(b.ts||''));
+function chatThreadOf(m){
+  if(!m.to) return 'team';
+  return m.personId===view.personId ? m.to : m.personId;
+}
+function chatThreads(){
+  // liste des conversations proposées : équipe + (admin : toutes les personnes | autres : les admins)
+  const me = view.personId;
+  const people = (DATA.people||[]).filter(p=>p.active!==false && p.id!==me && (view.role==='admin' || p.role==='admin'));
+  return [{key:'team', label:'Toute l\'équipe'}].concat(people.map(p=>({key:p.id, label:'Privé · '+p.name+' ('+(ROLE_LABEL[p.role]||p.role)+')'})));
+}
+function chatSeenLoad(){
+  const k = 'dj_chat_seen_'+view.personId;
+  let seen = null;
+  try{ seen = JSON.parse(localStorage.getItem(k)||'null'); }catch(e){}
+  if(!seen){
+    // première utilisation : l'existant est considéré comme déjà lu
+    seen = {};
+    (DATA.messages||[]).filter(chatMsgVisible).forEach(m=>{ const t=chatThreadOf(m); if(!seen[t] || (m.ts||'')>seen[t]) seen[t]=m.ts||''; });
+    chatSeenSave(seen);
+  }
+  return seen;
+}
+function chatSeenSave(seen){ try{ localStorage.setItem('dj_chat_seen_'+view.personId, JSON.stringify(seen)); }catch(e){} }
+function chatUnread(){
+  // { threadKey: nombre de messages non lus des autres }
+  const seen = chatSeenLoad(), out = {};
+  (DATA.messages||[]).filter(chatMsgVisible).forEach(m=>{
+    if(m.personId===view.personId) return;
+    const t = chatThreadOf(m);
+    if((m.ts||'') > (seen[t]||'')) out[t] = (out[t]||0)+1;
+  });
+  return out;
+}
+function chatBtnHtml(){
+  const un = chatUnread();
+  const n = Object.keys(un).reduce((a,k)=>a+un[k],0);
+  return 'Discussion'+(n?' <span class="badge">'+n+'</span>':'');
+}
+function chatThreadMsgs(key){
+  return (DATA.messages||[]).filter(chatMsgVisible).filter(m=>chatThreadOf(m)===key).sort((a,b)=>(a.ts||'').localeCompare(b.ts||''));
+}
+function chatMarkSeen(key){
+  const msgs = chatThreadMsgs(key);
+  if(!msgs.length) return;
+  const seen = chatSeenLoad();
+  const last = msgs[msgs.length-1].ts||'';
+  if((seen[key]||'') < last){ seen[key] = last; chatSeenSave(seen); }
+}
+function chatFillSelect(sel){
+  const un = chatUnread();
+  const opts = chatThreads().map(t=>({key:t.key, text:t.label+(un[t.key]?'  ('+un[t.key]+' nouveau'+(un[t.key]>1?'x':'')+')':'')}));
+  if(!opts.some(o=>o.key===view.chatWith)) view.chatWith = 'team';
+  const sig = opts.map(o=>o.key+'|'+o.text).join('§');
+  if(sel.dataset.sig===sig){ sel.value = view.chatWith; return; }
+  sel.dataset.sig = sig;
+  sel.innerHTML = '';
+  opts.forEach(o=>{ const op=document.createElement('option'); op.value=o.key; op.textContent=o.text; sel.appendChild(op); });
+  sel.value = view.chatWith;
+}
+function chatFillList(list){
+  const key = view.chatWith;
+  const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60 || !list.dataset.init;
+  list.dataset.init = '1';
+  list.innerHTML = '';
+  const msgs = chatThreadMsgs(key);
   if(msgs.length===0){
-    list.appendChild(el('<div class="empty-msg">Aucun message pour le moment. Écris le premier ci-dessous.</div>'));
+    list.appendChild(el('<div class="empty-msg">'+(key==='team'?'Aucun message pour le moment. Écris le premier ci-dessous.':'Aucun message privé pour le moment.')+'</div>'));
   } else {
     msgs.forEach(msg=>{
       const mine = msg.personId && msg.personId===view.personId;
-      const bubble = el('<div class="chat-msg'+(mine?' mine':'')+'"></div>');
-      bubble.appendChild(el('<div class="chat-meta"><b>'+msg.author+'</b> · '+fmtDateTime(msg.ts)+'</div>'));
+      const bubble = el('<div class="chat-msg'+(mine?' mine':'')+(msg.to?' priv':'')+'"></div>');
+      const meta = document.createElement('div'); meta.className='chat-meta';
+      const b = document.createElement('b'); b.textContent = msg.author; meta.appendChild(b);
+      meta.appendChild(document.createTextNode(' · '+fmtDateTime(msg.ts)));
+      bubble.appendChild(meta);
       const textDiv = document.createElement('div');
       textDiv.className = 'chat-text';
       textDiv.textContent = msg.text;
@@ -1528,18 +1585,104 @@ function renderDiscussion(){
       list.appendChild(bubble);
     });
   }
+  if(nearBottom) setTimeout(()=>{ list.scrollTop = list.scrollHeight; }, 0);
+  chatMarkSeen(key);
+}
+// Met à jour le bouton du haut et, si la discussion est ouverte, la liste — sans la recréer
+function refreshChatUI(){
+  const btn = document.getElementById('chatBtn');
+  if(btn) btn.innerHTML = chatBtnHtml();
+  if(view.discussionOpen){
+    const sel = document.getElementById('chatSel'), list = document.getElementById('chatList');
+    if(list) chatFillList(list);          // les messages affichés sont marqués comme lus
+    if(sel) chatFillSelect(sel);
+    if(btn) btn.innerHTML = chatBtnHtml();
+  }
+}
+async function fetchRemoteMessages(){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main&select=data->messages`, { headers: { 'apikey': SUPABASE_KEY }, cache:'no-store' });
+    if(!res.ok) return null;
+    const rows = await res.json();
+    const msgs = rows && rows[0] ? rows[0].messages : null;
+    return Array.isArray(msgs) ? msgs : [];
+  }catch(e){ return null; }
+}
+function mergeMessages(remote){
+  DATA.messages = DATA.messages || [];
+  const have = new Set(DATA.messages.map(m=>m.id));
+  let added = 0;
+  remote.forEach(m=>{ if(m && m.id && !have.has(m.id)){ DATA.messages.push(m); have.add(m.id); added++; } });
+  if(added){
+    DATA.messages.sort((a,b)=>(a.ts||'').localeCompare(b.ts||''));
+    if(DATA.messages.length>200) DATA.messages = DATA.messages.slice(-200);
+  }
+  return added;
+}
+let chatPollBusy = false;
+async function pollMessages(){
+  if(!view.personId || chatPollBusy || document.hidden) return;
+  chatPollBusy = true;
+  try{
+    const r = await fetchRemoteMessages();
+    if(r && mergeMessages(r)) refreshChatUI();
+  }catch(e){}
+  chatPollBusy = false;
+}
+
+async function postMessage(text){
+  if(!text || !text.trim()) return;
+  const person = currentPerson();
+  const author = person ? person.name : (ROLE_LABEL[view.role]||'Inconnu');
+  DATA.messages = DATA.messages || [];
+  const msg = {
+    id: 'msg_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+    author: author, role: view.role, personId: view.personId, text: text.trim(), ts: new Date().toISOString()
+  };
+  if(view.chatWith && view.chatWith!=='team') msg.to = view.chatWith;
+  DATA.messages.push(msg);
+  if(DATA.messages.length>200) DATA.messages = DATA.messages.slice(-200);
+  view.chatRefocus = true;
+  render();
+  // avant d'enregistrer, on récupère les messages que les autres ont envoyés entre-temps
+  const remote = await fetchRemoteMessages();
+  if(remote) mergeMessages(remote);
+  const ok = await saveToSupabase();
+  refreshChatUI();
+  if(!ok) showToast("⚠ Échec de l'enregistrement, vérifiez la connexion");
+}
+
+function renderDiscussion(){
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal chat-modal"></div>');
+  m.appendChild(el('<h2>Discussion</h2>'));
+  if(!view.chatWith) view.chatWith = 'team';
+
+  const selWrap = el('<div style="margin-bottom:8px;"></div>');
+  selWrap.appendChild(el('<label style="display:block;font-size:11px;color:var(--text-soft);margin-bottom:3px;">'+(view.role==='admin'?'Parler avec :':'Conversation :')+'</label>'));
+  const sel = document.createElement('select'); sel.id = 'chatSel';
+  chatFillSelect(sel);
+  selWrap.appendChild(sel);
+  m.appendChild(selWrap);
+
+  const list = el('<div class="chat-list" id="chatList"></div>');
   m.appendChild(list);
 
   const inputRow = el('<div class="chat-input-row"></div>');
   const ta = document.createElement('textarea');
   ta.rows = 2;
-  ta.placeholder = 'Écris un message à toute l\'équipe...';
+  const setPlaceholder = ()=>{
+    const th = chatThreads().find(t=>t.key===view.chatWith);
+    ta.placeholder = view.chatWith==='team' ? 'Écris un message à toute l\'équipe...' : 'Message privé — '+(th?th.label.replace('Privé · ',''):'')+'...';
+  };
+  setPlaceholder();
+  sel.onchange = ()=>{ view.chatWith = sel.value; list.dataset.init=''; setPlaceholder(); chatFillList(list); refreshChatUI(); };
   inputRow.appendChild(ta);
   const sendBtn = el('<button class="btn primary">Envoyer</button>');
   sendBtn.onclick = ()=>{
     const t = ta.value;
     if(!t || !t.trim()) return;
-    view.discussionOpen = false;
+    ta.value = '';
     postMessage(t);
   };
   inputRow.appendChild(sendBtn);
@@ -1551,6 +1694,9 @@ function renderDiscussion(){
 
   overlay.appendChild(m);
   overlay.onclick = (e)=>{ if(e.target===overlay){ view.discussionOpen=false; render(); } };
+  chatFillList(list);
+  chatFillSelect(sel);
+  if(view.chatRefocus){ view.chatRefocus = false; setTimeout(()=>{ try{ ta.focus(); }catch(e){} }, 0); }
   return overlay;
 }
 
@@ -3758,6 +3904,9 @@ async function boot(){
   }
   applyScan();
   render();
+  // Discussion en direct : on récupère les nouveaux messages toutes les 4 secondes
+  setInterval(pollMessages, 4000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) pollMessages(); });
 }
 
 boot();
