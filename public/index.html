@@ -46,7 +46,9 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica
 .badge{display:inline-block;background:var(--red);color:#fff;font-size:11px;font-weight:bold;border-radius:10px;padding:1px 8px;margin-left:8px;vertical-align:middle;}
 .pill.nouveau{background:var(--steel);color:#fff;}
 
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px;margin-bottom:22px;}
+.kpi{min-width:0;}
+.kpi .num{overflow-wrap:anywhere;}
 .kpi{background:var(--charcoal);color:#fff;border-radius:10px;padding:14px;text-align:center;}
 .kpi .num{font-size:26px;font-weight:bold;}
 .kpi .label{font-size:11px;opacity:.85;margin-top:2px;}
@@ -129,6 +131,57 @@ table.main tr:hover td{background:#FBF9F6;}
 .dept-det .full{grid-column:1/-1;}
 .dept-det .sz{display:inline-block;background:#fff;border:1px solid var(--border);border-radius:6px;padding:2px 7px;margin:3px 4px 0 0;font-size:12px;font-weight:bold;}
 .dept-det .note{font-size:12px;font-weight:normal;white-space:pre-wrap;}
+.io-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 12px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;}
+.io-lbl{font-size:11px;font-weight:bold;color:var(--text-soft);margin-right:2px;}
+.stars{font-size:17px;letter-spacing:1px;white-space:nowrap;}
+.stars .on{color:#E0A100;} .stars .off{color:#D5CFC6;}
+.stars-in{display:flex;gap:4px;}
+.stars-in button{border:none;background:none;font-size:30px;line-height:1;color:#D5CFC6;cursor:pointer;padding:0 2px;}
+.stars-in button.on{color:#E0A100;}
+.eval-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.eval-lbl{font-size:13px;font-weight:bold;}
+.team-avg{display:flex;align-items:center;gap:8px;font-size:13px;margin:0 0 12px;}
+.team-avg span{color:var(--text-soft);}
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;}
+.team-card{border:1px solid var(--border);border-radius:10px;padding:12px;background:#fff;}
+.team-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:8px;}
+.team-name{font-weight:bold;font-size:14px;}
+.team-role{font-size:12px;color:var(--text-soft);}
+.team-score{text-align:right;}
+.team-num{font-size:11px;color:var(--text-soft);}
+.team-none{font-size:12px;color:var(--text-soft);}
+.team-perf{background:var(--bg);border-radius:8px;padding:6px 10px;margin-bottom:8px;}
+.team-perf div{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:3px 0;}
+.team-perf span{color:var(--text-soft);}
+.prio-tag{background:#1F3A5F;color:#fff;font-size:10px;font-weight:bold;padding:2px 7px;border-radius:8px;white-space:nowrap;}
+.dept-card.waiting{opacity:.6;}
+.stars.big{font-size:30px;}
+.my-eval-head{display:flex;align-items:center;gap:12px;margin:2px 0 6px;}
+.my-eval-num{font-size:20px;font-weight:bold;}
+.my-eval-msg{background:#FFF6DB;border:1px solid #F0DC9A;border-radius:8px;padding:9px 11px;font-size:13px;margin:0 0 10px;}
+.team-period{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px;font-size:12px;color:var(--text-soft);}
+.team-how{margin:0 0 12px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;}
+.team-how summary{cursor:pointer;font-weight:bold;}
+.team-how div{margin-top:8px;line-height:1.55;color:var(--text-soft);}
+.team-crit{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--border);}
+.team-crit:first-child{border-top:none;}
+.tc-l{display:flex;flex-direction:column;min-width:0;}
+.tc-l b{font-size:12px;} .tc-l small{font-size:11px;color:var(--text-soft);}
+.tc-r{text-align:right;flex:0 0 auto;}
+.tc-r .stars{font-size:14px;}
+.tc-pct{font-size:11px;font-weight:bold;}
+.team-foot{font-size:11px;color:var(--text-soft);margin-top:8px;}
+.team-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.team-hist{margin-top:8px;border-top:1px solid var(--border);}
+.team-hist-item{padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.team-hist-top{display:flex;justify-content:space-between;align-items:center;font-weight:bold;}
+.team-hist-det{color:var(--text-soft);margin-top:2px;}
+.team-hist-cm{margin-top:4px;white-space:pre-wrap;}
+.bk-card{border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;background:#fff;}
+.bk-title{font-weight:bold;font-size:14px;margin-bottom:4px;}
+.bk-text{font-size:12px;color:var(--text-soft);margin-bottom:10px;}
+.bk-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.bk-prev{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:10px;}
 .mat-cmp{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.5;background:#fff;border:1px solid var(--border);}
 .mat-cmp.ok{background:#E3F3E7;border-color:#9AD0A7;color:#1E5E2C;}
 .mat-cmp.sur{background:#FBE4E6;border-color:#E39AA1;color:#8C1F2B;}
@@ -1184,6 +1237,8 @@ const ICONS = {
   commandes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 10.5h6M9 13.5h6M9 16.5h4"/></svg>',
   recherche: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.2 15.2 21 21"/><path d="M7.6 10.6l2 2 3.4-3.6"/></svg>',
   listes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18h1.4a1.6 1.6 0 0 0 1.1-2.7c-.4-.4-.6-.8-.6-1.3a1.6 1.6 0 0 1 1.6-1.6H17a3.4 3.4 0 0 0 3.4-3.4C20.4 6.9 16.7 3 12 3Z"/><circle cx="7.6" cy="10.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="9.6" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.2" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.6" cy="10.8" r="1.1" fill="currentColor" stroke="none"/></svg>',
+  equipe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3Z"/></svg>',
+  sauvegarde: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M8 10l4 4 4-4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>',
   conso: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M5 7h14M7 7l-3.5 7a3.5 3.5 0 0 0 7 0L7 7ZM17 7l-3.5 7a3.5 3.5 0 0 0 7 0L17 7ZM8 21h8"/></svg>',
   stats: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/><path d="M20 8l-4 4-4-5-4 4" opacity=".0"/></svg>',
   paiements: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.4"/><path d="M6 6V5a1 1 0 0 1 1-1h8"/></svg>',
@@ -1281,7 +1336,7 @@ async function loadSettingsFromSupabase(){
     console.log('Supabase non disponible, utilisation des paramètres par défaut');
   }
 }
-let view = {screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, trackRef:'', trackId:null, trackSearched:false};
+let view = {screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, teamPeriod:'tout', importModal:null, trackRef:'', trackId:null, trackSearched:false};
 
 function fmtDate(d){
   if(!d) return '—';
@@ -1342,6 +1397,7 @@ function render(){
   if(view.scanModal) app.appendChild(renderScanModal());
   if(view.qrModal) app.appendChild(renderQrModal());
   if(view.payModal) app.appendChild(renderPayModal());
+  if(view.importModal) app.appendChild(renderImportModal());
   if(view.discussionOpen) app.appendChild(renderDiscussion());
 }
 
@@ -1365,7 +1421,7 @@ function renderLogin(){
   logoWrap.appendChild(logoEl(120, false));
   w.appendChild(logoWrap);
   w.appendChild(el('<h1>'+DATA.companyTitle+'</h1>'));
-  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 17 · suivi conso + alertes admin</div>'));
+  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 22 · priorité = ordre des services</div>'));
   // Client arrivé par le QR de sa commande : on affiche d'abord le suivi
   const trackFirst = !!view.trackId;
   if(trackFirst) w.appendChild(renderTrackBlock());
@@ -1726,12 +1782,21 @@ function renderDiscussion(){
 }
 
 // ---------- DEPARTMENT SCREEN ----------
+function prioRank(c){ const n = Number(c.priorite); return n>0 ? n : 99999; }
+function prioTag(c){ return Number(c.priorite)>0 ? '<span class="prio-tag">PRIORITÉ '+Number(c.priorite)+'</span>' : ''; }
+const PREV_DEPT = {confection:'decoupe', emballage:'confection'};
+// Une commande est « prête à traiter » dans un service quand l'étape précédente est terminée
+function readyForDept(c, dept){
+  const pv = PREV_DEPT[dept];
+  if(!pv) return true;
+  return c[pv].statut==='Prête' || c[pv].statut==='Annulée';
+}
 function isNewForDept(c, dept){
   // "Notification" signal: an item the department hasn't started touching yet —
   // either just launched by Commercial, or just handed off by the previous
   // department (for stock, arrival in the queue at all IS the notification).
   if(dept==='stock') return true;
-  return c[dept].statut==='En attente';
+  return c[dept].statut==='En attente' && readyForDept(c,dept);
 }
 
 function renderDeptScreen(){
@@ -1746,6 +1811,7 @@ function renderDeptScreen(){
   const ecarts = dept==='emballage' ? ecartsAGerer() : [];
   w.appendChild(topbar('Espace '+DEPT_LABEL[view.role], newCount+ecarts.length));
   const wrap = el('<div class="wrap"></div>');
+  myEvalSection(wrap);
 
   const scanned = view.focusId ? (DATA.commandes||[]).find(x=>x.id===view.focusId) : null;
   if(scanned){
@@ -1765,18 +1831,22 @@ function renderDeptScreen(){
     wrap.appendChild(ecBody);
   }
 
-  active.sort((a,b)=>{
+  const cmpQueue = (a,b)=>{
+    const pa = prioRank(a), pb = prioRank(b);
+    if(pa!==pb) return pa-pb;
     if(a.urgent!==b.urgent) return a.urgent? -1:1;
     const an = isNewForDept(a,dept), bn = isNewForDept(b,dept);
     if(an!==bn) return an? -1:1;
     return (a.dateCommande||'').localeCompare(b.dateCommande||'');
-  });
-  wrap.appendChild(el('<div class="section-title">Tâches en cours ('+active.length+')'+(newCount?' — dont '+newCount+' nouvelle(s)':'')+'</div>'));
+  };
+  const ready = active.filter(c=>readyForDept(c,dept)).sort(cmpQueue);
+  wrap.appendChild(el('<div class="section-title">Tâches en cours ('+ready.length+')'+(newCount?' — dont '+newCount+' nouvelle(s)':'')+'</div>'));
   const body = el('<div class="section-body"></div>');
-  if(active.length===0){
-    body.appendChild(el('<div class="empty-msg">Aucune commande en attente pour '+DEPT_LABEL[dept]+'.</div>'));
+  if(ready.length===0){
+    body.appendChild(el('<div class="empty-msg">Aucune commande à traiter pour '+DEPT_LABEL[dept]+' pour le moment.</div>'));
   } else {
-    active.forEach(c=>body.appendChild(renderDeptCard(c, dept)));
+    if(ready.some(c=>Number(c.priorite)>0)) body.appendChild(el('<div class="empty-msg" style="padding:0 0 10px;text-align:left;">Les commandes sont classées par <b>priorité</b> : fais-les dans cet ordre.</div>'));
+    ready.forEach(c=>body.appendChild(renderDeptCard(c, dept)));
   }
   wrap.appendChild(body);
 
@@ -2039,7 +2109,9 @@ function renderDeptCard(c, dept){
   head.appendChild(el('<div><div class="ref">'+c.reference+'</div><div class="art">'+c.article+' · '+c.client+' · '+c.quantite+' pièces</div></div>'));
   const tags = el('<div style="display:flex;gap:6px;"></div>');
   if(isNewForDept(c,dept)) tags.appendChild(el('<span class="pill nouveau">NOUVEAU</span>'));
+  if(Number(c.priorite)>0) tags.appendChild(el(prioTag(c)));
   if(c.urgent) tags.appendChild(el('<span class="urgent-tag">URGENT</span>'));
+  if(!readyForDept(c,dept)) tags.appendChild(el('<span class="pill" style="background:#E4DED3;color:#555;">En attente de '+DEPT_LABEL[PREV_DEPT[dept]]+'</span>'));
   head.appendChild(tags);
   card.appendChild(head);
   card.appendChild(renderDeptDetails(c, dept));
@@ -2069,6 +2141,7 @@ function renderDeptCard(c, dept){
     const btn = el('<button class="btn primary">Enregistrer</button>');
     btn.onclick = ()=>{
       c.stock.quantiteRecue = inp1.value===''?'':Number(inp1.value);
+      c.stock.par = view.personId || '';
       c.stock.dateReception = inp2.value;
       const e = ecartStock(c);
       if(e!==null && e!==0){
@@ -2141,6 +2214,7 @@ function renderDeptCard(c, dept){
   const btn = el('<button class="btn primary">Enregistrer</button>');
   btn.onclick = ()=>{
     d.statut = sel.value;
+    d.par = view.personId || '';
     dateInputs.forEach(([key,inp])=>{ d[key]=inp.value; });
     if(dept==='confection' && i4) d.fin = i4.value;
     if(matBlock){ Object.assign(c.tissuInfo, matBlock.read()); c.tissuInfo.consoGlobale = consoGlobale(c.tissuInfo, c.quantite).total; }
@@ -2158,6 +2232,7 @@ function renderCommercialScreen(){
   const ecarts = ecartsAGerer();
   w.appendChild(topbar('Espace Commercial', ecarts.length));
   const wrap = el('<div class="wrap"></div>');
+  myEvalSection(wrap);
 
   if(ecarts.length){
     wrap.appendChild(el('<div class="section-title" style="background:var(--red);">Écarts de stock à gérer ('+ecarts.length+')</div>'));
@@ -2333,6 +2408,7 @@ function renderConsoPanel(){
   const root = el('<div></div>');
   const seuil = consoSeuil();
   root.appendChild(el('<div class="empty-msg" style="padding:0 0 12px;text-align:left;">Compare la <b>consommation moyenne</b> du catalogue (par pièce) à la <b>consommation globale réelle</b> saisie par la Découpe (poids/pièce + côte + accessoires, × nombre réel). Alerte au-delà de <b>±'+fmtKg(seuil)+' %</b> (réglable dans Paramètres).</div>'));
+  root.appendChild(ioBar([{label:'Exporter le suivi (CSV)', fn:exportConsoCSV}], []));
   function table(heads){
     const wrap = document.createElement('div'); wrap.className='table-wrap';
     const t = document.createElement('table'); t.className='main';
@@ -2390,6 +2466,574 @@ function renderConsoPanel(){
   return root;
 }
 
+// ================= ÉVALUATION AUTOMATIQUE DE L'ÉQUIPE (étoiles calculées) =================
+// Les étoiles sont calculées par l'application à partir du travail réel de chacun.
+// L'admin ne note rien à la main. Barème : ≥95 % = 5★ · 85–94 % = 4★ · 70–84 % = 3★ · 50–69 % = 2★ · <50 % = 1★.
+function roleCount(role){ return (DATA.people||[]).filter(x=>x.role===role && x.active!==false).length; }
+// Une étape est attribuée à la personne qui a cliqué « Enregistrer » ; avant ça, au seul employé du rôle
+function personHandles(c, dept, p){
+  const par = dept==='stock' ? (c.stock||{}).par : (c[dept]||{}).par;
+  if(par) return par===p.id;
+  return roleCount(p.role)===1;
+}
+function avgOf(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
+function pctTone(p){ return p>=85 ? '#1E7A34' : (p>=70 ? '#B26A00' : '#A42834'); }
+function starsFromPct(p){ return p>=95 ? 5 : (p>=85 ? 4 : (p>=70 ? 3 : (p>=50 ? 2 : 1))); }
+function teamOrders(){
+  const all = DATA.commandes||[];
+  const per = view.teamPeriod || 'tout';
+  if(per==='tout') return all;
+  const cut = new Date(Date.now() - Number(per)*86400000).toISOString().slice(0,10);
+  return all.filter(c=>(c.dateCommande||'') >= cut);
+}
+function crit(label, hint, good, total){
+  if(!(total>0)) return {label:label, hint:hint, none:true};
+  const pct = good/total*100;
+  return {label:label, hint:hint, good:good, total:total, pct:pct, stars:starsFromPct(pct)};
+}
+// Retourne {crits, stars, n} pour un employé
+function autoEval(p){
+  const cmds = teamOrders();
+  const STARTED = ['Prête','En cours','Problème','Tissu non disponible'];
+  const crits = []; let n = 0;
+  if(p.role==='decoupe'){
+    const started = cmds.filter(c=>STARTED.indexOf(c.decoupe.statut)>=0 && personHandles(c,'decoupe',p));
+    const done = started.filter(c=>c.decoupe.statut==='Prête');
+    const wd = done.filter(c=>c.decoupe.prevueLe && c.decoupe.faiteLe);
+    const cmp = done.filter(c=>consoCompare(c));
+    n = started.length;
+    crits.push(crit('Délais','Découpe faite à la date prévue', wd.filter(c=>anDays(c.decoupe.prevueLe,c.decoupe.faiteLe)<=0).length, wd.length));
+    crits.push(crit('Qualité','Consommation de tissu conforme', cmp.filter(c=>consoCompare(c).status==='ok').length, cmp.length));
+    crits.push(crit('Fiabilité','Commandes sans problème', started.filter(c=>c.decoupe.statut!=='Problème').length, started.length));
+  } else if(p.role==='confection' || p.role==='emballage'){
+    const k = p.role;
+    const started = cmds.filter(c=>STARTED.indexOf(c[k].statut)>=0 && personHandles(c,k,p));
+    const done = started.filter(c=>c[k].statut==='Prête');
+    const wl = done.filter(c=>c[k].fin && c.dateLivraisonPrevue);
+    const rec = done.filter(c=>ecartStock(c)!==null);
+    n = started.length;
+    crits.push(crit('Délais','Terminée avant la livraison prévue', wl.filter(c=>c[k].fin<=c.dateLivraisonPrevue).length, wl.length));
+    crits.push(crit('Qualité','Quantité reçue conforme (sans écart)', rec.filter(c=>ecartStock(c)===0).length, rec.length));
+    crits.push(crit('Fiabilité','Commandes sans problème', started.filter(c=>c[k].statut!=='Problème').length, started.length));
+  } else if(p.role==='stock'){
+    const rec = cmds.filter(c=>ecartStock(c)!==null && personHandles(c,'stock',p));
+    const wd = rec.filter(c=>c.emballage.fin && c.stock.dateReception);
+    const packed = cmds.filter(c=>c.emballage.statut==='Prête' && (ecartStock(c)!==null ? personHandles(c,'stock',p) : roleCount('stock')===1));
+    n = rec.length;
+    crits.push(crit('Délais','Réception enregistrée sous 2 jours', wd.filter(c=>anDays(c.emballage.fin,c.stock.dateReception)<=2).length, wd.length));
+    crits.push(crit('Fiabilité','Commandes emballées déjà réceptionnées', packed.filter(c=>ecartStock(c)!==null).length, packed.length));
+  } else if(p.role==='commercial'){
+    const mine = cmds.filter(c=>c.commercialId===p.id);
+    const wd = mine.filter(c=>c.stock.dateReception && c.dateLivraisonPrevue);
+    const rec = mine.filter(c=>ecartStock(c)!==null);
+    const ecs = mine.filter(c=>{ const e = ecartStock(c); return e!==null && e!==0; });
+    n = mine.length;
+    crits.push(crit('Délais','Reçue en stock avant la livraison prévue', wd.filter(c=>c.stock.dateReception<=c.dateLivraisonPrevue).length, wd.length));
+    crits.push(crit('Qualité','Commandes reçues et entièrement payées', rec.filter(c=>payInfo(c).statut==='Payé').length, rec.length));
+    crits.push(crit('Fiabilité','Écarts de stock gérés', ecs.filter(c=>c.ecartGere).length, ecs.length));
+  }
+  const valid = crits.filter(x=>!x.none);
+  const stars = valid.length ? avgOf(valid.map(x=>x.stars)) : null;
+  return {crits:crits, stars:stars, n:n};
+}
+function starsHtml(v){
+  const full = Math.round(v);
+  let h = '<span class="stars" aria-label="'+(Math.round(v*10)/10)+' sur 5">';
+  for(let i=1;i<=5;i++) h += '<span class="'+(i<=full?'on':'off')+'">★</span>';
+  return h+'</span>';
+}
+function fmt1(v){ return (Math.round(v*10)/10).toLocaleString('fr-FR',{maximumFractionDigits:1}); }
+function teamRows(){
+  const staff = (DATA.people||[]).filter(p=>p.active!==false && p.role!=='admin');
+  return staff.map(p=>({p:p, e:autoEval(p)}));
+}
+function renderTeamPanel(){
+  const root = el('<div></div>');
+  const per = view.teamPeriod || 'tout';
+  root.appendChild(el('<div class="empty-msg" style="padding:0 0 10px;text-align:left;"><b>Évaluation automatique</b> : les étoiles sont calculées par l\'application à partir du travail réel de chacun (délais, qualité, fiabilité). Personne ne les note à la main.</div>'));
+  root.appendChild(ioBar([{label:'Exporter l\'évaluation (CSV)', fn:exportEvalCSV}], []));
+  const pr = el('<div class="team-period"><span>Période (date de commande) :</span></div>');
+  [['tout','Tout'],['30','30 jours'],['90','90 jours'],['365','12 mois']].forEach(([k,l])=>{
+    const b = el('<button class="btn small'+(per===k?' primary':'')+'"></button>'); b.textContent = l;
+    b.onclick = ()=>{ view.teamPeriod = k; render(); };
+    pr.appendChild(b);
+  });
+  root.appendChild(pr);
+  const det = el('<details class="team-how"><summary>Comment sont calculées les étoiles ?</summary><div></div></details>');
+  det.querySelector('div').innerHTML = 'Chaque critère est un pourcentage de réussite, converti en étoiles : <b>95 % et plus = 5★</b> · 85 à 94 % = 4★ · 70 à 84 % = 3★ · 50 à 69 % = 2★ · moins de 50 % = 1★. La note globale est la moyenne des critères disponibles.<br><br><b>Découpe</b> : délais (découpe faite à la date prévue), qualité (consommation de tissu sans alerte), fiabilité (sans statut « Problème»).<br><b>Confection / Emballage</b> : délais (terminé avant la livraison prévue), qualité (quantité reçue en stock sans écart), fiabilité.<br><b>Stock</b> : réception enregistrée sous 2 jours, commandes emballées réceptionnées.<br><b>Commercial</b> : reçue avant la livraison prévue, commandes payées, écarts de stock gérés.<br><br>Le travail est attribué à la personne qui clique « Enregistrer » sur chaque étape (ou à l\'unique employé du rôle). Moins de 3 commandes = note indicative.';
+  root.appendChild(det);
+
+  const rows = teamRows();
+  if(!rows.length){ root.appendChild(el('<div class="empty-msg">Aucun employé actif.</div>')); return root; }
+  rows.sort((a,b)=>(b.e.stars===null?-1:b.e.stars)-(a.e.stars===null?-1:a.e.stars));
+  const rated = rows.filter(r=>r.e.stars!==null);
+  const teamAvg = avgOf(rated.map(r=>r.e.stars));
+  if(teamAvg!==null){
+    const t = el('<div class="team-avg"></div>');
+    t.innerHTML = '<span>Moyenne de l\'équipe</span> '+starsHtml(teamAvg)+' <b></b>';
+    t.querySelector('b').textContent = fmt1(teamAvg)+' / 5';
+    root.appendChild(t);
+  }
+  const grid = el('<div class="team-grid"></div>');
+  rows.forEach(r=>{
+    const p = r.p, e = r.e;
+    const rank = rated.indexOf(r)+1;
+    const card = el('<div class="team-card"></div>');
+    const head = el('<div class="team-head"></div>');
+    const nm = el('<div><div class="team-name"></div><div class="team-role"></div></div>');
+    nm.querySelector('.team-name').textContent = (e.stars!==null && rated.length>1 ? 'N°'+rank+' · ' : '')+p.name;
+    nm.querySelector('.team-role').textContent = ROLE_LABEL[p.role]||p.role;
+    head.appendChild(nm);
+    const sc = el('<div class="team-score"></div>');
+    if(e.stars===null) sc.innerHTML = '<span class="team-none">Pas assez de données</span>';
+    else { sc.innerHTML = starsHtml(e.stars)+'<div class="team-num"></div>'; sc.querySelector('.team-num').textContent = fmt1(e.stars)+' / 5'; }
+    head.appendChild(sc);
+    card.appendChild(head);
+    const pl = el('<div class="team-perf"></div>');
+    e.crits.forEach(c=>{
+      const line = el('<div class="team-crit"><div class="tc-l"><b></b><small></small></div><div class="tc-r"></div></div>');
+      line.querySelector('b').textContent = c.label; line.querySelector('small').textContent = c.hint;
+      const rr = line.querySelector('.tc-r');
+      if(c.none) rr.innerHTML = '<span class="team-none">—</span>';
+      else { rr.innerHTML = starsHtml(c.stars)+'<div class="tc-pct"></div>'; const pc = rr.querySelector('.tc-pct'); pc.textContent = Math.round(c.pct)+' % ('+c.good+'/'+c.total+')'; pc.style.color = pctTone(c.pct); }
+      pl.appendChild(line);
+    });
+    card.appendChild(pl);
+    const foot = el('<div class="team-foot"></div>');
+    foot.textContent = 'Commandes suivies : '+e.n+(e.stars!==null && e.n<3 ? ' · note indicative (peu de données)' : '');
+    card.appendChild(foot);
+    grid.appendChild(card);
+  });
+  root.appendChild(grid);
+  return root;
+}
+function exportEvalCSV(){
+  const rows = teamRows().map(r=>{
+    const e = r.e, g = k=>e.crits.find(c=>c.label===k);
+    const cell = k=>{ const c = g(k); return c && !c.none ? [Math.round(c.pct), c.stars] : ['','']; };
+    return [r.p.name, ROLE_LABEL[r.p.role]||r.p.role, e.stars===null?'':Math.round(e.stars*10)/10, e.n].concat(cell('Délais'), cell('Qualité'), cell('Fiabilité'));
+  });
+  csvFile('evaluation_equipe_'+todayISO()+'.csv', ['Employé','Rôle','Étoiles (sur 5)','Commandes suivies','Délais (%)','Délais (étoiles)','Qualité (%)','Qualité (étoiles)','Fiabilité (%)','Fiabilité (étoiles)'], rows);
+}
+
+// ---- Mon évaluation (visible dans le compte de chaque employé) ----
+function renderMyEval(){
+  const p = currentPerson();
+  if(!p || p.role==='admin') return null;
+  const e = autoEval(p);
+  const per = view.teamPeriod || 'tout';
+  const box = el('<div></div>');
+  const top = el('<div class="team-period"><span>Période :</span></div>');
+  [['tout','Tout'],['30','30 jours'],['90','90 jours'],['365','12 mois']].forEach(([k,l])=>{
+    const b = el('<button class="btn small'+(per===k?' primary':'')+'"></button>'); b.textContent = l;
+    b.onclick = ()=>{ view.teamPeriod = k; render(); };
+    top.appendChild(b);
+  });
+  box.appendChild(top);
+  if(e.stars===null){
+    box.appendChild(el('<div class="empty-msg" style="text-align:left;padding:4px 0;">Pas encore assez de données : ta note apparaîtra dès que tu auras terminé des commandes. Courage !</div>'));
+    return box;
+  }
+  const head = el('<div class="my-eval-head"></div>');
+  head.innerHTML = '<div>'+starsHtml(e.stars).replace('class="stars"','class="stars big"')+'</div><div class="my-eval-num"></div>';
+  head.querySelector('.my-eval-num').textContent = fmt1(e.stars)+' / 5';
+  box.appendChild(head);
+  const valid = e.crits.filter(x=>!x.none).sort((a,b)=>a.pct-b.pct);
+  const weak = valid[0];
+  let msg;
+  if(e.stars>=4.5) msg = 'Excellent travail, bravo ! Continue comme ça.';
+  else if(e.stars>=3.5) msg = 'Très bien ! Encore un petit effort pour décrocher les 5 étoiles.';
+  else if(e.stars>=2.5) msg = 'Bon travail, tu peux encore progresser.';
+  else msg = 'Courage ! Chaque commande bien faite fait monter ta note.';
+  if(weak && weak.stars<5) msg += ' Point à améliorer : '+weak.label.toLowerCase()+' ('+weak.hint.toLowerCase()+').';
+  const m = el('<div class="my-eval-msg"></div>'); m.textContent = msg; box.appendChild(m);
+  const pl = el('<div class="team-perf"></div>');
+  e.crits.forEach(c=>{
+    const line = el('<div class="team-crit"><div class="tc-l"><b></b><small></small></div><div class="tc-r"></div></div>');
+    line.querySelector('b').textContent = c.label; line.querySelector('small').textContent = c.hint;
+    const rr = line.querySelector('.tc-r');
+    if(c.none) rr.innerHTML = '<span class="team-none">—</span>';
+    else { rr.innerHTML = starsHtml(c.stars)+'<div class="tc-pct"></div>'; const pc = rr.querySelector('.tc-pct'); pc.textContent = Math.round(c.pct)+' % ('+c.good+'/'+c.total+')'; pc.style.color = pctTone(c.pct); }
+    pl.appendChild(line);
+  });
+  box.appendChild(pl);
+  box.appendChild(el('<div class="team-foot">Calculée automatiquement à partir de ton travail · Commandes suivies : '+e.n+(e.n<3?' · note indicative':'')+'</div>'));
+  return box;
+}
+function myEvalSection(wrap){
+  const p = currentPerson();
+  if(!p || p.role==='admin') return;
+  const e = autoEval(p);
+  const lbl = e.stars===null ? '' : ' — '+fmt1(e.stars)+' ★';
+  wrap.appendChild(el('<div class="section-title" style="background:#B8860B;">Mon évaluation'+lbl+'</div>'));
+  const b = el('<div class="section-body"></div>');
+  const inner = renderMyEval(); if(inner) b.appendChild(inner);
+  wrap.appendChild(b);
+}
+
+// ================= IMPORT / EXPORT =================
+function downloadFile(name, text, mime){
+  const blob = new Blob([text], {type: mime||'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+}
+function backupPayload(){ return {app:'suivi-production-dj', version:18, exportedAt:new Date().toISOString(), data:DATA}; }
+function exportJSON(){ downloadFile('sauvegarde_djebs_'+todayISO()+'.json', JSON.stringify(backupPayload()), 'application/json'); }
+function csvCell(v){ if(typeof v==='number' && !Number.isInteger(v)) v = String(v).replace('.',','); return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'; }
+function csvFile(name, header, rows){
+  const lines = [header].concat(rows).map(r=>r.map(csvCell).join(';'));
+  downloadFile(name, '﻿'+lines.join('\r\n'), 'text/csv;charset=utf-8');
+}
+const CSV_CMD_HEAD = ['Référence','Client','Article','Tissu','Couleur','Quantité','Date commande','Livraison prévue','Urgent','Responsable','Total (DA)','Découpe','Confection','Emballage','Quantité reçue','Payé (DA)','Reste (DA)','Conso globale (kg)'];
+function parseCSV(text){
+  text = String(text||'').replace(/^﻿/, '');
+  const first = text.split(/\r?\n/)[0] || '';
+  const delim = (first.split(';').length>=first.split(',').length && first.indexOf(';')>=0) ? ';' : (first.indexOf('\t')>=0 ? '\t' : ',');
+  const rows = []; let row = [], cur = '', q = false;
+  for(let i=0;i<text.length;i++){
+    const ch = text[i];
+    if(q){
+      if(ch==='"'){ if(text[i+1]==='"'){ cur+='"'; i++; } else q=false; }
+      else cur += ch;
+    } else if(ch==='"') q = true;
+    else if(ch===delim){ row.push(cur); cur=''; }
+    else if(ch==='\n' || ch==='\r'){ if(ch==='\r' && text[i+1]==='\n') i++; row.push(cur); cur=''; if(row.some(x=>x.trim()!=='')) rows.push(row); row=[]; }
+    else cur += ch;
+  }
+  row.push(cur); if(row.some(x=>x.trim()!=='')) rows.push(row);
+  return rows;
+}
+function normKey(h){ return String(h||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim(); }
+function csvDate(v){
+  v = String(v||'').trim(); if(!v) return '';
+  let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v); if(m) return m[1]+'-'+m[2]+'-'+m[3];
+  m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(v); if(m) return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+  return '';
+}
+function csvToCommandes(rows){
+  if(rows.length<2) return {list:[], skipped:0, error:'Le fichier ne contient pas de lignes de commandes.'};
+  const keys = rows[0].map(normKey);
+  const idx = names => { for(const n of names){ const i = keys.indexOf(n); if(i>=0) return i; } return -1; };
+  const col = {
+    reference: idx(['reference','ref']), client: idx(['client']), article: idx(['article','produit']), tissu: idx(['tissu']), couleur: idx(['couleur']),
+    quantite: idx(['quantite','qte','quantite pieces']), dateCommande: idx(['date commande','date de commande']), liv: idx(['livraison prevue','date de livraison prevue','livraison']),
+    urgent: idx(['urgent']), resp: idx(['responsable','commercial']), total: idx(['total da','total','montant total da','montant total'])
+  };
+  if(col.client<0 && col.article<0 && col.reference<0) return {list:[], skipped:0, error:'Colonnes non reconnues. Utilise le fichier « Exporter les commandes (CSV) » comme modèle.'};
+  const have = new Set((DATA.commandes||[]).map(c=>String(c.reference||'').trim().toLowerCase()));
+  const list = []; let skipped = 0;
+  rows.slice(1).forEach((r,i)=>{
+    const g = k => col[k]>=0 ? String(r[col[k]]||'').trim() : '';
+    if(!g('client') && !g('article') && !g('quantite')){ skipped++; return; }
+    const ref = g('reference');
+    if(ref && (have.has(ref.toLowerCase()))){ skipped++; return; }
+    if(ref) have.add(ref.toLowerCase());
+    const c = blankCommande();
+    c.id = 'cmd_'+Date.now()+'_'+i+'_'+Math.random().toString(36).slice(2,5);
+    c.reference = ref || '';   // numérotée plus tard si vide
+    c.client = g('client'); c.article = g('article'); c.tissu = g('tissu'); c.couleur = g('couleur');
+    const q = parseFloat(g('quantite').replace(/\s/g,'').replace(',','.')); c.quantite = isNaN(q) ? '' : q;
+    c.dateCommande = csvDate(g('dateCommande')) || todayISO(); c.dateLivraisonPrevue = csvDate(g('liv'));
+    c.urgent = /^(oui|yes|1|true|x)$/i.test(g('urgent'));
+    const rn = g('resp').toLowerCase();
+    const com = rn ? (DATA.people||[]).find(p=>p.role==='commercial' && (p.name||'').toLowerCase()===rn) : null;
+    c.commercialId = com ? com.id : '';
+    const t = parseFloat(g('total').replace(/\s/g,'').replace(',','.')); c.paiement = {total: isNaN(t)?'':t, versements:[]};
+    list.push(c);
+  });
+  return {list:list, skipped:skipped, error:''};
+}
+function readFileText(file){
+  return new Promise((res,rej)=>{ const fr = new FileReader(); fr.onload = ()=>res(String(fr.result||'')); fr.onerror = ()=>rej(new Error('lecture')); fr.readAsText(file, 'utf-8'); });
+}
+function mergeData(inc){
+  const rep = {added:{}, ignored:{}};
+  function mergeArr(key, uniqFn){
+    DATA[key] = DATA[key] || []; const have = new Set(DATA[key].map(uniqFn)); let a=0, ig=0;
+    (Array.isArray(inc[key])?inc[key]:[]).forEach(x=>{ const u = uniqFn(x); if(x && !have.has(u)){ DATA[key].push(x); have.add(u); a++; } else ig++; });
+    rep.added[key]=a; rep.ignored[key]=ig;
+  }
+  mergeArr('catalogue', x=>x.id);
+  mergeArr('people', x=>x.id);
+  mergeArr('messages', x=>x.id);
+  mergeArr('evaluations', x=>x.id);
+  // commandes : par id ET par référence
+  DATA.commandes = DATA.commandes || [];
+  const ids = new Set(DATA.commandes.map(c=>c.id)), refs = new Set(DATA.commandes.map(c=>String(c.reference||'').trim().toLowerCase()));
+  let a=0, ig=0;
+  (Array.isArray(inc.commandes)?inc.commandes:[]).forEach(c=>{
+    const r = String(c.reference||'').trim().toLowerCase();
+    if(c && !ids.has(c.id) && !(r && refs.has(r))){ DATA.commandes.push(c); ids.add(c.id); if(r) refs.add(r); a++; } else ig++;
+  });
+  rep.added.commandes=a; rep.ignored.commandes=ig;
+  // listes : on ajoute ce qui manque
+  if(inc.lists){
+    DATA.lists = DATA.lists || {tailles:[], tissus:{}};
+    (inc.lists.tailles||[]).forEach(t=>{ if(DATA.lists.tailles.indexOf(t)<0) DATA.lists.tailles.push(t); });
+    Object.keys(inc.lists.tissus||{}).forEach(t=>{
+      DATA.lists.tissus[t] = DATA.lists.tissus[t] || [];
+      (inc.lists.tissus[t]||[]).forEach(c=>{ if(DATA.lists.tissus[t].indexOf(c)<0) DATA.lists.tissus[t].push(c); });
+    });
+  }
+  return rep;
+}
+// ---------- IMPORT / EXPORT DANS CHAQUE CASE ----------
+// Barre « Import / Export » affichée en haut de chaque case admin.
+// exports : [{label, fn}]   imports : [{label, accept, onFile(file)}]
+function ioBar(exports, imports){
+  const bar = el('<div class="io-bar"><span class="io-lbl">Import / Export :</span></div>');
+  (exports||[]).forEach(x=>{
+    const b = el('<button class="btn small"></button>'); b.textContent = '⬇ ' + x.label; b.onclick = x.fn; bar.appendChild(b);
+  });
+  (imports||[]).forEach(x=>{
+    const l = el('<label class="btn small" style="display:inline-block;cursor:pointer;"></label>'); l.textContent = '⬆ ' + x.label;
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = x.accept || '.csv,text/csv'; inp.style.display = 'none';
+    inp.onchange = ()=>{ const f = inp.files[0]; inp.value = ''; if(f) x.onFile(f); };
+    l.appendChild(inp); bar.appendChild(l);
+  });
+  return bar;
+}
+// lit un CSV et renvoie {keys, rows, col(names...) , get(row,names...)}
+async function readCSVFile(file){
+  const rows = parseCSV(await readFileText(file));
+  if(rows.length < 2) throw new Error('vide');
+  const keys = rows[0].map(normKey);
+  const idx = names => { for(const n of names){ const i = keys.indexOf(n); if(i>=0) return i; } return -1; };
+  return {keys:keys, rows:rows.slice(1), idx:idx, get:(r,names)=>{ const i = idx(names); return i>=0 ? String(r[i]||'').trim() : ''; }};
+}
+function openImport(name, headline, preview, applyLabel, apply){
+  view.importModal = {type:'generic', name:name, headline:headline, preview:preview, applyLabel:applyLabel, apply:apply};
+  render();
+}
+function importFail(msg){ alert(msg || 'Impossible de lire ce fichier. Utilise un fichier CSV exporté depuis cette même case comme modèle.'); }
+function num(v){ const n = parseFloat(String(v||'').replace(/\s/g,'').replace(',','.')); return isNaN(n) ? null : n; }
+const ROLE_FROM_TEXT = {admin:'admin', commercial:'commercial', decoupe:'decoupe', confection:'confection', emballage:'emballage', stock:'stock'};
+
+// ----- Commandes -----
+function exportCommandesList(list){
+  const rows = list.map(c=>{
+    const com = commercialOf(c), pi = payInfo(c), g = consoGlobale(c.tissuInfo, c.quantite);
+    return [c.reference,c.client,c.article,c.tissu,c.couleur,c.quantite,c.dateCommande,c.dateLivraisonPrevue,c.urgent?'oui':'non',com?com.name:'',pi.total,c.decoupe.statut,c.confection.statut,c.emballage.statut,c.stock.quantiteRecue,pi.paye,pi.reste, g.parPiece>0 ? Math.round(g.total*1000)/1000 : ''];
+  });
+  csvFile('commandes_djebs_'+todayISO()+'.csv', CSV_CMD_HEAD, rows);
+}
+function exportCommandesCSV(){ exportCommandesList(DATA.commandes||[]); }
+function importCommandesFile(f){
+  readFileText(f).then(t=>{
+    const r = csvToCommandes(parseCSV(t));
+    if(r.error){ alert(r.error); return; }
+    if(!r.list.length){ alert('Aucune nouvelle commande à importer ('+r.skipped+' ligne(s) ignorée(s) : vides ou référence déjà existante).'); return; }
+    const prev = r.list.slice(0,5).map(c=>(c.reference||'(réf. automatique)')+' · '+(c.client||'—')+' · '+(c.article||'—')+(c.quantite!==''?' · '+c.quantite+' pcs':''));
+    if(r.list.length>5) prev.push('… et '+(r.list.length-5)+' autre(s)');
+    openImport(f.name, r.list.length+' commande(s) à ajouter'+(r.skipped?' · '+r.skipped+' ligne(s) ignorée(s) (vides ou référence déjà existante)':'')+'.', prev, 'Importer ces commandes', ()=>{
+      r.list.forEach(c=>{ if(!c.reference) c.reference = nextReference(); DATA.commandes.push(c); });
+      return r.list.length+' commande(s) importée(s)';
+    });
+  }).catch(()=>importFail());
+}
+
+// ----- Catalogue produits -----
+function exportCatalogueCSV(){
+  csvFile('catalogue_djebs_'+todayISO()+'.csv', ['Article','Référence patron','Tissu','Conso moyenne','Unité','Tailles (séparées par /)'],
+    (DATA.catalogue||[]).map(p=>[p.article,p.refPatron||'',p.tissu||'',p.consoMoyenne===undefined?'':p.consoMoyenne,p.consoUnite||'kg',(p.tailles||[]).join('/')]));
+}
+function importCatalogueFile(f){
+  readCSVFile(f).then(d=>{
+    if(d.idx(['article','produit','nom du produit'])<0) throw new Error('col');
+    const have = new Set((DATA.catalogue||[]).map(p=>String(p.article||'').trim().toLowerCase()));
+    const list = []; let skipped = 0;
+    d.rows.forEach((r,i)=>{
+      const art = d.get(r,['article','produit','nom du produit']);
+      if(!art || have.has(art.toLowerCase())){ skipped++; return; }
+      have.add(art.toLowerCase());
+      const u = d.get(r,['unite']).toLowerCase();
+      const cm = num(d.get(r,['conso moyenne','consommation moyenne']));
+      list.push({id:'prod_'+Date.now()+'_'+i+'_'+Math.random().toString(36).slice(2,5), article:art, tissu:d.get(r,['tissu']), photo:'',
+        tailles:d.get(r,['tailles separees par','tailles','tailles separees par '] ).split(/[\/|,;]+/).map(x=>x.trim()).filter(Boolean),
+        refPatron:d.get(r,['reference patron','ref patron']), consoMoyenne: cm===null?'':cm, consoUnite: u==='m'?'m':'kg'});
+    });
+    if(!list.length){ alert('Aucun nouveau produit à importer ('+skipped+' ligne(s) ignorée(s) : vides ou produit déjà existant).'); return; }
+    openImport(f.name, list.length+' produit(s) à ajouter'+(skipped?' · '+skipped+' ignoré(s) (déjà existants ou vides)':'')+'.', list.slice(0,6).map(p=>p.article+(p.refPatron?' · patron '+p.refPatron:'')+(p.tissu?' · '+p.tissu:'')), 'Importer ces produits', ()=>{
+      DATA.catalogue = DATA.catalogue || []; list.forEach(p=>DATA.catalogue.push(p));
+      return list.length+' produit(s) importé(s)';
+    });
+  }).catch(()=>importFail());
+}
+
+// ----- Paiements -----
+function exportPaiementsCSV(){
+  csvFile('paiements_djebs_'+todayISO()+'.csv', ['Référence','Client','Total (DA)','Payé (DA)','Reste (DA)','Statut','Dernier versement'],
+    (DATA.commandes||[]).map(c=>{ const p = payInfo(c); return [c.reference,c.client,p.total,p.paye,p.reste,p.statut,p.dernier]; }));
+}
+function exportVersementsCSV(){
+  const rows = [];
+  (DATA.commandes||[]).forEach(c=>payInfo(c).vers.forEach(v=>rows.push([c.reference,v.date||'',Number(v.montant)||0,v.note||''])));
+  csvFile('versements_djebs_'+todayISO()+'.csv', ['Référence','Date','Montant (DA)','Note'], rows);
+}
+function importVersementsFile(f){
+  readCSVFile(f).then(d=>{
+    if(d.idx(['reference','ref'])<0 || d.idx(['montant da','montant'])<0) throw new Error('col');
+    const todo = []; let skipped = 0;
+    d.rows.forEach(r=>{
+      const ref = d.get(r,['reference','ref']).toLowerCase();
+      const m = num(d.get(r,['montant da','montant']));
+      const cs = (DATA.commandes||[]).filter(c=>String(c.reference||'').trim().toLowerCase()===ref);
+      const c = cs.length ? cs[cs.length-1] : null;
+      if(!c || !m || m<=0){ skipped++; return; }
+      const date = csvDate(d.get(r,['date'])) || todayISO(), note = d.get(r,['note']);
+      const dup = (c.paiement && c.paiement.versements || []).some(v=>v.date===date && Number(v.montant)===m && (v.note||'')===note) || todo.some(t=>t.c===c && t.v.date===date && t.v.montant===m && t.v.note===note);
+      if(dup){ skipped++; return; }
+      todo.push({c:c, v:{id:'v_'+Date.now()+'_'+todo.length+'_'+Math.random().toString(36).slice(2,5), date:date, montant:m, note:note}});
+    });
+    if(!todo.length){ alert('Aucun nouveau versement à importer ('+skipped+' ligne(s) ignorée(s) : référence inconnue, montant vide ou versement déjà présent).'); return; }
+    openImport(f.name, todo.length+' versement(s) à ajouter'+(skipped?' · '+skipped+' ignoré(s)':'')+'.', todo.slice(0,6).map(t=>t.c.reference+' · '+fmtDate(t.v.date)+' · '+fmtDA(t.v.montant)+(t.v.note?' · '+t.v.note:'')), 'Importer ces versements', ()=>{
+      todo.forEach(t=>{ t.c.paiement = t.c.paiement || {total:'', versements:[]}; t.c.paiement.versements = t.c.paiement.versements || []; t.c.paiement.versements.push(t.v); });
+      return todo.length+' versement(s) importé(s)';
+    });
+  }).catch(()=>importFail());
+}
+
+// ----- Tailles / Tissus / Couleurs -----
+function exportListesCSV(){
+  const L = DATA.lists || {tailles:[], tissus:{}}, rows = [];
+  (L.tailles||[]).forEach(t=>rows.push(['Taille',t,'']));
+  Object.keys(L.tissus||{}).forEach(t=>{ rows.push(['Tissu',t,'']); (L.tissus[t]||[]).forEach(c=>rows.push(['Couleur',c,t])); });
+  csvFile('listes_djebs_'+todayISO()+'.csv', ['Type','Valeur','Tissu'], rows);
+}
+function importListesFile(f){
+  readCSVFile(f).then(d=>{
+    if(d.idx(['type'])<0 || d.idx(['valeur'])<0) throw new Error('col');
+    const L = DATA.lists = DATA.lists || {tailles:[], tissus:{}}; L.tailles = L.tailles||[]; L.tissus = L.tissus||{};
+    const add = {tailles:[], tissus:[], couleurs:[]};
+    const tIn = {}; // tissus déjà prévus dans ce fichier
+    d.rows.forEach(r=>{
+      const type = normKey(d.get(r,['type'])), val = d.get(r,['valeur']), tis = d.get(r,['tissu']);
+      if(!val) return;
+      if(type==='taille' && L.tailles.indexOf(val)<0 && add.tailles.indexOf(val)<0) add.tailles.push(val);
+      else if(type==='tissu' && !L.tissus[val] && add.tissus.indexOf(val)<0) add.tissus.push(val);
+      else if(type==='couleur' && tis){
+        const val2 = val.toUpperCase();
+        if(!(L.tissus[tis]||[]).includes(val2) && !add.couleurs.some(x=>x[0]===tis && x[1]===val2)) add.couleurs.push([tis,val2]);
+      }
+    });
+    const n = add.tailles.length+add.tissus.length+add.couleurs.length;
+    if(!n){ alert('Rien de nouveau à importer : tout existe déjà.'); return; }
+    openImport(f.name, n+' élément(s) à ajouter.', [add.tailles.length+' taille(s) : '+add.tailles.join(', '), add.tissus.length+' tissu(s) : '+add.tissus.join(', '), add.couleurs.length+' couleur(s) : '+add.couleurs.map(x=>x[1]+' ('+x[0]+')').slice(0,8).join(', ')], 'Importer', ()=>{
+      add.tailles.forEach(t=>L.tailles.push(t));
+      add.tissus.forEach(t=>{ L.tissus[t] = L.tissus[t] || []; });
+      add.couleurs.forEach(x=>{ L.tissus[x[0]] = L.tissus[x[0]] || []; L.tissus[x[0]].push(x[1]); });
+      return n+' élément(s) importé(s)';
+    });
+  }).catch(()=>importFail());
+}
+
+// ----- Accès (personnes) -----
+function exportAccesCSV(){
+  csvFile('acces_djebs_'+todayISO()+'.csv', ['Nom','Email','Rôle','Code','Actif'], (DATA.people||[]).map(p=>[p.name,p.email||'',ROLE_LABEL[p.role]||p.role,p.code,p.active===false?'non':'oui']));
+}
+function importAccesFile(f){
+  readCSVFile(f).then(d=>{
+    if(d.idx(['nom','name'])<0 || d.idx(['role'])<0) throw new Error('col');
+    const haveE = new Set((DATA.people||[]).map(p=>String(p.email||'').trim().toLowerCase()).filter(Boolean));
+    const haveN = new Set((DATA.people||[]).map(p=>String(p.name||'').trim().toLowerCase()));
+    const list = []; const skip = [];
+    d.rows.forEach((r,i)=>{
+      const name = d.get(r,['nom','name']), email = d.get(r,['email']), code = d.get(r,['code']).replace(/\s/g,'');
+      const roleKey = normKey(d.get(r,['role']));
+      const role = ROLE_FROM_TEXT[roleKey];
+      if(!name){ return; }
+      if(!role){ skip.push(name+' (rôle inconnu)'); return; }
+      if(!/^\d{4}$/.test(code)){ skip.push(name+' (code à 4 chiffres manquant)'); return; }
+      if((email && haveE.has(email.toLowerCase())) || haveN.has(name.toLowerCase())){ skip.push(name+' (existe déjà)'); return; }
+      if(email) haveE.add(email.toLowerCase()); haveN.add(name.toLowerCase());
+      list.push({id:'p_'+Date.now()+'_'+i+'_'+Math.random().toString(36).slice(2,5), name:name, email:email, role:role, code:code, active:!/^(non|no|0|false)$/i.test(d.get(r,['actif']))});
+    });
+    if(!list.length){ alert('Aucune personne à importer.'+(skip.length?'\n'+skip.slice(0,6).join('\n'):'')); return; }
+    openImport(f.name, list.length+' personne(s) à ajouter'+(skip.length?' · '+skip.length+' ignorée(s)':'')+'.', list.map(p=>p.name+' · '+(ROLE_LABEL[p.role]||p.role)).concat(skip.slice(0,4).map(s=>'⚠ ignoré : '+s)), 'Importer ces accès', ()=>{
+      list.forEach(p=>DATA.people.push(p));
+      return list.length+' accès importé(s)';
+    });
+  }).catch(()=>importFail());
+}
+
+// ----- Consommation tissu (export seulement : valeurs calculées) -----
+function exportConsoCSV(){
+  const rows = [];
+  (DATA.commandes||[]).forEach(c=>{
+    const r = consoCompare(c); if(!r) return;
+    rows.push([c.reference,c.article,Math.round(r.moy*1000)/1000,Math.round(r.attendu*1000)/1000,Math.round(r.total*1000)/1000,Math.round(r.ecart*1000)/1000,Math.round(r.pct*10)/10,consoLabel(r.status)]);
+  });
+  csvFile('consommation_tissu_djebs_'+todayISO()+'.csv', ['Référence','Produit','Conso moyenne (kg/pièce)','Attendu (kg)','Réel (kg)','Écart (kg)','Écart (%)','Statut'], rows);
+}
+
+// ----- Sauvegarde complète (dans Paramètres) -----
+function renderFullBackupBlock(){
+  const box = el('<div class="bk-card" style="margin-top:14px;"><div class="bk-title">Sauvegarde complète</div><div class="bk-text"></div></div>');
+  const n = {cmd:(DATA.commandes||[]).length, cat:(DATA.catalogue||[]).length, ppl:(DATA.people||[]).length, msg:(DATA.messages||[]).length, ev:(DATA.evaluations||[]).length};
+  box.querySelector('.bk-text').textContent = 'Tout en un seul fichier JSON : '+n.cmd+' commande(s), '+n.cat+' produit(s), '+n.ppl+' personne(s), '+n.msg+' message(s), listes et paramètres. À garder comme sauvegarde, ou pour restaurer / déplacer les données.';
+  box.appendChild(ioBar([{label:'Tout exporter (JSON)', fn:exportJSON}], [{label:'Importer une sauvegarde (JSON)', accept:'.json,application/json', onFile:async f=>{
+    try{
+      const obj = JSON.parse(await readFileText(f));
+      const data = obj && obj.data && typeof obj.data==='object' ? obj.data : obj;
+      if(!data || typeof data!=='object' || (!Array.isArray(data.commandes) && !Array.isArray(data.people))) throw new Error('format');
+      view.importModal = {type:'json', name:f.name, data:data};
+      render();
+    }catch(e){ alert('Ce fichier n\'est pas une sauvegarde valide de l\'application.'); }
+  }}]));
+  return box;
+}
+
+function renderImportModal(){
+  const st = view.importModal;
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal" style="max-width:460px;"></div>');
+  const h = document.createElement('h2'); h.textContent = 'Importer : '+st.name; m.appendChild(h);
+  const actions = el('<div class="actions" style="flex-wrap:wrap;"></div>');
+  const cancel = el('<button class="btn">Annuler</button>');
+  cancel.onclick = ()=>{ view.importModal=null; render(); };
+  function finish(msg){
+    view.importModal = null;
+    if(!currentPerson()){ clearSession(); view.screen='login'; view.role=null; view.personId=null; }
+    saveState(msg);
+  }
+  if(st.type==='generic'){
+    const p = document.createElement('p'); p.style.cssText='font-size:13px;margin:0 0 10px;'; p.textContent = st.headline; m.appendChild(p);
+    const prev = el('<div class="bk-prev"></div>');
+    (st.preview||[]).forEach(t=>{ const d = document.createElement('div'); d.textContent = t; prev.appendChild(d); });
+    m.appendChild(prev);
+    const ok = el('<button class="btn primary"></button>'); ok.textContent = st.applyLabel || 'Importer';
+    ok.onclick = ()=>{ finish(st.apply()); };
+    actions.appendChild(cancel); actions.appendChild(ok);
+  } else {
+    const d = st.data;
+    const cnt = k => Array.isArray(d[k]) ? d[k].length : 0;
+    m.appendChild(el('<p style="font-size:13px;margin:0 0 8px;">Contenu du fichier : <b>'+cnt('commandes')+'</b> commande(s), <b>'+cnt('catalogue')+'</b> produit(s), <b>'+cnt('people')+'</b> personne(s), <b>'+cnt('messages')+'</b> message(s).</p>'));
+    m.appendChild(el('<p style="font-size:12px;color:var(--text-soft);margin:0 0 10px;"><b>Fusionner</b> : ajoute ce qui manque, ne touche à rien d\'existant (recommandé).<br><b>Remplacer tout</b> : efface les données actuelles et met celles du fichier (une sauvegarde de l\'état actuel est téléchargée d\'abord).</p>'));
+    const merge = el('<button class="btn primary">Fusionner</button>');
+    merge.onclick = ()=>{
+      const r = mergeData(d), a = r.added;
+      finish('Import terminé : +'+(a.commandes||0)+' commande(s), +'+(a.catalogue||0)+' produit(s), +'+(a.people||0)+' personne(s)');
+    };
+    const repl = el('<button class="btn" style="color:#A42834;border-color:#A42834;">Remplacer tout</button>');
+    repl.onclick = ()=>{
+      const hasAdmin = Array.isArray(d.people) && d.people.some(p=>p.role==='admin' && p.active!==false);
+      if(!hasAdmin){ alert('Remplacement refusé : ce fichier ne contient aucun compte admin actif (tu ne pourrais plus te connecter).'); return; }
+      if(!confirm('Remplacer TOUTES les données actuelles par celles du fichier ?')) return;
+      exportJSON();
+      const keep = DATA;
+      DATA = Object.assign({}, keep, d);
+      finish('Données remplacées');
+    };
+    actions.appendChild(cancel); actions.appendChild(merge); actions.appendChild(repl);
+  }
+  m.appendChild(actions);
+  overlay.appendChild(m);
+  overlay.onclick = (e)=>{ if(e.target===overlay){ view.importModal=null; render(); } };
+  return overlay;
+}
+
 function renderAdminScreen(){
   const w = el('<div></div>');
   w.appendChild(topbar('Espace Admin'));
@@ -2419,6 +3063,7 @@ function renderAdminScreen(){
     {key:'commandes', label:'Commandes', badge: DATA.commandes.length},
     {key:'stats', label:'Statistiques', badge: null},
     {key:'conso', label:'Consommation tissu', badge: nbConso},
+    {key:'equipe', label:'Évaluation équipe', badge: null},
     {key:'recherche', label:'Recherche par référence', badge: null},
     {key:'paiements', label:'Paiements', badge: nbNonSoldes()},
     {key:'catalogue', label:'Catalogue produits', badge: (DATA.catalogue||[]).length},
@@ -2464,6 +3109,7 @@ function renderAdminScreen(){
     addBtn.onclick = ()=>{ view.modal = {mode:'create', data:blankCommande()}; render(); };
     addRow.appendChild(addBtn);
     tableBody.appendChild(addRow);
+    tableBody.appendChild(ioBar([{label:'Exporter (Excel / CSV)', fn:exportCommandesCSV}], [{label:'Importer (CSV)', onFile:importCommandesFile}]));
     tableBody.appendChild(renderTable());
     panel.appendChild(tableBody);
   }
@@ -2476,12 +3122,14 @@ function renderAdminScreen(){
     catAddBtn.onclick = ()=>{ view.catalogueModal = {mode:'create', data:blankCatalogueItem()}; render(); };
     catAddRow.appendChild(catAddBtn);
     catBody.appendChild(catAddRow);
+    catBody.appendChild(ioBar([{label:'Exporter (Excel / CSV)', fn:exportCatalogueCSV}], [{label:'Importer (CSV)', onFile:importCatalogueFile}]));
     catBody.appendChild(renderCatalogueTable());
     panel.appendChild(catBody);
   }
   if(view.adminOpen.listes){
     panel.appendChild(el('<div class="section-title">Gérer les listes (tailles, tissus & couleurs)</div>'));
     const listsBody = el('<div class="section-body"></div>');
+    listsBody.appendChild(ioBar([{label:'Exporter (Excel / CSV)', fn:exportListesCSV}], [{label:'Importer (CSV)', onFile:importListesFile}]));
     listsBody.appendChild(renderListsManager());
     panel.appendChild(listsBody);
   }
@@ -2494,7 +3142,14 @@ function renderAdminScreen(){
     const info = el('<div style="margin-top:14px;font-size:13px;color:var(--text-soft);"></div>');
     info.innerHTML = '<strong>Entreprise:</strong> '+(DATA.settings.companyName||'—')+'<br/><strong>Couleur primaire:</strong> <span style="display:inline-block;width:20px;height:20px;background:'+(DATA.settings.primaryColor||'#DBC4A0')+';border:1px solid var(--border);vertical-align:middle;"></span><br/><strong>Couleur secondaire:</strong> <span style="display:inline-block;width:20px;height:20px;background:'+(DATA.settings.secondaryColor||'#001D51')+';border:1px solid var(--border);vertical-align:middle;"></span>';
     settingsBody.appendChild(info);
+    settingsBody.appendChild(renderFullBackupBlock());
     panel.appendChild(settingsBody);
+  }
+  if(view.adminOpen.equipe){
+    panel.appendChild(el('<div class="section-title">Évaluation de l\'équipe</div>'));
+    const eBody = el('<div class="section-body"></div>');
+    eBody.appendChild(renderTeamPanel());
+    panel.appendChild(eBody);
   }
   if(view.adminOpen.conso){
     panel.appendChild(el('<div class="section-title">Suivi de la consommation de tissu par produit</div>'));
@@ -2505,12 +3160,14 @@ function renderAdminScreen(){
   if(view.adminOpen.stats){
     panel.appendChild(el('<div class="section-title">Statistiques du site</div>'));
     const stBody = el('<div class="section-body"></div>');
+    stBody.appendChild(ioBar([{label:'Exporter les commandes de la période (CSV)', fn:()=>exportCommandesList(anOrders())}], []));
     stBody.appendChild(renderAnalyticsPanel());
     panel.appendChild(stBody);
   }
   if(view.adminOpen.paiements){
     panel.appendChild(el('<div class="section-title">Suivi des paiements</div>'));
     const payBody = el('<div class="section-body"></div>');
+    payBody.appendChild(ioBar([{label:'Exporter les paiements (CSV)', fn:exportPaiementsCSV},{label:'Exporter les versements (CSV)', fn:exportVersementsCSV}], [{label:'Importer des versements (CSV)', onFile:importVersementsFile}]));
     payBody.appendChild(renderPaymentsPanel());
     panel.appendChild(payBody);
   }
@@ -2522,6 +3179,7 @@ function renderAdminScreen(){
     accessAddBtn.onclick = ()=>{ view.personModal = {mode:'create', data:blankPerson()}; render(); };
     accessAddRow.appendChild(accessAddBtn);
     accessBody.appendChild(accessAddRow);
+    accessBody.appendChild(ioBar([{label:'Exporter (Excel / CSV)', fn:exportAccesCSV}], [{label:'Importer (CSV)', onFile:importAccesFile}]));
     accessBody.appendChild(renderPeopleTable());
     panel.appendChild(accessBody);
   }
@@ -3722,7 +4380,7 @@ function renderSearchResult(box){
 function renderFiche(c){
   const f = el('<div class="fiche"></div>');
   const head = el('<div style="text-align:center;margin-bottom:12px;"></div>');
-  head.appendChild(el('<div style="font-size:24px;font-weight:bold;">'+esc(c.reference)+(c.urgent?' <span class="pill probleme" style="vertical-align:middle;">URGENT</span>':'')+'</div>'));
+  head.appendChild(el('<div style="font-size:24px;font-weight:bold;">'+esc(c.reference)+(Number(c.priorite)>0?' '+prioTag(c):'')+(c.urgent?' <span class="pill probleme" style="vertical-align:middle;">URGENT</span>':'')+'</div>'));
   head.appendChild(el('<div style="font-size:13px;color:var(--text-soft);margin-top:2px;">'+esc(c.client)+' · '+esc(c.article)+' · '+esc(c.quantite)+' pièces</div>'));
   f.appendChild(head);
 
@@ -3790,7 +4448,7 @@ function renderTable(onlyMine){
   DATA.commandes.slice().reverse().filter(c=>!onlyMine || c.commercialId===view.personId).forEach(c=>{
     const tr = document.createElement('tr');
     function td(html){ const cell=document.createElement('td'); cell.innerHTML=html; tr.appendChild(cell); }
-    td('<b>'+c.reference+'</b>'+(c.urgent?' <span class="pill probleme">URG</span>':''));
+    td('<b>'+c.reference+'</b>'+(Number(c.priorite)>0?' <span class="prio-tag">P'+Number(c.priorite)+'</span>':'')+(c.urgent?' <span class="pill probleme">URG</span>':''));
     td(c.article);
     td(esc(c.client));
     { const cm = commercialOf(c); td(cm?esc(cm.name):'<span style="color:var(--red);">—</span>'); }
@@ -3833,7 +4491,7 @@ function nextReference(){
 function blankCommande(){
   return {
     id: 'cmd_'+Date.now(), catalogueId:'', reference: nextReference(), client:'', commercialId:(view.role==='commercial' ? view.personId : ''), article:'', tissu:'', tailles:{}, couleur:'',
-    quantite:'', dateCommande: todayISO(), dateLivraisonPrevue:'', urgent:false,
+    quantite:'', dateCommande: todayISO(), dateLivraisonPrevue:'', urgent:false, priorite:'',
     decoupe:{statut:'En attente',prevueLe:'',faiteLe:''},
     confection:{statut:'En attente',atelier:'',debut:'',fin:''},
     emballage:{statut:'En attente',debut:'',fin:''},
@@ -4016,6 +4674,11 @@ function renderModal(){
   urgLabel.appendChild(document.createTextNode('Commande urgente'));
   urgWrap.appendChild(urgLabel);
   m.appendChild(urgWrap);
+  frow([
+    field('Priorité (1 = traitée en premier · vide = normale)', data.priorite===undefined?'':data.priorite, v=>data.priorite=(v===''?'':Math.max(1,Math.round(Number(v)))), 'number')
+  ]);
+  { const nx = DATA.commandes.filter(x=>x.id!==data.id && Number(x.priorite)>0 && x.decoupe.statut!=='Prête' && x.decoupe.statut!=='Annulée').map(x=>Number(x.priorite));
+    if(nx.length) m.appendChild(el('<div style="font-size:11px;color:var(--text-soft);margin:-4px 0 10px;">Priorités déjà utilisées en Découpe : '+nx.sort((a,b)=>a-b).join(', ')+'</div>')); }
 
   m.appendChild(el('<div class="grp-head" style="background:#6B4226">Découpe</div>'));
   frow([
