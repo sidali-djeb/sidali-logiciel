@@ -153,6 +153,17 @@ table.main tr:hover td{background:#FBF9F6;}
 .team-perf{background:var(--bg);border-radius:8px;padding:6px 10px;margin-bottom:8px;}
 .team-perf div{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:3px 0;}
 .team-perf span{color:var(--text-soft);}
+.ev-edit{background:#FFF9E8;border:1px solid #F0DC9A;border-radius:8px;padding:9px 11px;margin:8px 0 14px;}
+.ev-edit-h{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:6px;}
+.ev-edit-h span{color:var(--text-soft);}
+.ev-edit-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+.ev-edit .stars-in button{font-size:26px;}
+.ev-items{border:1px solid var(--border);border-radius:8px;max-height:190px;overflow:auto;margin:4px 0 6px;}
+.ev-item{display:flex;gap:8px;align-items:baseline;padding:5px 9px;border-top:1px solid var(--border);font-size:12px;}
+.ev-item:first-child{border-top:none;}
+.ev-why{color:var(--text-soft);}
+.ev-ok{font-weight:bold;width:14px;}
+.ov-note{color:#1F3A5F;font-style:italic;}
 .prio-tag{background:#1F3A5F;color:#fff;font-size:10px;font-weight:bold;padding:2px 7px;border-radius:8px;white-space:nowrap;}
 .dept-card.waiting{opacity:.6;}
 .stars.big{font-size:30px;}
@@ -1239,6 +1250,7 @@ const ICONS = {
   listes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18h1.4a1.6 1.6 0 0 0 1.1-2.7c-.4-.4-.6-.8-.6-1.3a1.6 1.6 0 0 1 1.6-1.6H17a3.4 3.4 0 0 0 3.4-3.4C20.4 6.9 16.7 3 12 3Z"/><circle cx="7.6" cy="10.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="9.6" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.2" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.6" cy="10.8" r="1.1" fill="currentColor" stroke="none"/></svg>',
   equipe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3Z"/></svg>',
   sauvegarde: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M8 10l4 4 4-4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>',
+  ecarts: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg>',
   conso: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M5 7h14M7 7l-3.5 7a3.5 3.5 0 0 0 7 0L7 7ZM17 7l-3.5 7a3.5 3.5 0 0 0 7 0L17 7ZM8 21h8"/></svg>',
   stats: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/><path d="M20 8l-4 4-4-5-4 4" opacity=".0"/></svg>',
   paiements: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.4"/><path d="M6 6V5a1 1 0 0 1 1-1h8"/></svg>',
@@ -1336,7 +1348,7 @@ async function loadSettingsFromSupabase(){
     console.log('Supabase non disponible, utilisation des paramètres par défaut');
   }
 }
-let view = {screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, teamPeriod:'tout', importModal:null, trackRef:'', trackId:null, trackSearched:false};
+let view = {ecartFilter:'agerer', evalDetail:null, screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, teamPeriod:'tout', importModal:null, trackRef:'', trackId:null, trackSearched:false};
 
 function fmtDate(d){
   if(!d) return '—';
@@ -1396,6 +1408,7 @@ function render(){
   if(view.settingsModal) app.appendChild(renderSettingsModal());
   if(view.scanModal) app.appendChild(renderScanModal());
   if(view.qrModal) app.appendChild(renderQrModal());
+  if(view.evalDetail) app.appendChild(renderEvalDetailModal());
   if(view.payModal) app.appendChild(renderPayModal());
   if(view.importModal) app.appendChild(renderImportModal());
   if(view.discussionOpen) app.appendChild(renderDiscussion());
@@ -1421,7 +1434,7 @@ function renderLogin(){
   logoWrap.appendChild(logoEl(120, false));
   w.appendChild(logoWrap);
   w.appendChild(el('<h1>'+DATA.companyTitle+'</h1>'));
-  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 22 · priorité = ordre des services</div>'));
+  w.appendChild(el('<div style="font-size:11px;color:#1E7A34;font-weight:bold;margin:-2px 0 8px;">Version 24 · gestion écarts stock</div>'));
   // Client arrivé par le QR de sa commande : on affiche d'abord le suivi
   const trackFirst = !!view.trackId;
   if(trackFirst) w.appendChild(renderTrackBlock());
@@ -1919,6 +1932,69 @@ function renderEcartCard(c){
   btnRow.appendChild(resolveBtn);
   card.appendChild(btnRow);
   return card;
+}
+
+
+// ---------- GESTION DES ÉCARTS DE STOCK (admin) ----------
+function ecartsAll(){ return (DATA.commandes||[]).filter(c=>{ const e=ecartStock(c); return e!==null && e!==0; }); }
+function personNameById(id){ const p=(DATA.people||[]).find(x=>x.id===id); return p?p.name:''; }
+function renderEcartDoneCard(c){
+  const e = ecartStock(c);
+  const card = el('<div class="dept-card" style="border-left:4px solid #1E7A34;"></div>');
+  const head = el('<div class="head"></div>');
+  head.appendChild(el('<div><div class="ref">'+esc(c.reference)+'</div><div class="art">'+esc(c.article)+' · '+esc(c.client)+'</div></div>'));
+  head.appendChild(el('<span class="pill" style="background:#E3F3E7;color:#1E7A34;">Géré · '+(e>0?'+':'')+e+' pièce(s)</span>'));
+  card.appendChild(head);
+  card.appendChild(el('<div style="font-size:12px;color:var(--text-soft);margin-bottom:8px;">Commandé : '+esc(c.quantite)+' · Reçu : '+esc(c.stock.quantiteRecue)+' le '+fmtDate(c.stock.dateReception)+'</div>'));
+  (c.ecartNotes||[]).forEach(n=>{
+    card.appendChild(el('<div style="font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;margin-bottom:5px;"><b>'+esc(n.author)+'</b> · '+fmtDateTime(n.ts)+'<br>'+esc(n.text)+'</div>'));
+  });
+  const re = el('<button class="btn small" style="margin-top:4px;">Rouvrir cet écart</button>');
+  re.onclick = ()=>{ c.ecartGere = false; saveState('Écart rouvert : '+c.reference); };
+  card.appendChild(re);
+  return card;
+}
+function exportEcartsCSV(){
+  const rows = ecartsAll().map(c=>{
+    const e = ecartStock(c);
+    return [c.reference,c.client,c.article,c.quantite,c.stock.quantiteRecue,e,csvDate(c.stock.dateReception),c.ecartGere?'Géré':'À gérer',personNameById(c.stock.par),(c.ecartNotes||[]).map(n=>n.author+': '+n.text).join(' | ')];
+  });
+  csvFile('ecarts_stock_'+todayISO()+'.csv',['Référence','Client','Article','Commandé','Reçu','Écart (pièces)','Date réception','Statut','Réceptionné par','Notes'],rows);
+}
+function renderEcartsPanel(){
+  const root = el('<div></div>');
+  const all = ecartsAll();
+  const open = all.filter(c=>!c.ecartGere), done = all.filter(c=>c.ecartGere);
+  const manque = all.reduce((a,c)=>{ const e=ecartStock(c); return a+(e<0?-e:0); },0);
+  const exces = all.reduce((a,c)=>{ const e=ecartStock(c); return a+(e>0?e:0); },0);
+  const kpi = el('<div class="kpi-row"></div>');
+  kpi.appendChild(el('<div class="kpi'+(open.length?' alert':'')+'"><div class="num">'+open.length+'</div><div class="label">À gérer</div></div>'));
+  kpi.appendChild(el('<div class="kpi"><div class="num">'+done.length+'</div><div class="label">Gérés</div></div>'));
+  kpi.appendChild(el('<div class="kpi"><div class="num">'+manque+'</div><div class="label">Pièces manquantes</div></div>'));
+  kpi.appendChild(el('<div class="kpi"><div class="num">'+exces+'</div><div class="label">Pièces en trop</div></div>'));
+  root.appendChild(kpi);
+  root.appendChild(ioBar([{label:'Exporter les écarts (CSV)', fn:exportEcartsCSV}], []));
+  const f = el('<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px;"></div>');
+  [['agerer','À gérer ('+open.length+')'],['geres','Gérés ('+done.length+')'],['tous','Tous ('+all.length+')']].forEach(([k,l])=>{
+    const b = el('<button class="btn small'+(view.ecartFilter===k?' primary':'')+'"></button>'); b.textContent = l;
+    b.onclick = ()=>{ view.ecartFilter = k; render(); };
+    f.appendChild(b);
+  });
+  root.appendChild(f);
+  const list = view.ecartFilter==='agerer' ? open : (view.ecartFilter==='geres' ? done : all);
+  if(!list.length){
+    root.appendChild(el('<div class="empty-msg">'+(view.ecartFilter==='geres'?'Aucun écart géré pour le moment.':(all.length?'Aucun écart à gérer : tout est traité.':'Aucun écart de stock : toutes les réceptions sont conformes.'))+'</div>'));
+    return root;
+  }
+  list.slice().sort((a,b)=>(b.stock.dateReception||'').localeCompare(a.stock.dateReception||'')).forEach(c=>{
+    const card = c.ecartGere ? renderEcartDoneCard(c) : renderEcartCard(c);
+    const by = personNameById(c.stock.par), com = commercialOf(c);
+    const meta = el('<div style="font-size:11px;color:var(--text-soft);margin:-4px 0 8px;"></div>');
+    meta.textContent = (by?'Réceptionné par '+by:'')+(by&&com?' · ':'')+(com?'Commercial : '+com.name:'');
+    if(meta.textContent) card.insertBefore(meta, card.children[2]||null);
+    root.appendChild(card);
+  });
+  return root;
 }
 
 // ---------- TISSU / MATIÈRE : champs + consommation globale du produit ----------
@@ -2486,25 +2562,36 @@ function teamOrders(){
   const cut = new Date(Date.now() - Number(per)*86400000).toISOString().slice(0,10);
   return all.filter(c=>(c.dateCommande||'') >= cut);
 }
-function crit(label, hint, good, total){
-  if(!(total>0)) return {label:label, hint:hint, none:true};
-  const pct = good/total*100;
-  return {label:label, hint:hint, good:good, total:total, pct:pct, stars:starsFromPct(pct)};
+// Un critère = une liste de commandes testées (ok / pas ok) avec la raison
+function critL(label, hint, arr, okFn, whyFn){
+  const items = arr.map(c=>({ref:c.reference, ok:!!okFn(c), why:whyFn(c)}));
+  if(!items.length) return {label:label, hint:hint, none:true, items:[]};
+  const good = items.filter(x=>x.ok).length, pct = good/items.length*100;
+  return {label:label, hint:hint, good:good, total:items.length, pct:pct, stars:starsFromPct(pct), items:items};
 }
-// Retourne {crits, stars, n} pour un employé
+function evOvOf(pid,key){ const o = (DATA.evalOv||{})[pid]; return o && o[key] ? o[key] : null; }
+function evOvSet(pid,key,stars,note){
+  DATA.evalOv = DATA.evalOv||{}; DATA.evalOv[pid] = DATA.evalOv[pid]||{};
+  if(!stars && !note) delete DATA.evalOv[pid][key];
+  else DATA.evalOv[pid][key] = {stars:stars||null, note:note||''};
+}
+function dFr(d){ return fmtDate(d); }
+function lateTxt(n){ return n>0 ? ' (+'+n+' j de retard)' : (n<0 ? ' ('+(-n)+' j d\'avance)' : ' (à l\'heure)'); }
+// Retourne {crits, stars, autoStars, n, ov} pour un employé
 function autoEval(p){
   const cmds = teamOrders();
   const STARTED = ['Prête','En cours','Problème','Tissu non disponible'];
   const crits = []; let n = 0;
+  const probWhy = k=>c=> c[k].statut==='Problème' ? 'statut « Problème »' : 'sans problème';
   if(p.role==='decoupe'){
     const started = cmds.filter(c=>STARTED.indexOf(c.decoupe.statut)>=0 && personHandles(c,'decoupe',p));
     const done = started.filter(c=>c.decoupe.statut==='Prête');
     const wd = done.filter(c=>c.decoupe.prevueLe && c.decoupe.faiteLe);
     const cmp = done.filter(c=>consoCompare(c));
     n = started.length;
-    crits.push(crit('Délais','Découpe faite à la date prévue', wd.filter(c=>anDays(c.decoupe.prevueLe,c.decoupe.faiteLe)<=0).length, wd.length));
-    crits.push(crit('Qualité','Consommation de tissu conforme', cmp.filter(c=>consoCompare(c).status==='ok').length, cmp.length));
-    crits.push(crit('Fiabilité','Commandes sans problème', started.filter(c=>c.decoupe.statut!=='Problème').length, started.length));
+    crits.push(critL('Délais','Découpe faite à la date prévue', wd, c=>anDays(c.decoupe.prevueLe,c.decoupe.faiteLe)<=0, c=>'prévue '+dFr(c.decoupe.prevueLe)+' · faite '+dFr(c.decoupe.faiteLe)+lateTxt(anDays(c.decoupe.prevueLe,c.decoupe.faiteLe))));
+    crits.push(critL('Qualité','Consommation de tissu conforme', cmp, c=>consoCompare(c).status==='ok', c=>{ const r=consoCompare(c); return consoLabel(r.status)+' ('+fmtSigned(r.pct,1)+' %)'; }));
+    crits.push(critL('Fiabilité','Commandes sans problème', started, c=>c.decoupe.statut!=='Problème', probWhy('decoupe')));
   } else if(p.role==='confection' || p.role==='emballage'){
     const k = p.role;
     const started = cmds.filter(c=>STARTED.indexOf(c[k].statut)>=0 && personHandles(c,k,p));
@@ -2512,29 +2599,54 @@ function autoEval(p){
     const wl = done.filter(c=>c[k].fin && c.dateLivraisonPrevue);
     const rec = done.filter(c=>ecartStock(c)!==null);
     n = started.length;
-    crits.push(crit('Délais','Terminée avant la livraison prévue', wl.filter(c=>c[k].fin<=c.dateLivraisonPrevue).length, wl.length));
-    crits.push(crit('Qualité','Quantité reçue conforme (sans écart)', rec.filter(c=>ecartStock(c)===0).length, rec.length));
-    crits.push(crit('Fiabilité','Commandes sans problème', started.filter(c=>c[k].statut!=='Problème').length, started.length));
+    crits.push(critL('Délais','Terminée avant la livraison prévue', wl, c=>c[k].fin<=c.dateLivraisonPrevue, c=>'fin '+dFr(c[k].fin)+' · livraison prévue '+dFr(c.dateLivraisonPrevue)+lateTxt(anDays(c.dateLivraisonPrevue,c[k].fin))));
+    crits.push(critL('Qualité','Quantité reçue conforme (sans écart)', rec, c=>ecartStock(c)===0, c=>'commandé '+c.quantite+' · reçu '+c.stock.quantiteRecue+' ('+statutReception(c)+')'));
+    crits.push(critL('Fiabilité','Commandes sans problème', started, c=>c[k].statut!=='Problème', probWhy(k)));
   } else if(p.role==='stock'){
     const rec = cmds.filter(c=>ecartStock(c)!==null && personHandles(c,'stock',p));
     const wd = rec.filter(c=>c.emballage.fin && c.stock.dateReception);
     const packed = cmds.filter(c=>c.emballage.statut==='Prête' && (ecartStock(c)!==null ? personHandles(c,'stock',p) : roleCount('stock')===1));
     n = rec.length;
-    crits.push(crit('Délais','Réception enregistrée sous 2 jours', wd.filter(c=>anDays(c.emballage.fin,c.stock.dateReception)<=2).length, wd.length));
-    crits.push(crit('Fiabilité','Commandes emballées déjà réceptionnées', packed.filter(c=>ecartStock(c)!==null).length, packed.length));
+    crits.push(critL('Délais','Réception enregistrée sous 2 jours', wd, c=>anDays(c.emballage.fin,c.stock.dateReception)<=2, c=>'emballée '+dFr(c.emballage.fin)+' · reçue '+dFr(c.stock.dateReception)+' ('+anDays(c.emballage.fin,c.stock.dateReception)+' j)'));
+    crits.push(critL('Fiabilité','Commandes emballées déjà réceptionnées', packed, c=>ecartStock(c)!==null, c=>ecartStock(c)!==null ? 'réceptionnée' : 'pas encore réceptionnée'));
   } else if(p.role==='commercial'){
     const mine = cmds.filter(c=>c.commercialId===p.id);
     const wd = mine.filter(c=>c.stock.dateReception && c.dateLivraisonPrevue);
     const rec = mine.filter(c=>ecartStock(c)!==null);
     const ecs = mine.filter(c=>{ const e = ecartStock(c); return e!==null && e!==0; });
     n = mine.length;
-    crits.push(crit('Délais','Reçue en stock avant la livraison prévue', wd.filter(c=>c.stock.dateReception<=c.dateLivraisonPrevue).length, wd.length));
-    crits.push(crit('Qualité','Commandes reçues et entièrement payées', rec.filter(c=>payInfo(c).statut==='Payé').length, rec.length));
-    crits.push(crit('Fiabilité','Écarts de stock gérés', ecs.filter(c=>c.ecartGere).length, ecs.length));
+    crits.push(critL('Délais','Reçue en stock avant la livraison prévue', wd, c=>c.stock.dateReception<=c.dateLivraisonPrevue, c=>'reçue '+dFr(c.stock.dateReception)+' · livraison prévue '+dFr(c.dateLivraisonPrevue)+lateTxt(anDays(c.dateLivraisonPrevue,c.stock.dateReception))));
+    crits.push(critL('Qualité','Commandes reçues et entièrement payées', rec, c=>payInfo(c).statut==='Payé', c=>'paiement : '+payInfo(c).statut));
+    crits.push(critL('Fiabilité','Écarts de stock gérés', ecs, c=>!!c.ecartGere, c=>c.ecartGere ? 'écart géré' : 'écart pas encore géré ('+statutReception(c)+')'));
   }
+  // corrections de l'admin, critère par critère
+  crits.forEach(c=>{
+    const o = evOvOf(p.id, c.label);
+    c.autoStars = c.none ? null : c.stars;
+    c.ov = o;
+    if(o && o.stars){ c.stars = o.stars; c.none = false; c.manual = true; }
+  });
   const valid = crits.filter(x=>!x.none);
-  const stars = valid.length ? avgOf(valid.map(x=>x.stars)) : null;
-  return {crits:crits, stars:stars, n:n};
+  const autoStars = valid.length ? avgOf(valid.map(x=>x.stars)) : null;
+  const g = evOvOf(p.id,'global');
+  let stars = autoStars, manual = false;
+  if(g && g.stars){ stars = g.stars; manual = true; }
+  return {crits:crits, stars:stars, autoStars:autoStars, n:n, ov:g, manual:manual};
+}
+// Affichage d'une ligne critère (utilisé par la carte équipe et « Mon évaluation »)
+function critLineHtml(c){
+  const line = el('<div class="team-crit"><div class="tc-l"><b></b><small></small></div><div class="tc-r"></div></div>');
+  line.querySelector('b').textContent = c.label; line.querySelector('small').textContent = c.hint;
+  if(c.ov && c.ov.note){ const nt = el('<small class="ov-note"></small>'); nt.textContent = 'Remarque de l\'admin : '+c.ov.note; line.querySelector('.tc-l').appendChild(nt); }
+  const rr = line.querySelector('.tc-r');
+  if(c.none) rr.innerHTML = '<span class="team-none">—</span>';
+  else {
+    rr.innerHTML = starsHtml(c.stars)+'<div class="tc-pct"></div>';
+    const pc = rr.querySelector('.tc-pct');
+    if(c.pct===undefined){ pc.textContent = 'fixée par l\'admin'; pc.style.color = '#6B4226'; }
+    else { pc.textContent = Math.round(c.pct)+' % ('+c.good+'/'+c.total+')'+(c.manual?' · modifiée':''); pc.style.color = pctTone(c.pct); }
+  }
+  return line;
 }
 function starsHtml(v){
   const full = Math.round(v);
@@ -2550,7 +2662,7 @@ function teamRows(){
 function renderTeamPanel(){
   const root = el('<div></div>');
   const per = view.teamPeriod || 'tout';
-  root.appendChild(el('<div class="empty-msg" style="padding:0 0 10px;text-align:left;"><b>Évaluation automatique</b> : les étoiles sont calculées par l\'application à partir du travail réel de chacun (délais, qualité, fiabilité). Personne ne les note à la main.</div>'));
+  root.appendChild(el('<div class="empty-msg" style="padding:0 0 10px;text-align:left;"><b>Évaluation automatique</b> : les étoiles sont calculées par l\'application à partir du travail réel de chacun (délais, qualité, fiabilité). Tu peux voir le détail de chaque note et la corriger si tu veux (bouton « Voir le détail / modifier la note »).</div>'));
   root.appendChild(ioBar([{label:'Exporter l\'évaluation (CSV)', fn:exportEvalCSV}], []));
   const pr = el('<div class="team-period"><span>Période (date de commande) :</span></div>');
   [['tout','Tout'],['30','30 jours'],['90','90 jours'],['365','12 mois']].forEach(([k,l])=>{
@@ -2590,18 +2702,14 @@ function renderTeamPanel(){
     head.appendChild(sc);
     card.appendChild(head);
     const pl = el('<div class="team-perf"></div>');
-    e.crits.forEach(c=>{
-      const line = el('<div class="team-crit"><div class="tc-l"><b></b><small></small></div><div class="tc-r"></div></div>');
-      line.querySelector('b').textContent = c.label; line.querySelector('small').textContent = c.hint;
-      const rr = line.querySelector('.tc-r');
-      if(c.none) rr.innerHTML = '<span class="team-none">—</span>';
-      else { rr.innerHTML = starsHtml(c.stars)+'<div class="tc-pct"></div>'; const pc = rr.querySelector('.tc-pct'); pc.textContent = Math.round(c.pct)+' % ('+c.good+'/'+c.total+')'; pc.style.color = pctTone(c.pct); }
-      pl.appendChild(line);
-    });
+    e.crits.forEach(c=>pl.appendChild(critLineHtml(c)));
     card.appendChild(pl);
     const foot = el('<div class="team-foot"></div>');
-    foot.textContent = 'Commandes suivies : '+e.n+(e.stars!==null && e.n<3 ? ' · note indicative (peu de données)' : '');
+    foot.textContent = 'Commandes suivies : '+e.n+(e.stars!==null && e.n<3 ? ' · note indicative (peu de données)' : '')+(e.manual?' · note modifiée par l\'admin (auto : '+(e.autoStars===null?'—':fmt1(e.autoStars))+')':'');
     card.appendChild(foot);
+    const dBtn = el('<button class="btn small" style="margin-top:8px;">Voir le détail / modifier la note</button>');
+    dBtn.onclick = ()=>{ view.evalDetail = {id:p.id, draft:null}; render(); };
+    card.appendChild(dBtn);
     grid.appendChild(card);
   });
   root.appendChild(grid);
@@ -2610,10 +2718,87 @@ function renderTeamPanel(){
 function exportEvalCSV(){
   const rows = teamRows().map(r=>{
     const e = r.e, g = k=>e.crits.find(c=>c.label===k);
-    const cell = k=>{ const c = g(k); return c && !c.none ? [Math.round(c.pct), c.stars] : ['','']; };
+    const cell = k=>{ const c = g(k); return c && !c.none ? [c.pct===undefined?'':Math.round(c.pct), c.stars] : ['','']; };
     return [r.p.name, ROLE_LABEL[r.p.role]||r.p.role, e.stars===null?'':Math.round(e.stars*10)/10, e.n].concat(cell('Délais'), cell('Qualité'), cell('Fiabilité'));
   });
   csvFile('evaluation_equipe_'+todayISO()+'.csv', ['Employé','Rôle','Étoiles (sur 5)','Commandes suivies','Délais (%)','Délais (étoiles)','Qualité (%)','Qualité (étoiles)','Fiabilité (%)','Fiabilité (étoiles)'], rows);
+}
+
+// ---- Détail d'une évaluation + modification par l'admin ----
+function starPick(cur, onPick){
+  const row = el('<div class="stars-in"></div>');
+  for(let i=1;i<=5;i++){
+    const b = el('<button type="button" class="'+(cur && i<=cur?'on':'')+'">★</button>');
+    b.onclick = ()=>onPick(cur===i ? null : i);
+    row.appendChild(b);
+  }
+  return row;
+}
+function renderEvalDetailModal(){
+  const st = view.evalDetail;
+  const p = (DATA.people||[]).find(x=>x.id===st.id);
+  if(!p){ view.evalDetail = null; return document.createElement('div'); }
+  const e = autoEval(p);
+  if(!st.draft){
+    st.draft = {};
+    ['global'].concat(e.crits.map(c=>c.label)).forEach(k=>{ const o = evOvOf(p.id,k); st.draft[k] = {stars:o?o.stars:null, note:o?o.note:''}; });
+  }
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal" style="max-width:640px;"></div>');
+  const h = el('<h2></h2>'); h.textContent = 'Évaluation — '+p.name+' ('+(ROLE_LABEL[p.role]||p.role)+')'; m.appendChild(h);
+  m.appendChild(el('<div style="font-size:12px;color:var(--text-soft);margin:-6px 0 12px;">Voici les commandes qui expliquent la note. Tu peux corriger une note comme tu veux : la valeur calculée par l\'application reste affichée à côté.</div>'));
+
+  function editor(key, autoVal, title){
+    const d = st.draft[key];
+    const box = el('<div class="ev-edit"></div>');
+    const autoTxt = autoVal===null||autoVal===undefined ? 'pas de données' : fmt1(autoVal)+' / 5';
+    const hd = el('<div class="ev-edit-h"><b></b><span></span></div>');
+    hd.querySelector('b').textContent = title; hd.querySelector('span').textContent = 'Calculée : '+autoTxt;
+    box.appendChild(hd);
+    const row = el('<div class="ev-edit-row"></div>');
+    row.appendChild(el('<span style="font-size:12px;">Ma note :</span>'));
+    row.appendChild(starPick(d.stars, v=>{ d.stars = v; render(); }));
+    const auto = el('<button type="button" class="btn small">Revenir à l\'auto</button>');
+    auto.onclick = ()=>{ d.stars = null; d.note = ''; render(); };
+    row.appendChild(auto);
+    box.appendChild(row);
+    const nt = document.createElement('input'); nt.placeholder = 'Remarque visible par l\'employé (facultatif)'; nt.value = d.note||'';
+    nt.oninput = ()=>{ d.note = nt.value; };
+    box.appendChild(nt);
+    return box;
+  }
+  m.appendChild(el('<div class="grp-head" style="background:#B8860B">Note globale</div>'));
+  m.appendChild(editor('global', e.autoStars, 'Note finale de '+p.name));
+  e.crits.forEach(c=>{
+    m.appendChild(el('<div class="grp-head" style="background:#6B4226"></div>')).textContent = c.label+' — '+c.hint;
+    const info = el('<div style="font-size:12px;margin:6px 0;"></div>');
+    info.textContent = c.items.length ? (c.good+' bien sur '+c.total+' commande(s) = '+Math.round(c.pct)+' %  →  '+starsFromPct(c.pct)+' ★') : 'Aucune commande à analyser pour ce critère.';
+    m.appendChild(info);
+    if(c.items.length){
+      const list = el('<div class="ev-items"></div>');
+      c.items.forEach(it=>{
+        const r = el('<div class="ev-item"><span class="ev-ok"></span><b></b><span class="ev-why"></span></div>');
+        const ok = r.querySelector('.ev-ok'); ok.textContent = it.ok ? '✓' : '✗'; ok.style.color = it.ok ? '#1E7A34' : '#A42834';
+        r.querySelector('b').textContent = it.ref; r.querySelector('.ev-why').textContent = it.why;
+        list.appendChild(r);
+      });
+      m.appendChild(list);
+    }
+    m.appendChild(editor(c.label, c.autoStars, 'Modifier « '+c.label+' »'));
+  });
+  const actions = el('<div class="actions"></div>');
+  const cancel = el('<button class="btn">Fermer sans enregistrer</button>');
+  cancel.onclick = ()=>{ view.evalDetail=null; render(); };
+  const save = el('<button class="btn primary">Enregistrer mes modifications</button>');
+  save.onclick = ()=>{
+    Object.keys(st.draft).forEach(k=>evOvSet(p.id, k, st.draft[k].stars, (st.draft[k].note||'').trim()));
+    view.evalDetail = null; saveState('Évaluation modifiée : '+p.name); render();
+  };
+  actions.appendChild(cancel); actions.appendChild(save);
+  m.appendChild(actions);
+  overlay.appendChild(m);
+  overlay.onclick = (ev)=>{ if(ev.target===overlay){ view.evalDetail=null; render(); } };
+  return overlay;
 }
 
 // ---- Mon évaluation (visible dans le compte de chaque employé) ----
@@ -2638,7 +2823,7 @@ function renderMyEval(){
   head.innerHTML = '<div>'+starsHtml(e.stars).replace('class="stars"','class="stars big"')+'</div><div class="my-eval-num"></div>';
   head.querySelector('.my-eval-num').textContent = fmt1(e.stars)+' / 5';
   box.appendChild(head);
-  const valid = e.crits.filter(x=>!x.none).sort((a,b)=>a.pct-b.pct);
+  const valid = e.crits.filter(x=>!x.none).sort((a,b)=>(a.stars-b.stars)||((a.pct===undefined?100:a.pct)-(b.pct===undefined?100:b.pct)));
   const weak = valid[0];
   let msg;
   if(e.stars>=4.5) msg = 'Excellent travail, bravo ! Continue comme ça.';
@@ -2647,15 +2832,9 @@ function renderMyEval(){
   else msg = 'Courage ! Chaque commande bien faite fait monter ta note.';
   if(weak && weak.stars<5) msg += ' Point à améliorer : '+weak.label.toLowerCase()+' ('+weak.hint.toLowerCase()+').';
   const m = el('<div class="my-eval-msg"></div>'); m.textContent = msg; box.appendChild(m);
+  if(e.ov && e.ov.note){ const am = el('<div class="my-eval-msg" style="background:#E8F0FB;border-color:#B9CFEF;"></div>'); am.textContent = 'Remarque de l\'admin : '+e.ov.note; box.appendChild(am); }
   const pl = el('<div class="team-perf"></div>');
-  e.crits.forEach(c=>{
-    const line = el('<div class="team-crit"><div class="tc-l"><b></b><small></small></div><div class="tc-r"></div></div>');
-    line.querySelector('b').textContent = c.label; line.querySelector('small').textContent = c.hint;
-    const rr = line.querySelector('.tc-r');
-    if(c.none) rr.innerHTML = '<span class="team-none">—</span>';
-    else { rr.innerHTML = starsHtml(c.stars)+'<div class="tc-pct"></div>'; const pc = rr.querySelector('.tc-pct'); pc.textContent = Math.round(c.pct)+' % ('+c.good+'/'+c.total+')'; pc.style.color = pctTone(c.pct); }
-    pl.appendChild(line);
-  });
+  e.crits.forEach(c=>pl.appendChild(critLineHtml(c)));
   box.appendChild(pl);
   box.appendChild(el('<div class="team-foot">Calculée automatiquement à partir de ton travail · Commandes suivies : '+e.n+(e.n<3?' · note indicative':'')+'</div>'));
   return box;
@@ -3063,6 +3242,7 @@ function renderAdminScreen(){
     {key:'commandes', label:'Commandes', badge: DATA.commandes.length},
     {key:'stats', label:'Statistiques', badge: null},
     {key:'conso', label:'Consommation tissu', badge: nbConso},
+    {key:'ecarts', label:'Gestion écarts stock', badge: ecartsAGerer().length},
     {key:'equipe', label:'Évaluation équipe', badge: null},
     {key:'recherche', label:'Recherche par référence', badge: null},
     {key:'paiements', label:'Paiements', badge: nbNonSoldes()},
@@ -3150,6 +3330,13 @@ function renderAdminScreen(){
     const eBody = el('<div class="section-body"></div>');
     eBody.appendChild(renderTeamPanel());
     panel.appendChild(eBody);
+  }
+  if(view.adminOpen.ecarts){
+    panel.appendChild(el('<div class="section-title" style="background:var(--red);">Gestion des écarts de stock</div>'));
+    const ecBody = el('<div class="section-body"></div>');
+    ecBody.appendChild(el('<div class="empty-msg" style="padding:0 0 10px;text-align:left;">Un écart apparaît quand la quantité reçue en stock est différente de la quantité commandée. Ajoute une note qui explique la cause, puis marque l\'écart comme géré.</div>'));
+    ecBody.appendChild(renderEcartsPanel());
+    panel.appendChild(ecBody);
   }
   if(view.adminOpen.conso){
     panel.appendChild(el('<div class="section-title">Suivi de la consommation de tissu par produit</div>'));
