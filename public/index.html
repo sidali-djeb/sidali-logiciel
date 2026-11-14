@@ -387,6 +387,13 @@ table.main tr:hover td{background:var(--pop-cream)}
 .jc{border-color:var(--pop-navy)}
 .empty-msg{font-weight:600}
 input[type=checkbox]{width:18px!important;height:18px;padding:0!important;border:2px solid var(--pop-navy)!important;border-radius:5px!important;accent-color:var(--pop-navy);flex:none}
+.cat-bar{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+.cat-bar input,.cat-bar select{padding:9px 12px;border:2px solid var(--pop-navy);border-radius:10px;background:var(--pop-cream);font-size:13px;font-weight:600;font-family:Arial,sans-serif}
+.cat-bar input{flex:1;min-width:200px}
+.cat-bulk{display:none;gap:8px;align-items:center;flex-wrap:wrap;background:#FFF1C9;border:2px solid var(--pop-navy);border-radius:12px;padding:8px 12px;margin:0 0 10px;font-size:13px}
+.cat-launch{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--pop-sun);border:3px solid var(--pop-navy);border-radius:14px;padding:10px 14px;margin:0 0 12px;box-shadow:4px 4px 0 var(--pop-navy)}
+.cat-launch b{font-size:13px}
+.cat-launch select{flex:1;min-width:180px;padding:9px 12px;border:2px solid var(--pop-navy);border-radius:10px;background:#fff;font-size:13px;font-weight:700;font-family:Arial,sans-serif}
 /* ---------- page d'accueil ---------- */
 .pop-home{min-height:100vh;display:flex;flex-direction:column}
 .pop-mq{background:var(--pop-navy);color:var(--pop-sun);font:800 14px Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:10px 0;overflow:hidden;white-space:nowrap}
@@ -1367,6 +1374,7 @@ const ICONS = {
   listes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18h1.4a1.6 1.6 0 0 0 1.1-2.7c-.4-.4-.6-.8-.6-1.3a1.6 1.6 0 0 1 1.6-1.6H17a3.4 3.4 0 0 0 3.4-3.4C20.4 6.9 16.7 3 12 3Z"/><circle cx="7.6" cy="10.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="9.6" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.2" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.6" cy="10.8" r="1.1" fill="currentColor" stroke="none"/></svg>',
   equipe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3Z"/></svg>',
   sauvegarde: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M8 10l4 4 4-4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>',
+  lancer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
   ecarts: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg>',
   conso: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M5 7h14M7 7l-3.5 7a3.5 3.5 0 0 0 7 0L7 7ZM17 7l-3.5 7a3.5 3.5 0 0 0 7 0L17 7ZM8 21h8"/></svg>',
   stats: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/><path d="M20 8l-4 4-4-5-4 4" opacity=".0"/></svg>',
@@ -1615,7 +1623,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 25 · design Couture Pop</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 28 · lancer commande dans le catalogue</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -3150,8 +3158,8 @@ function importCommandesFile(f){
 
 // ----- Catalogue produits -----
 function exportCatalogueCSV(){
-  csvFile('catalogue_djebs_'+todayISO()+'.csv', ['Article','Référence patron','Tissu','Conso moyenne','Unité','Tailles (séparées par /)'],
-    (DATA.catalogue||[]).map(p=>[p.article,p.refPatron||'',p.tissu||'',p.consoMoyenne===undefined?'':p.consoMoyenne,p.consoUnite||'kg',(p.tailles||[]).join('/')]));
+  csvFile('catalogue_djebs_'+todayISO()+'.csv', ['Article','Référence patron','Tissu','Conso moyenne','Unité','Tailles (séparées par /)','Date d\'ajout','Dernière modification'],
+    (DATA.catalogue||[]).map(p=>[p.article,p.refPatron||'',p.tissu||'',p.consoMoyenne===undefined?'':p.consoMoyenne,p.consoUnite||'kg',(p.tailles||[]).join('/'),(p.creeLe||'').slice(0,10),(p.modifieLe||'').slice(0,10)]));
 }
 function importCatalogueFile(f){
   readCSVFile(f).then(d=>{
@@ -3166,7 +3174,7 @@ function importCatalogueFile(f){
       const cm = num(d.get(r,['conso moyenne','consommation moyenne']));
       list.push({id:'prod_'+Date.now()+'_'+i+'_'+Math.random().toString(36).slice(2,5), article:art, tissu:d.get(r,['tissu']), photo:'',
         tailles:d.get(r,['tailles separees par','tailles','tailles separees par '] ).split(/[\/|,;]+/).map(x=>x.trim()).filter(Boolean),
-        refPatron:d.get(r,['reference patron','ref patron']), consoMoyenne: cm===null?'':cm, consoUnite: u==='m'?'m':'kg'});
+        refPatron:d.get(r,['reference patron','ref patron']), consoMoyenne: cm===null?'':cm, consoUnite: u==='m'?'m':'kg', creeLe:new Date().toISOString(), modifieLe:new Date().toISOString()});
     });
     if(!list.length){ alert('Aucun nouveau produit à importer ('+skipped+' ligne(s) ignorée(s) : vides ou produit déjà existant).'); return; }
     openImport(f.name, list.length+' produit(s) à ajouter'+(skipped?' · '+skipped+' ignoré(s) (déjà existants ou vides)':'')+'.', list.slice(0,6).map(p=>p.article+(p.refPatron?' · patron '+p.refPatron:'')+(p.tissu?' · '+p.tissu:'')), 'Importer ces produits', ()=>{
@@ -3648,47 +3656,167 @@ function renderPersonModal(){
 
 // ---------- CATALOGUE PRODUITS ----------
 function blankCatalogueItem(){
-  return {id:'prod_'+Date.now(), article:'', tissu:'', tailles:[], photo:'', refPatron:'', consoMoyenne:'', consoUnite:'kg'};
+  return {id:'prod_'+Date.now(), article:'', tissu:'', tailles:[], photo:'', refPatron:'', consoMoyenne:'', consoUnite:'kg', creeLe:'', modifieLe:''};
 }
 
+function launchFromProduct(p){
+  const d = blankCommande();
+  d.catalogueId = p.id; d.article = p.article || '';
+  if(p.tissu && DATA.lists && DATA.lists.tissus && DATA.lists.tissus[p.tissu]) d.tissu = p.tissu;
+  view.modal = {mode:'create', data:d};
+  render();
+}
+function renderLaunchBar(){
+  const bar = el('<div class="cat-launch"></div>');
+  bar.appendChild(el('<b>Lancer une commande depuis le catalogue :</b>'));
+  const sel = document.createElement('select');
+  const e0 = document.createElement('option'); e0.value=''; e0.textContent='— Choisir un produit —'; sel.appendChild(e0);
+  (DATA.catalogue||[]).slice().sort((a,b)=>String(a.article||'').localeCompare(String(b.article||''),'fr')).forEach(p=>{
+    const o = document.createElement('option'); o.value=p.id; o.textContent=p.article||'(sans nom)'+(p.refPatron?' · '+p.refPatron:''); sel.appendChild(o);
+  });
+  const go = el('<button class="btn primary">Lancer la commande</button>');
+  go.onclick = ()=>{
+    const p = (DATA.catalogue||[]).find(x=>x.id===sel.value);
+    if(!p){ alert('Choisis d\'abord un produit dans la liste.'); return; }
+    launchFromProduct(p);
+  };
+  bar.appendChild(sel); bar.appendChild(go);
+  return bar;
+}
+function catDate(iso){
+  if(!iso) return '—';
+  const d = new Date(iso); if(isNaN(d.getTime())) return '—';
+  const p = n=>String(n).padStart(2,'0');
+  return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+function catOrdersUsing(id){ return (DATA.commandes||[]).filter(c=>c.catalogueId===id).length; }
+function catDuplicate(ids){
+  const now = new Date().toISOString(); let n = 0;
+  ids.forEach((id,i)=>{
+    const p = (DATA.catalogue||[]).find(x=>x.id===id); if(!p) return;
+    const c = JSON.parse(JSON.stringify(p));
+    c.id = 'prod_'+Date.now()+'_'+i+'_'+Math.random().toString(36).slice(2,5);
+    c.article = (p.article||'Produit')+' (copie)';
+    c.creeLe = c.modifieLe = now;
+    DATA.catalogue.push(c); n++;
+  });
+  return n;
+}
+function catDelete(ids){
+  const used = ids.reduce((a,id)=>a+catOrdersUsing(id),0);
+  const names = ids.map(id=>{ const p=(DATA.catalogue||[]).find(x=>x.id===id); return p?p.article:''; }).filter(Boolean);
+  const msg = (ids.length===1 ? 'Supprimer "'+names[0]+'" du catalogue ?' : 'Supprimer ces '+ids.length+' produits du catalogue ?\n\n'+names.slice(0,8).join('\n')+(names.length>8?'\n…':''))
+    + (used ? '\n\nAttention : '+used+' commande(s) utilisent déjà ce(s) produit(s). Elles restent intactes, mais ne seront plus liées au catalogue.' : '')
+    + '\n\nCette action est définitive.';
+  if(!confirm(msg)) return false;
+  DATA.catalogue = (DATA.catalogue||[]).filter(x=>ids.indexOf(x.id)<0);
+  view.catSel = {};
+  return true;
+}
 function renderCatalogueTable(){
+  view.catSel = view.catSel || {};
+  const box = document.createElement('div');
+  if((DATA.catalogue||[]).length) box.appendChild(renderLaunchBar());
+  // barre : recherche + tri
+  const bar = el('<div class="cat-bar"></div>');
+  const q = document.createElement('input'); q.type='search'; q.placeholder='Rechercher un produit (nom, tissu, patron)…'; q.value = view.catSearch||'';
+  const sortSel = document.createElement('select');
+  [['recent','Les plus récents d\'abord'],['ancien','Les plus anciens d\'abord'],['az','Ordre alphabétique (A → Z)']].forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; if((view.catSort||'recent')===v) o.selected=true; sortSel.appendChild(o); });
+  bar.appendChild(q); bar.appendChild(sortSel);
+  box.appendChild(bar);
+  const bulk = el('<div class="cat-bulk"></div>');
+  box.appendChild(bulk);
   const wrap = document.createElement('div'); wrap.className='table-wrap';
   const t = document.createElement('table'); t.className='main';
   const thead = document.createElement('thead');
   const headRow = document.createElement('tr');
-  ['Photo','Article','Réf. patron','Tissu','Conso moyenne','Tailles disponibles',''].forEach(h=>{
+  const thSel = document.createElement('th'); const allCk = document.createElement('input'); allCk.type='checkbox'; allCk.title='Tout sélectionner'; thSel.appendChild(allCk); headRow.appendChild(thSel);
+  ['Photo','Article','Réf. patron','Tissu','Conso moyenne','Tailles disponibles','Ajouté le','Modifié le','Actions'].forEach(h=>{
     const th = document.createElement('th'); th.textContent=h; headRow.appendChild(th);
   });
   thead.appendChild(headRow);
   t.appendChild(thead);
   const tbody = document.createElement('tbody');
-  (DATA.catalogue||[]).forEach(p=>{
-    const tr = document.createElement('tr');
-    const photoTd = document.createElement('td');
-    if(p.photo){
-      const img = document.createElement('img');
-      img.src = p.photo; img.style.cssText='width:36px;height:36px;object-fit:cover;border-radius:5px;border:1px solid var(--border);display:block;';
-      photoTd.appendChild(img);
-    } else {
-      photoTd.appendChild(el('<div style="width:36px;height:36px;border-radius:5px;background:var(--bg);border:1px solid var(--border);"></div>'));
-    }
-    tr.appendChild(photoTd);
-    function td(text){ const cell=document.createElement('td'); cell.textContent=text; tr.appendChild(cell); }
-    td(p.article||'—');
-    td(p.refPatron||'—');
-    td(p.tissu||'—');
-    td((p.consoMoyenne!==''&&p.consoMoyenne!=null) ? p.consoMoyenne+' '+(p.consoUnite||'kg')+' / pièce' : '—');
-    td((p.tailles||[]).join(' / ')||'—');
-    const editTd = document.createElement('td');
-    const b = document.createElement('button'); b.className='btn small'; b.textContent='Modifier';
-    b.onclick = ()=>{ view.catalogueModal = {mode:'edit', data:JSON.parse(JSON.stringify(p))}; render(); };
-    editTd.appendChild(b);
-    tr.appendChild(editTd);
-    tbody.appendChild(tr);
-  });
   t.appendChild(tbody);
   wrap.appendChild(t);
-  return wrap;
+  box.appendChild(wrap);
+  const empty = el('<div class="empty-msg" style="display:none;">Aucun produit trouvé.</div>');
+  box.appendChild(empty);
+
+  function visible(){
+    const term = (view.catSearch||'').trim().toLowerCase();
+    let list = (DATA.catalogue||[]).slice();
+    if(term) list = list.filter(p=>[p.article,p.tissu,p.refPatron].join(' ').toLowerCase().indexOf(term)>=0);
+    const sm = view.catSort||'recent';
+    const dt = p=>(p.modifieLe||p.creeLe||'');
+    if(sm==='az') list.sort((a,b)=>String(a.article||'').localeCompare(String(b.article||''),'fr'));
+    else if(sm==='ancien') list.sort((a,b)=>dt(a).localeCompare(dt(b)));
+    else list.sort((a,b)=>dt(b).localeCompare(dt(a)));
+    return list;
+  }
+  function selIds(){ return Object.keys(view.catSel).filter(k=>view.catSel[k] && (DATA.catalogue||[]).some(p=>p.id===k)); }
+  function fillBulk(){
+    const ids = selIds();
+    bulk.innerHTML = '';
+    bulk.style.display = ids.length ? 'flex' : 'none';
+    if(!ids.length) return;
+    const lbl = el('<b></b>'); lbl.textContent = ids.length+' produit(s) sélectionné(s)';
+    const dup = el('<button class="btn small">Dupliquer la sélection</button>');
+    dup.onclick = ()=>{ const n = catDuplicate(ids); view.catSel = {}; saveState(n+' produit(s) dupliqué(s)'); };
+    const del = el('<button class="btn small" style="color:#E0392D;">Supprimer la sélection</button>');
+    del.onclick = ()=>{ if(catDelete(ids)) saveState(ids.length+' produit(s) supprimé(s) du catalogue'); };
+    const none = el('<button class="btn small">Annuler</button>');
+    none.onclick = ()=>{ view.catSel = {}; fill(); };
+    bulk.appendChild(lbl); bulk.appendChild(dup); bulk.appendChild(del); bulk.appendChild(none);
+  }
+  function fill(){
+    tbody.innerHTML = '';
+    const list = visible();
+    empty.style.display = list.length ? 'none' : 'block';
+    empty.textContent = (DATA.catalogue||[]).length ? 'Aucun produit ne correspond à la recherche.' : 'Le catalogue est vide. Ajoute ton premier produit avec « + Ajouter un produit ».';
+    list.forEach(p=>{
+      const tr = document.createElement('tr');
+      const ckTd = document.createElement('td'); const ck = document.createElement('input'); ck.type='checkbox'; ck.checked = !!view.catSel[p.id];
+      ck.onchange = ()=>{ if(ck.checked) view.catSel[p.id]=true; else delete view.catSel[p.id]; allCk.checked = list.every(x=>view.catSel[x.id]); fillBulk(); };
+      ckTd.appendChild(ck); tr.appendChild(ckTd);
+      const photoTd = document.createElement('td');
+      if(p.photo){
+        const img = document.createElement('img');
+        img.src = p.photo; img.style.cssText='width:36px;height:36px;object-fit:cover;border-radius:5px;border:1px solid var(--border);display:block;';
+        photoTd.appendChild(img);
+      } else {
+        photoTd.appendChild(el('<div style="width:36px;height:36px;border-radius:5px;background:var(--bg);border:1px solid var(--border);"></div>'));
+      }
+      tr.appendChild(photoTd);
+      function td(text){ const cell=document.createElement('td'); cell.textContent=text; tr.appendChild(cell); return cell; }
+      td(p.article||'—').style.fontWeight='bold';
+      td(p.refPatron||'—');
+      td(p.tissu||'—');
+      td((p.consoMoyenne!==''&&p.consoMoyenne!=null) ? p.consoMoyenne+' '+(p.consoUnite||'kg')+' / pièce' : '—');
+      td((p.tailles||[]).join(' / ')||'—');
+      td(catDate(p.creeLe));
+      td(catDate(p.modifieLe));
+      const act = document.createElement('td'); act.style.whiteSpace='normal'; act.style.minWidth='150px';
+      const b0 = el('<button class="btn small primary">Lancer commande</button>');
+      b0.onclick = ()=>launchFromProduct(p);
+      const b1 = el('<button class="btn small">Modifier</button>');
+      b1.onclick = ()=>{ view.catalogueModal = {mode:'edit', data:JSON.parse(JSON.stringify(p))}; render(); };
+      const b2 = el('<button class="btn small">Dupliquer</button>');
+      b2.onclick = ()=>{ catDuplicate([p.id]); saveState('Produit dupliqué : '+p.article); };
+      const b3 = el('<button class="btn small" style="color:#E0392D;">Supprimer</button>');
+      b3.onclick = ()=>{ if(catDelete([p.id])) saveState('Produit supprimé du catalogue : '+p.article); };
+      const grp = el('<div style="display:flex;flex-wrap:wrap;gap:6px;max-width:190px;"></div>'); grp.appendChild(b0); grp.appendChild(b1); grp.appendChild(b2); grp.appendChild(b3); act.appendChild(grp);
+      tr.appendChild(act);
+      tbody.appendChild(tr);
+    });
+    allCk.checked = list.length>0 && list.every(x=>view.catSel[x.id]);
+    fillBulk();
+  }
+  allCk.onchange = ()=>{ visible().forEach(p=>{ if(allCk.checked) view.catSel[p.id]=true; else delete view.catSel[p.id]; }); fill(); };
+  q.oninput = ()=>{ view.catSearch = q.value; fill(); };
+  sortSel.onchange = ()=>{ view.catSort = sortSel.value; fill(); };
+  fill();
+  return box;
 }
 
 function renderCatalogueModal(){
@@ -3696,7 +3824,8 @@ function renderCatalogueModal(){
   data.tailles = data.tailles || [];
   const overlay = el('<div class="modal-overlay"></div>');
   const m = el('<div class="modal"></div>');
-  m.appendChild(el('<h2>'+(mode==='create'?'Ajouter un produit au catalogue':'Modifier '+(data.article||'ce produit'))+'</h2>'));
+  m.appendChild(el('<h2>'+(mode==='create'?'Ajouter un produit au catalogue':'Modifier '+esc(data.article||'ce produit'))+'</h2>'));
+  if(mode==='edit') m.appendChild(el('<div style="font-size:12px;color:var(--text-soft);margin:-6px 0 12px;">Ajouté le '+catDate(data.creeLe)+' · Dernière modification : '+catDate(data.modifieLe)+'</div>'));
 
   function frow(fields){
     const row = el('<div class="frow"></div>');
@@ -3793,11 +3922,13 @@ function renderCatalogueModal(){
     if(!data.article || !data.article.trim()){ alert('Le nom du produit est obligatoire.'); return; }
     if(mode==='create'){
       DATA.catalogue = DATA.catalogue || [];
+      data.creeLe = data.modifieLe = new Date().toISOString();
       DATA.catalogue.push(data);
       view.catalogueModal=null;
       saveState('Produit ajouté au catalogue : '+data.article);
     } else {
       const idx = (DATA.catalogue||[]).findIndex(x=>x.id===data.id);
+      data.modifieLe = new Date().toISOString();
       if(idx>=0) DATA.catalogue[idx]=data;
       view.catalogueModal=null;
       saveState('Produit modifié : '+data.article);
@@ -3806,14 +3937,15 @@ function renderCatalogueModal(){
   const del = mode==='edit' ? el('<button class="btn" style="color:#A42834;border-color:#A42834;">Supprimer</button>') : null;
   if(del){
     del.onclick = ()=>{
-      if(confirm('Supprimer "'+data.article+'" du catalogue ?')){
-        DATA.catalogue = (DATA.catalogue||[]).filter(x=>x.id!==data.id);
+      if(catDelete([data.id])){
         view.catalogueModal=null;
         saveState('Produit supprimé du catalogue : '+data.article);
       }
     };
   }
   if(del) actions.appendChild(del);
+  if(mode==='edit'){ const lc = el('<button class="btn primary">Lancer commande</button>'); lc.onclick = ()=>{ view.catalogueModal=null; launchFromProduct(data); }; actions.appendChild(lc); }
+  if(mode==='edit'){ const dp = el('<button class="btn">Dupliquer</button>'); dp.onclick = ()=>{ catDuplicate([data.id]); view.catalogueModal=null; saveState('Produit dupliqué : '+data.article); }; actions.appendChild(dp); }
   actions.appendChild(cancel);
   actions.appendChild(save);
   m.appendChild(actions);
@@ -4823,6 +4955,24 @@ function blankCommande(){
   };
 }
 
+function clientNames(){
+  const set = {};
+  ((DATA.lists||{}).clients||[]).forEach(x=>{ if(x) set[x]=1; });
+  (DATA.commandes||[]).forEach(c=>{ if(c.client && String(c.client).trim()) set[String(c.client).trim()]=1; });
+  return Object.keys(set);
+}
+function articleNames(){
+  const set = {};
+  (DATA.catalogue||[]).forEach(p=>{ if(p.article) set[p.article]=1; });
+  ((DATA.lists||{}).articles||[]).forEach(x=>{ if(x) set[x]=1; });
+  (DATA.commandes||[]).forEach(c=>{ if(c.article && String(c.article).trim()) set[String(c.article).trim()]=1; });
+  return Object.keys(set);
+}
+function rememberNames(data){
+  DATA.lists = DATA.lists || {};
+  const add = (key,val)=>{ val = String(val||'').trim(); if(!val) return; DATA.lists[key] = DATA.lists[key] || []; if(DATA.lists[key].indexOf(val)<0) DATA.lists[key].push(val); };
+  add('clients', data.client); add('articles', data.article);
+}
 function renderModal(){
   const {mode, data} = view.modal;
   const overlay = el('<div class="modal-overlay"></div>');
@@ -4855,6 +5005,38 @@ function renderModal(){
     inp.oninput = ()=>onchange(inp.value);
     wrap.appendChild(inp);
     return wrap;
+  }
+  // Liste déroulante avec « + Autre… » pour saisir une nouvelle valeur
+  function comboField(labelText, value, options, onchange, newLabel){
+    const wrap = el('<div></div>');
+    wrap.appendChild(el('<label>'+labelText+'</label>'));
+    const sel = document.createElement('select');
+    const list = options.filter((x,i,a)=>x && a.indexOf(x)===i);
+    if(value && list.indexOf(value)<0) list.push(value);
+    list.sort((a,b)=>String(a).localeCompare(String(b),'fr'));
+    const empty = document.createElement('option'); empty.value=''; empty.textContent='— Sélectionner —'; if(!value) empty.selected=true; sel.appendChild(empty);
+    list.forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent=o; if(o===value) op.selected=true; sel.appendChild(op); });
+    const nw = document.createElement('option'); nw.value='__new__'; nw.textContent='＋ '+newLabel; sel.appendChild(nw);
+    const txt = document.createElement('input'); txt.placeholder = newLabel; txt.style.display='none'; txt.style.marginTop='6px';
+    sel.onchange = ()=>{
+      if(sel.value==='__new__'){ txt.style.display=''; txt.value=''; onchange(''); txt.focus(); }
+      else { txt.style.display='none'; onchange(sel.value); }
+    };
+    txt.oninput = ()=>onchange(txt.value);
+    wrap.appendChild(sel); wrap.appendChild(txt);
+    return wrap;
+  }
+  function pickCatalogueByArticle(name){
+    const prod = (DATA.catalogue||[]).find(p=>p.article===name);
+    if(!prod) return false;
+    data.catalogueId = prod.id; data.article = prod.article;
+    if(prod.tissu && DATA.lists.tissus[prod.tissu]){
+      data.tissu = prod.tissu;
+      if(!(DATA.lists.tissus[prod.tissu]||[]).includes(data.couleur)) data.couleur='';
+    }
+    const allowed = prod.tailles||[];
+    Object.keys(data.tailles||{}).forEach(sz=>{ if(allowed.indexOf(sz)===-1) delete data.tailles[sz]; });
+    return true;
   }
   function tissuSelectField(){
     const wrap = el('<div></div>');
@@ -4933,7 +5115,7 @@ function renderModal(){
   m.appendChild(el('<div class="grp-head" style="background:#001D51">Identité article / commande</div>'));
   frow([
     field(mode==='create' ? 'Référence (automatique, modifiable)' : 'Référence', data.reference, v=>data.reference=v),
-    field('Client', data.client, v=>data.client=v)
+    comboField('Client', data.client, clientNames(), v=>data.client=v, 'Nouveau client…')
   ]);
   // Commercial responsable du suivi de cette commande
   const comWrap = el('<div></div>');
@@ -4950,7 +5132,10 @@ function renderModal(){
   comWrap.appendChild(comSel);
   const comRow = el('<div class="frow"></div>'); comRow.appendChild(comWrap); m.appendChild(comRow);
   frow([
-    field('Article', data.article, v=>data.article=v),
+    (function(){
+      const w = comboField('Article', data.article, articleNames(), v=>{ data.article=v; if(v && pickCatalogueByArticle(v)) render(); }, 'Autre article…');
+      return w;
+    })(),
     tissuSelectField()
   ]);
   frow([
@@ -4996,11 +5181,24 @@ function renderModal(){
   urgLabel.appendChild(document.createTextNode('Commande urgente'));
   urgWrap.appendChild(urgLabel);
   m.appendChild(urgWrap);
-  frow([
-    field('Priorité (1 = traitée en premier · vide = normale)', data.priorite===undefined?'':data.priorite, v=>data.priorite=(v===''?'':Math.max(1,Math.round(Number(v)))), 'number')
-  ]);
-  { const nx = DATA.commandes.filter(x=>x.id!==data.id && Number(x.priorite)>0 && x.decoupe.statut!=='Prête' && x.decoupe.statut!=='Annulée').map(x=>Number(x.priorite));
-    if(nx.length) m.appendChild(el('<div style="font-size:11px;color:var(--text-soft);margin:-4px 0 10px;">Priorités déjà utilisées en Découpe : '+nx.sort((a,b)=>a-b).join(', ')+'</div>')); }
+  (function(){
+    const w = el('<div></div>');
+    w.appendChild(el('<label>Priorité (1 = traitée en premier)</label>'));
+    const sel = document.createElement('select');
+    const used = {};
+    DATA.commandes.filter(x=>x.id!==data.id && Number(x.priorite)>0 && x.decoupe.statut!=='Prête' && x.decoupe.statut!=='Annulée').forEach(x=>{ used[Number(x.priorite)] = x.reference; });
+    const cur = Number(data.priorite)>0 ? Number(data.priorite) : 0;
+    const max = Math.max(10, cur);
+    const o0 = document.createElement('option'); o0.value=''; o0.textContent='Normale (sans priorité)'; if(!cur) o0.selected=true; sel.appendChild(o0);
+    for(let i=1;i<=max;i++){
+      const o = document.createElement('option'); o.value=String(i);
+      o.textContent = 'Priorité '+i+(i===1?' — en premier':'')+(used[i]?'  (déjà : '+used[i]+')':'');
+      if(i===cur) o.selected=true; sel.appendChild(o);
+    }
+    sel.onchange = ()=>{ data.priorite = sel.value==='' ? '' : Number(sel.value); };
+    w.appendChild(sel);
+    const row = el('<div class="frow"></div>'); row.appendChild(w); m.appendChild(row);
+  })();
 
   m.appendChild(el('<div class="grp-head" style="background:#6B4226">Découpe</div>'));
   frow([
@@ -5058,6 +5256,8 @@ function renderModal(){
   save.onclick = ()=>{
     if(!data.reference || !data.reference.trim()){ alert('La référence est obligatoire.'); return; }
     if(mode==='create' && !data.commercialId){ alert('Choisis le commercial responsable de cette commande.'); return; }
+    data.client = String(data.client||'').trim(); data.article = String(data.article||'').trim();
+    rememberNames(data);
     if(mode==='create'){
       DATA.commandes.push(data);
       view.modal=null;
