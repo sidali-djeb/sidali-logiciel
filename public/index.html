@@ -1444,8 +1444,8 @@ const STATUS_CLASS = {
 };
 const DEPT_LABEL = {decoupe:"Découpe",confection:"Confection",emballage:"Emballage",stock:"Stock"};
 const DEPT_COLOR = {decoupe:"#6B4226",confection:"#A8492E",emballage:"#8A6D3B",stock:"#3E5C76"};
-const ROLE_LABEL = {admin:"Admin",commercial:"Commercial",decoupe:"Découpe",confection:"Confection",emballage:"Emballage",stock:"Stock"};
-const ROLE_OPTIONS = ["admin","commercial","decoupe","confection","emballage","stock"];
+const ROLE_LABEL = {admin:"Admin",commercial:"Commercial",decoupe:"Découpe",confection:"Confection",emballage:"Emballage",stock:"Stock",crea:"Créa"};
+const ROLE_OPTIONS = ["admin","commercial","decoupe","confection","emballage","stock","crea"];
 
 // Configuration Supabase
 const SUPABASE_URL = 'https://dmpzpcvlscrlefedfung.supabase.co';
@@ -1539,7 +1539,7 @@ function render(){
   if(view.screen==='login') app.appendChild(renderLogin());
   else if(view.screen==='dept') app.appendChild(renderDeptScreen());
   else if(view.screen==='commercial') app.appendChild(renderCommercialScreen());
-  else if(view.screen==='admin') app.appendChild(renderAdminScreen());
+  else if(view.screen==='admin' || view.screen==='crea') app.appendChild(renderAdminScreen());
   if(view.modal) app.appendChild(renderModal());
   if(view.personModal) app.appendChild(renderPersonModal());
   if(view.catalogueModal) app.appendChild(renderCatalogueModal());
@@ -1626,7 +1626,7 @@ function renderLogin(){
     }
     view.personId = person.id;
     view.role = person.role;
-    view.screen = person.role==='admin' ? 'admin' : (person.role==='commercial' ? 'commercial' : 'dept');
+    view.screen = person.role==='admin' ? 'admin' : (person.role==='commercial' ? 'commercial' : (person.role==='crea' ? 'crea' : 'dept'));
     view.loginId=''; view.loginCode=''; view.loginError='';
     saveSession(person.id);
     applyScan();
@@ -1637,7 +1637,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 31 · options en liste déroulante</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 32 · rôle Créa</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -1723,7 +1723,7 @@ function topbar(title, badgeCount){
   bar.appendChild(el('<div class="spacer"></div>'));
   const scanTop = el('<button class="link">Scanner QR</button>');
   scanTop.onclick = ()=>{ view.scanModal = true; render(); };
-  bar.appendChild(scanTop);
+  if(view.role!=='crea') bar.appendChild(scanTop);
   const chat = el('<button class="link" id="chatBtn"></button>');
   chat.innerHTML = chatBtnHtml();
   chat.onclick = ()=>{ view.discussionOpen=true; render(); pollMessages(); };
@@ -2813,7 +2813,7 @@ function starsHtml(v){
 }
 function fmt1(v){ return (Math.round(v*10)/10).toLocaleString('fr-FR',{maximumFractionDigits:1}); }
 function teamRows(){
-  const staff = (DATA.people||[]).filter(p=>p.active!==false && p.role!=='admin');
+  const staff = (DATA.people||[]).filter(p=>p.active!==false && p.role!=='admin' && p.role!=='crea');
   return staff.map(p=>({p:p, e:autoEval(p)}));
 }
 function renderTeamPanel(){
@@ -3145,7 +3145,7 @@ function openImport(name, headline, preview, applyLabel, apply){
 }
 function importFail(msg){ alert(msg || 'Impossible de lire ce fichier. Utilise un fichier CSV exporté depuis cette même case comme modèle.'); }
 function num(v){ const n = parseFloat(String(v||'').replace(/\s/g,'').replace(',','.')); return isNaN(n) ? null : n; }
-const ROLE_FROM_TEXT = {admin:'admin', commercial:'commercial', decoupe:'decoupe', confection:'confection', emballage:'emballage', stock:'stock'};
+const ROLE_FROM_TEXT = {admin:'admin', commercial:'commercial', decoupe:'decoupe', confection:'confection', emballage:'emballage', stock:'stock', crea:'crea'};
 
 // ----- Commandes -----
 function exportCommandesList(list){
@@ -3371,8 +3371,11 @@ function renderImportModal(){
 }
 
 function renderAdminScreen(){
+  const isCrea = view.role==='crea';
+  const CREA_KEYS = ['conso','catalogue','listes'];
+  if(isCrea){ Object.keys(view.adminOpen||{}).forEach(k=>{ if(CREA_KEYS.indexOf(k)<0) delete view.adminOpen[k]; }); }
   const w = el('<div></div>');
-  w.appendChild(topbar('Espace Admin'));
+  w.appendChild(topbar(isCrea ? 'Espace Créa' : 'Espace Admin'));
   const wrap = el('<div class="wrap"></div>');
 
   const total = DATA.commandes.length;
@@ -3386,11 +3389,11 @@ function renderAdminScreen(){
   kpi.appendChild(el('<div class="kpi'+(alertes>0?' alert':'')+'"><div class="num">'+alertes+'</div><div class="label">Alertes poids/pièce</div></div>'));
   const nbConso = consoAlertCount();
   kpi.appendChild(el('<div class="kpi'+(nbConso>0?' alert':'')+'"><div class="num">'+nbConso+'</div><div class="label">Alertes conso tissu</div></div>'));
-  wrap.appendChild(kpi);
+  if(!isCrea) wrap.appendChild(kpi);
 
   // Bandeau : alertes de consommation non lues
   const unAl = chatUnread()['alertes'] || 0;
-  if(unAl>0){
+  if(unAl>0 && !isCrea){
     wrap.appendChild(buildConsoBanner(unAl));
   }
 
@@ -3409,7 +3412,7 @@ function renderAdminScreen(){
     {key:'acces', label:'Gérer les accès', badge: (DATA.people||[]).length}
   ];
   const iconGrid = el('<div class="icon-grid"></div>');
-  tiles.forEach(it=>{
+  tiles.filter(it=>!isCrea || CREA_KEYS.indexOf(it.key)>=0).forEach(it=>{
     const isOpen = !!view.adminOpen[it.key];
     const tile = el('<button class="icon-tile'+(isOpen?' active':'')+'"></button>');
     tile.appendChild(el('<div class="icon-tile-ic">'+ICONS[it.key]+'</div>'));
@@ -5423,7 +5426,7 @@ function restoreSession(){
   if(!person){ clearSession(); return; }
   view.personId = person.id;
   view.role = person.role;
-  view.screen = person.role==='admin' ? 'admin' : (person.role==='commercial' ? 'commercial' : 'dept');
+  view.screen = person.role==='admin' ? 'admin' : (person.role==='commercial' ? 'commercial' : (person.role==='crea' ? 'crea' : 'dept'));
 }
 
 async function boot(){
