@@ -407,6 +407,16 @@ input[type=checkbox]{width:18px!important;height:18px;padding:0!important;border
 .cat-actions-v{display:flex;flex-direction:column;gap:8px;width:150px;padding:4px 8px 6px 0}
 .cat-actions-v .btn{width:100%;text-align:center}
 .cat-act-sel{width:130px;margin-right:8px;padding:8px 10px;border:2px solid var(--pop-navy);border-radius:10px;background:var(--pop-sun);font-size:13px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer}
+.lignes-box{margin:0 0 12px}
+.lg-hint{font-size:12px;color:#5c6a8c;margin:0 0 8px;font-weight:700}
+.lg-line{border:3px solid var(--pop-navy);border-radius:12px;padding:10px;margin:0 0 10px;background:var(--pop-cream)}
+.lg-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.lg-head select{flex:1;min-width:140px}
+.lg-sub{font-size:12px;font-weight:700;color:#5c6a8c}
+.lg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px}
+.lg-cell{border:2px solid var(--pop-navy);border-radius:8px;padding:6px;background:#fff}
+.lg-lab{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:bold;margin-bottom:4px}
+.lg-total{margin-top:10px;font-weight:800;font-size:14px;background:var(--pop-sun);border:2px solid var(--pop-navy);border-radius:10px;padding:8px 12px;display:inline-block}
 /* ---------- page d'accueil ---------- */
 .pop-home{min-height:100vh;display:flex;flex-direction:column}
 .pop-mq{background:var(--pop-navy);color:var(--pop-sun);font:800 14px Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:10px 0;overflow:hidden;white-space:nowrap}
@@ -1637,7 +1647,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 32 · rôle Créa</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 33 · plusieurs couleurs et tailles par commande</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -2288,6 +2298,17 @@ function renderDeptDetails(c, dept){
     d.appendChild(v); box.appendChild(d);
   }
   function tailles(){
+    if(Array.isArray(c.lignes) && c.lignes.filter(l=>l.couleur).length>1){
+      c.lignes.forEach(l=>{
+        const ks = Object.keys(l.tailles||{}).filter(k=>has(l.tailles[k]) && Number(l.tailles[k])>0);
+        if(!ks.length) return;
+        const d = el('<div class="full"><div class="k">'+esc(l.couleur||'Couleur ?')+' — répartition par taille</div></div>');
+        const v = document.createElement('div');
+        ks.forEach(k=>{ const sp=document.createElement('span'); sp.className='sz'; sp.textContent = k+' × '+l.tailles[k]; v.appendChild(sp); });
+        d.appendChild(v); box.appendChild(d);
+      });
+      return;
+    }
     const keys = Object.keys(c.tailles||{}).filter(k=>has(c.tailles[k]) && Number(c.tailles[k])>0);
     if(!keys.length) return;
     const d = el('<div class="full"><div class="k">Répartition par taille</div></div>');
@@ -4785,7 +4806,14 @@ function renderAnalyticsPanel(){
 
   // ---- 5. Tissus, couleurs et tailles ----
   const tissus = anGroup(orders, c=>(c.tissu||'').trim(), c=>Number(c.quantite)||0);
-  const couleurs = anGroup(orders, c=>c.tissu && c.couleur ? c.tissu+' · '+c.couleur : '', c=>Number(c.quantite)||0);
+  const couleurOrders = [];
+  orders.forEach(c=>{
+    const ls = Array.isArray(c.lignes) ? c.lignes.filter(l=>l.couleur) : [];
+    if(ls.length>1 || (ls.length===1 && Object.keys(ls[0].tailles||{}).length)){
+      ls.forEach(l=>{ const q = Object.keys(l.tailles||{}).reduce((a,k)=>a+(Number(l.tailles[k])||0),0); couleurOrders.push(Object.assign({}, c, {couleur:l.couleur, quantite:q})); });
+    } else couleurOrders.push(c);
+  });
+  const couleurs = anGroup(couleurOrders, c=>c.tissu && c.couleur ? c.tissu+' · '+c.couleur : '', c=>Number(c.quantite)||0);
   const tailleMap = {};
   orders.forEach(c=>{ Object.keys(c.tailles||{}).forEach(sz=>{ const q = Number(c.tailles[sz])||0; if(q) tailleMap[sz] = (tailleMap[sz]||0)+q; }); });
   const tailles = Object.keys(tailleMap).map(k=>({key:k, value:tailleMap[k]})).sort((a,b)=>b.value-a.value);
@@ -5006,7 +5034,7 @@ function nextReference(){
 
 function blankCommande(){
   return {
-    id: 'cmd_'+Date.now(), catalogueId:'', reference: nextReference(), client:'', commercialId:(view.role==='commercial' ? view.personId : ''), article:'', tissu:'', tailles:{}, couleur:'',
+    id: 'cmd_'+Date.now(), catalogueId:'', reference: nextReference(), client:'', commercialId:(view.role==='commercial' ? view.personId : ''), article:'', tissu:'', tailles:{}, couleur:'', lignes:[{couleur:'', tailles:{}}],
     quantite:'', dateCommande: todayISO(), dateLivraisonPrevue:'', urgent:false, priorite:'',
     decoupe:{statut:'En attente',prevueLe:'',faiteLe:''},
     confection:{statut:'En attente',atelier:'',debut:'',fin:''},
@@ -5088,16 +5116,38 @@ function renderModal(){
     wrap.appendChild(sel); wrap.appendChild(txt);
     return wrap;
   }
+  function ensureLignes(){
+    if(!Array.isArray(data.lignes) || !data.lignes.length){
+      const t = {}; Object.keys(data.tailles||{}).forEach(k=>{ if(data.tailles[k]!=='' && data.tailles[k]!=null) t[k]=data.tailles[k]; });
+      data.lignes = [{couleur:data.couleur||'', tailles:t}];
+    }
+  }
+  function syncLignes(){
+    const tot = {}; const cols = []; let q = 0;
+    data.lignes.forEach(l=>{
+      if(l.couleur && cols.indexOf(l.couleur)<0) cols.push(l.couleur);
+      Object.keys(l.tailles||{}).forEach(sz=>{ const n = Number(l.tailles[sz]); if(l.tailles[sz]!=='' && l.tailles[sz]!=null && !isNaN(n) && n>0){ tot[sz]=(tot[sz]||0)+n; q+=n; } });
+    });
+    data.couleur = cols.join(' / '); data.tailles = tot; return q;
+  }
+  function fixLignes(){
+    ensureLignes();
+    const colors = (data.tissu && DATA.lists.tissus[data.tissu]) || [];
+    const prod = data.catalogueId ? catalogueById(data.catalogueId) : null;
+    data.lignes.forEach(l=>{
+      if(l.couleur && colors.indexOf(l.couleur)<0) l.couleur='';
+      if(prod){ const allowed = prod.tailles||[]; Object.keys(l.tailles||{}).forEach(sz=>{ if(allowed.indexOf(sz)===-1) delete l.tailles[sz]; }); }
+    });
+    syncLignes();
+  }
   function pickCatalogueByArticle(name){
     const prod = (DATA.catalogue||[]).find(p=>p.article===name);
     if(!prod) return false;
     data.catalogueId = prod.id; data.article = prod.article;
     if(prod.tissu && DATA.lists.tissus[prod.tissu]){
       data.tissu = prod.tissu;
-      if(!(DATA.lists.tissus[prod.tissu]||[]).includes(data.couleur)) data.couleur='';
     }
-    const allowed = prod.tailles||[];
-    Object.keys(data.tailles||{}).forEach(sz=>{ if(allowed.indexOf(sz)===-1) delete data.tailles[sz]; });
+    fixLignes();
     return true;
   }
   function tissuSelectField(){
@@ -5113,7 +5163,7 @@ function renderModal(){
     inp.onchange = ()=>{
       data.tissu = inp.value;
       // couleur is scoped to the chosen tissu — clear it if it no longer applies
-      if(!inp.value || !((DATA.lists.tissus[inp.value]||[]).includes(data.couleur))) data.couleur='';
+      fixLignes();
       render();
     };
     wrap.appendChild(inp);
@@ -5153,12 +5203,9 @@ function renderModal(){
         data.article = prod.article;
         if(prod.tissu && DATA.lists.tissus[prod.tissu]){
           data.tissu = prod.tissu;
-          if(!(DATA.lists.tissus[prod.tissu]||[]).includes(data.couleur)) data.couleur='';
         }
-        // drop any chosen size that isn't offered by this product
-        const allowed = prod.tailles||[];
-        Object.keys(data.tailles||{}).forEach(sz=>{ if(allowed.indexOf(sz)===-1) delete data.tailles[sz]; });
       }
+      fixLignes();
       render();
     };
     catWrap.appendChild(catSel);
@@ -5200,36 +5247,81 @@ function renderModal(){
     })(),
     tissuSelectField()
   ]);
-  frow([
-    couleurSelectField()
-  ]);
-  m.appendChild(el('<label style="display:block;font-size:11px;color:var(--text-soft);margin-bottom:5px;">Répartition par taille (coche + quantité)</label>'));
-  const sizeGrid = el('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-bottom:8px;"></div>');
-  data.tailles = data.tailles || {};
+  ensureLignes(); syncLignes();
+  m.appendChild(el('<div class="grp-head" style="background:#B8860B">Couleurs et tailles (plusieurs couleurs possibles)</div>'));
+  const lgBox = el('<div class="lignes-box"></div>');
+  m.appendChild(lgBox);
+  const qtyRef = {};
   const sizeOptions = (data.catalogueId && catalogueById(data.catalogueId)) ? (catalogueById(data.catalogueId).tailles||[]) : (DATA.lists.tailles||[]);
-  sizeOptions.forEach(sz=>{
-    const cell = el('<div style="border:1px solid var(--border);border-radius:5px;padding:6px;"></div>');
-    const lab = el('<label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:bold;margin-bottom:4px;"></label>');
-    const chk = document.createElement('input'); chk.type='checkbox';
-    chk.checked = data.tailles[sz]!==undefined && data.tailles[sz]!=='' && data.tailles[sz]!=null;
-    lab.appendChild(chk);
-    lab.appendChild(document.createTextNode(sz));
-    cell.appendChild(lab);
-    const qtyInp = document.createElement('input'); qtyInp.type='number'; qtyInp.min='0';
-    qtyInp.value = data.tailles[sz]!==undefined ? data.tailles[sz] : '';
-    qtyInp.disabled = !chk.checked;
-    qtyInp.oninput = ()=>{ data.tailles[sz] = qtyInp.value===''?'':Number(qtyInp.value); };
-    chk.onchange = ()=>{
-      qtyInp.disabled = !chk.checked;
-      if(!chk.checked){ delete data.tailles[sz]; qtyInp.value=''; }
-      else if(qtyInp.value===''){ qtyInp.focus(); }
-    };
-    cell.appendChild(qtyInp);
-    sizeGrid.appendChild(cell);
-  });
-  m.appendChild(sizeGrid);
+  const colorsOfTissu = (data.tissu && DATA.lists.tissus[data.tissu]) || [];
+  function refreshTotal(){
+    const q = syncLignes();
+    const totEl = lgBox.querySelector('.lg-total');
+    if(totEl) totEl.textContent = 'Total commande : '+q+' pièce'+(q>1?'s':'')+' · '+data.lignes.filter(l=>l.couleur).length+' couleur(s)';
+    lgBox.querySelectorAll('.lg-line').forEach((node,i)=>{
+      const l = data.lignes[i]; if(!l) return;
+      const n = Object.keys(l.tailles||{}).reduce((a,k)=>a+(Number(l.tailles[k])||0),0);
+      const lt = node.querySelector('.lg-sub'); if(lt) lt.textContent = n+' pièce'+(n>1?'s':'');
+    });
+    if(q>0){ data.quantite = q; if(qtyRef.inp) qtyRef.inp.value = q; }
+  }
+  function drawLignes(){
+    lgBox.innerHTML = '';
+    if(!data.tissu) lgBox.appendChild(el('<div class="lg-hint">Choisis d\'abord un tissu pour pouvoir choisir les couleurs.</div>'));
+    data.lignes.forEach((l,idx)=>{
+      l.tailles = l.tailles || {};
+      const line = el('<div class="lg-line"></div>');
+      const head = el('<div class="lg-head"></div>');
+      const sel = document.createElement('select'); sel.disabled = !data.tissu;
+      const e0 = document.createElement('option'); e0.value=''; e0.textContent='— Couleur '+(idx+1)+' —'; sel.appendChild(e0);
+      const usedElsewhere = data.lignes.filter((x,j)=>j!==idx).map(x=>x.couleur).filter(Boolean);
+      colorsOfTissu.forEach(c=>{
+        const o = document.createElement('option'); o.value=c; o.textContent=c;
+        if(usedElsewhere.indexOf(c)>=0) o.disabled = true;
+        if(c===l.couleur) o.selected = true; sel.appendChild(o);
+      });
+      sel.onchange = ()=>{ l.couleur = sel.value; refreshTotal(); };
+      head.appendChild(sel);
+      head.appendChild(el('<span class="lg-sub"></span>'));
+      if(data.lignes.length>1){
+        const rm = el('<button class="btn small" type="button" style="color:#E0392D;">Retirer</button>');
+        rm.onclick = ()=>{ data.lignes.splice(idx,1); drawLignes(); refreshTotal(); };
+        head.appendChild(rm);
+      }
+      line.appendChild(head);
+      const grid = el('<div class="lg-grid"></div>');
+      sizeOptions.forEach(sz=>{
+        const cell = el('<div class="lg-cell"></div>');
+        const lab = el('<label class="lg-lab"></label>');
+        const chk = document.createElement('input'); chk.type='checkbox';
+        chk.checked = l.tailles[sz]!==undefined && l.tailles[sz]!=='' && l.tailles[sz]!=null;
+        lab.appendChild(chk); lab.appendChild(document.createTextNode(sz)); cell.appendChild(lab);
+        const qi = document.createElement('input'); qi.type='number'; qi.min='0';
+        qi.value = l.tailles[sz]!==undefined ? l.tailles[sz] : '';
+        qi.disabled = !chk.checked;
+        qi.oninput = ()=>{ l.tailles[sz] = qi.value===''?'':Number(qi.value); refreshTotal(); };
+        chk.onchange = ()=>{
+          qi.disabled = !chk.checked;
+          if(!chk.checked){ delete l.tailles[sz]; qi.value=''; refreshTotal(); }
+          else if(qi.value===''){ qi.focus(); }
+        };
+        cell.appendChild(qi); grid.appendChild(cell);
+      });
+      line.appendChild(grid);
+      lgBox.appendChild(line);
+    });
+    const add = el('<button class="btn small primary" type="button">+ Ajouter une couleur</button>');
+    add.disabled = !data.tissu;
+    add.onclick = ()=>{ data.lignes.push({couleur:'', tailles:{}}); drawLignes(); refreshTotal(); };
+    lgBox.appendChild(add);
+    lgBox.appendChild(el('<div class="lg-total"></div>'));
+    refreshTotal();
+  }
+  drawLignes();
+  const qtyField = field('Quantité (pièces)', data.quantite, v=>data.quantite=v===''?'':Number(v), 'number');
+  qtyRef.inp = qtyField.querySelector('input');
   frow([
-    field('Quantité (pièces)', data.quantite, v=>data.quantite=v===''?'':Number(v), 'number'),
+    qtyField,
     field('Date commande', data.dateCommande, v=>data.dateCommande=v, 'date')
   ]);
   frow([
@@ -5319,6 +5411,8 @@ function renderModal(){
     if(!data.reference || !data.reference.trim()){ alert('La référence est obligatoire.'); return; }
     if(mode==='create' && !data.commercialId){ alert('Choisis le commercial responsable de cette commande.'); return; }
     data.client = String(data.client||'').trim(); data.article = String(data.article||'').trim();
+    data.lignes = data.lignes.filter((l,i)=>l.couleur || Object.keys(l.tailles||{}).length || data.lignes.length===1);
+    syncLignes();
     rememberNames(data);
     if(mode==='create'){
       DATA.commandes.push(data);
