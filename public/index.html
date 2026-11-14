@@ -418,6 +418,7 @@ input[type=checkbox]{width:18px!important;height:18px;padding:0!important;border
 .lg-lab{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:bold;margin-bottom:4px}
 .lg-total{margin-top:10px;font-weight:800;font-size:14px;background:var(--pop-sun);border:2px solid var(--pop-navy);border-radius:10px;padding:8px 12px;display:inline-block}
 .dept-order-print{margin:10px 0 4px}
+.cl-count{font-size:12px;font-weight:700;color:#5c6a8c;margin:0 0 8px}
 /* ---------- page d'accueil ---------- */
 .pop-home{min-height:100vh;display:flex;flex-direction:column}
 .pop-mq{background:var(--pop-navy);color:var(--pop-sun);font:800 14px Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:10px 0;overflow:hidden;white-space:nowrap}
@@ -1393,6 +1394,7 @@ const STATUS_OPTIONS = ["En attente","En cours","Prête","Problème","Tissu non 
 // the user shared) — hand-drawn here as inline SVG so the page stays fully
 // self-contained (no external icon font / CDN).
 const ICONS = {
+  clients: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c.4-3.6 3-5.6 6.5-5.6s6.1 2 6.5 5.6"/><circle cx="17" cy="9" r="2.6"/><path d="M17.5 14.2c2.4.2 3.8 1.9 4 4.3"/></svg>',
   commandes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 10.5h6M9 13.5h6M9 16.5h4"/></svg>',
   recherche: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.2 15.2 21 21"/><path d="M7.6 10.6l2 2 3.4-3.6"/></svg>',
   listes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18h1.4a1.6 1.6 0 0 0 1.1-2.7c-.4-.4-.6-.8-.6-1.3a1.6 1.6 0 0 1 1.6-1.6H17a3.4 3.4 0 0 0 3.4-3.4C20.4 6.9 16.7 3 12 3Z"/><circle cx="7.6" cy="10.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="9.6" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.2" cy="7.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.6" cy="10.8" r="1.1" fill="currentColor" stroke="none"/></svg>',
@@ -1497,7 +1499,7 @@ async function loadSettingsFromSupabase(){
     console.log('Supabase non disponible, utilisation des paramètres par défaut');
   }
 }
-let view = {ecartFilter:'agerer', evalDetail:null, screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, catView:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, teamPeriod:'tout', importModal:null, trackRef:'', trackId:null, trackSearched:false};
+let view = {ecartFilter:'agerer', evalDetail:null, screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, catView:null, clientModal:null, clientSearch:'', clientWilaya:'', settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, teamPeriod:'tout', importModal:null, trackRef:'', trackId:null, trackSearched:false};
 
 function fmtDate(d){
   if(!d) return '—';
@@ -1555,6 +1557,7 @@ function render(){
   if(view.personModal) app.appendChild(renderPersonModal());
   if(view.catalogueModal) app.appendChild(renderCatalogueModal());
   if(view.catView) app.appendChild(renderCatalogueView());
+  if(view.clientModal) app.appendChild(renderClientModal());
   if(view.settingsModal) app.appendChild(renderSettingsModal());
   if(view.scanModal) app.appendChild(renderScanModal());
   if(view.qrModal) app.appendChild(renderQrModal());
@@ -1648,7 +1651,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 34 · ordre de coupe à imprimer</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 35 · fichier clients</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -3399,6 +3402,7 @@ function renderImportModal(){
 
 function renderAdminScreen(){
   const isCrea = view.role==='crea';
+  if(!isCrea) syncClients();
   const CREA_KEYS = ['conso','catalogue','listes'];
   if(isCrea){ Object.keys(view.adminOpen||{}).forEach(k=>{ if(CREA_KEYS.indexOf(k)<0) delete view.adminOpen[k]; }); }
   const w = el('<div></div>');
@@ -3433,6 +3437,7 @@ function renderAdminScreen(){
     {key:'equipe', label:'Évaluation équipe', badge: null},
     {key:'recherche', label:'Recherche par référence', badge: null},
     {key:'paiements', label:'Paiements', badge: nbNonSoldes()},
+    {key:'clients', label:'Clients', badge: (DATA.clients||[]).length},
     {key:'catalogue', label:'Catalogue produits', badge: (DATA.catalogue||[]).length},
     {key:'listes', label:'Tailles / Tissus / Couleurs', badge: null},
     {key:'parametres', label:'Paramètres & Thème', badge: null},
@@ -3492,6 +3497,19 @@ function renderAdminScreen(){
     catBody.appendChild(ioBar([{label:'Exporter (Excel / CSV)', fn:exportCatalogueCSV}], [{label:'Importer (CSV)', onFile:importCatalogueFile}]));
     catBody.appendChild(renderCatalogueTable());
     panel.appendChild(catBody);
+  }
+  if(view.adminOpen.clients){
+    panel.appendChild(el('<div class="section-title">Clients</div>'));
+    const clBody = el('<div class="section-body"></div>');
+    const clAddRow = el('<div class="add-row"></div>');
+    const clAddBtn = el('<button class="btn primary">+ Ajouter un client</button>');
+    clAddBtn.onclick = ()=>{ view.clientModal = {mode:'create', data:blankClient(), oldName:''}; render(); };
+    clAddRow.appendChild(clAddBtn);
+    clBody.appendChild(clAddRow);
+    clBody.appendChild(ioBar([{label:'Exporter (Excel / CSV)', fn:exportClientsCSV}], []));
+    clBody.appendChild(renderClientsPanel());
+    panel.appendChild(clBody);
+    if(view.clientsDirty){ view.clientsDirty=false; setTimeout(()=>saveState('Clients synchronisés'),0); }
   }
   if(view.adminOpen.listes){
     panel.appendChild(el('<div class="section-title">Gérer les listes (tailles, tissus & couleurs)</div>'));
@@ -5102,9 +5120,167 @@ function blankCommande(){
   };
 }
 
+const WILAYAS = ['Adrar','Chlef','Laghouat','Oum El Bouaghi','Batna','Béjaïa','Biskra','Béchar','Blida','Bouira','Tamanrasset','Tébessa','Tlemcen','Tiaret','Tizi Ouzou','Alger','Djelfa','Jijel','Sétif','Saïda','Skikda','Sidi Bel Abbès','Annaba','Guelma','Constantine','Médéa','Mostaganem',"M'Sila",'Mascara','Ouargla','Oran','El Bayadh','Illizi','Bordj Bou Arréridj','Boumerdès','El Tarf','Tindouf','Tissemsilt','El Oued','Khenchela','Souk Ahras','Tipaza','Mila','Aïn Defla','Naâma','Aïn Témouchent','Ghardaïa','Relizane','Timimoun','Bordj Badji Mokhtar','Ouled Djellal','Béni Abbès','In Salah','In Guezzam','Touggourt','Djanet',"El M'Ghair",'El Meniaa'];
+const WILAYA_LABELS = WILAYAS.map((n,i)=>String(i+1).padStart(2,'0')+' - '+n);
+function normName(x){ return String(x||'').trim().toLowerCase(); }
+function blankClient(){ return {id:'cl_'+Date.now(), ref:nextClientRef(), nom:'', tel:'', adresse:'', wilaya:'', commune:'', creeLe:new Date().toISOString()}; }
+function nextClientRef(){
+  let max = 0;
+  (DATA.clients||[]).forEach(c=>{ const m = /^CL(\d+)$/.exec(c.ref||''); if(m) max = Math.max(max, Number(m[1])); });
+  return 'CL'+String(max+1).padStart(4,'0');
+}
+function syncClients(){
+  DATA.clients = DATA.clients || [];
+  const have = {}; DATA.clients.forEach(c=>{ have[normName(c.nom)] = 1; });
+  const names = [];
+  ((DATA.lists||{}).clients||[]).forEach(x=>names.push(x));
+  (DATA.commandes||[]).forEach(c=>names.push(c.client));
+  let n = 0;
+  names.forEach(x=>{
+    const t = String(x||'').trim();
+    if(!t || have[normName(t)]) return;
+    DATA.clients.push({id:'cl_'+Date.now()+'_'+n, ref:nextClientRef(), nom:t, tel:'', adresse:'', wilaya:'', commune:'', creeLe:new Date().toISOString()});
+    have[normName(t)] = 1; n++;
+  });
+  if(n) view.clientsDirty = true;
+  return n;
+}
+function clientOrderCount(cl){ return (DATA.commandes||[]).filter(c=>normName(c.client)===normName(cl.nom)).length; }
+function exportClientsCSV(){
+  csvFile('clients_djebs_'+todayISO()+'.csv', ['Référence','Nom','Téléphone','Adresse','Wilaya','Commune','Nb commandes'],
+    (DATA.clients||[]).map(c=>[c.ref,c.nom,c.tel||'',c.adresse||'',c.wilaya||'',c.commune||'',clientOrderCount(c)]));
+}
+function renderClientsPanel(){
+  const box = document.createElement('div');
+  const bar = el('<div class="cat-bar"></div>');
+  const q = document.createElement('input'); q.type='search'; q.placeholder='Rechercher par nom ou référence (CL0001)… ou téléphone, wilaya, commune'; q.value = view.clientSearch||'';
+  const ws = document.createElement('select');
+  const w0 = document.createElement('option'); w0.value=''; w0.textContent='Toutes les wilayas'; ws.appendChild(w0);
+  WILAYA_LABELS.forEach(l=>{ const o=document.createElement('option'); o.value=l; o.textContent=l; if(l===view.clientWilaya) o.selected=true; ws.appendChild(o); });
+  bar.appendChild(q); bar.appendChild(ws); box.appendChild(bar);
+  const count = el('<div class="cl-count"></div>'); box.appendChild(count);
+  const wrap = document.createElement('div'); wrap.className='table-wrap';
+  const t = document.createElement('table'); t.className='main';
+  const thead = document.createElement('thead'); const hr = document.createElement('tr');
+  ['Réf.','Nom','Téléphone','Adresse','Wilaya','Commune','Commandes','Actions'].forEach(h=>{ const th=document.createElement('th'); th.textContent=h; hr.appendChild(th); });
+  thead.appendChild(hr); t.appendChild(thead);
+  const tbody = document.createElement('tbody'); t.appendChild(tbody); wrap.appendChild(t); box.appendChild(wrap);
+  const empty = el('<div class="empty-msg"></div>'); box.appendChild(empty);
+  function visible(){
+    const k = normName(view.clientSearch);
+    return (DATA.clients||[]).filter(c=>{
+      if(view.clientWilaya && c.wilaya!==view.clientWilaya) return false;
+      if(!k) return true;
+      return [c.nom,c.ref,c.tel,c.adresse,c.wilaya,c.commune].some(v=>normName(v).indexOf(k)>=0);
+    }).sort((a,b)=>String(a.nom||'').localeCompare(String(b.nom||''),'fr'));
+  }
+  function fill(){
+    tbody.innerHTML = '';
+    const list = visible();
+    count.textContent = list.length+' client'+(list.length>1?'s':'')+' sur '+(DATA.clients||[]).length;
+    empty.style.display = list.length ? 'none' : 'block';
+    empty.textContent = (DATA.clients||[]).length ? 'Aucun client ne correspond à la recherche.' : 'Aucun client. Ajoute le premier avec « + Ajouter un client ».';
+    list.forEach(c=>{
+      const tr = document.createElement('tr');
+      function td(text){ const cell=document.createElement('td'); cell.textContent=text; tr.appendChild(cell); return cell; }
+      td(c.ref||'—').style.fontWeight='bold';
+      td(c.nom||'—').style.fontWeight='bold';
+      const tc = document.createElement('td');
+      if(c.tel){ const a = document.createElement('a'); a.href='tel:'+String(c.tel).replace(/\s/g,''); a.textContent=c.tel; a.style.color='inherit'; tc.appendChild(a); } else tc.textContent='—';
+      tr.appendChild(tc);
+      const ad = td(c.adresse||'—'); ad.style.whiteSpace='normal'; ad.style.maxWidth='220px';
+      td(c.wilaya||'—'); td(c.commune||'—'); td(String(clientOrderCount(c)));
+      const act = document.createElement('td'); act.style.whiteSpace='normal';
+      const sel = document.createElement('select'); sel.className='cat-act-sel';
+      [['','Options…'],['edit','Modifier'],['del','Supprimer']].forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; sel.appendChild(o); });
+      sel.onchange = ()=>{
+        const v = sel.value; sel.value='';
+        if(v==='edit'){ view.clientModal = {mode:'edit', data:JSON.parse(JSON.stringify(c)), oldName:c.nom}; render(); }
+        else if(v==='del'){
+          const n = clientOrderCount(c);
+          if(n>0){ alert('Impossible de supprimer « '+c.nom+' » : il a '+n+' commande(s). Tu peux modifier ses informations à la place.'); return; }
+          if(!confirm('Supprimer le client « '+c.nom+' » ('+c.ref+') ?')) return;
+          DATA.clients = DATA.clients.filter(x=>x.id!==c.id);
+          if(DATA.lists && DATA.lists.clients) DATA.lists.clients = DATA.lists.clients.filter(x=>normName(x)!==normName(c.nom));
+          saveState('Client supprimé : '+c.nom);
+        }
+      };
+      act.appendChild(sel); tr.appendChild(act);
+      tbody.appendChild(tr);
+    });
+  }
+  q.oninput = ()=>{ view.clientSearch = q.value; fill(); };
+  ws.onchange = ()=>{ view.clientWilaya = ws.value; fill(); };
+  fill();
+  return box;
+}
+function renderClientModal(){
+  const {mode, data, oldName} = view.clientModal;
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal"></div>');
+  m.appendChild(el('<h2>'+(mode==='create'?'Ajouter un client':'Modifier '+esc(data.nom||'ce client'))+'</h2>'));
+  m.appendChild(el('<div style="font-size:12px;color:var(--text-soft);margin:-6px 0 12px;">Référence client : <b>'+esc(data.ref)+'</b> (automatique)</div>'));
+  function frow(fields){ const row = el('<div class="frow"></div>'); fields.forEach(f=>row.appendChild(f)); m.appendChild(row); }
+  function field(label, value, onchange, type, ph){
+    const w = el('<div></div>'); w.appendChild(el('<label>'+label+'</label>'));
+    const inp = document.createElement('input'); if(type) inp.type=type; if(ph) inp.placeholder=ph;
+    inp.value = value||''; inp.oninput = ()=>onchange(inp.value); w.appendChild(inp); return w;
+  }
+  frow([ field('Nom du client *', data.nom, v=>data.nom=v, 'text', 'ex : Boutique Amel') ]);
+  frow([ field('Téléphone', data.tel, v=>data.tel=v, 'tel', 'ex : 0555 12 34 56') ]);
+  frow([ field('Adresse', data.adresse, v=>data.adresse=v, 'text', 'N°, rue, quartier…') ]);
+  const wWrap = el('<div></div>'); wWrap.appendChild(el('<label>Wilaya</label>'));
+  const wSel = document.createElement('select');
+  const w0 = document.createElement('option'); w0.value=''; w0.textContent='— Choisir la wilaya —'; wSel.appendChild(w0);
+  WILAYA_LABELS.forEach(l=>{ const o=document.createElement('option'); o.value=l; o.textContent=l; if(l===data.wilaya) o.selected=true; wSel.appendChild(o); });
+  wWrap.appendChild(wSel);
+  const cWrap = el('<div></div>'); cWrap.appendChild(el('<label>Commune</label>'));
+  const cInp = document.createElement('input'); cInp.placeholder='ex : Bab Ezzouar'; cInp.value = data.commune||''; cInp.setAttribute('list','dl-communes');
+  cInp.oninput = ()=>data.commune = cInp.value;
+  const dl = document.createElement('datalist'); dl.id='dl-communes';
+  function fillCommunes(){
+    dl.innerHTML='';
+    const seen = {};
+    (DATA.clients||[]).forEach(c=>{ if(c.commune && c.wilaya===data.wilaya && !seen[c.commune]){ seen[c.commune]=1; const o=document.createElement('option'); o.value=c.commune; dl.appendChild(o); } });
+  }
+  wSel.onchange = ()=>{ data.wilaya = wSel.value; fillCommunes(); };
+  fillCommunes();
+  cWrap.appendChild(cInp); cWrap.appendChild(dl);
+  frow([wWrap, cWrap]);
+  const actions = el('<div class="actions"></div>');
+  const cancel = el('<button class="btn">Annuler</button>'); cancel.onclick = ()=>{ view.clientModal=null; render(); };
+  const save = el('<button class="btn primary">Enregistrer</button>');
+  save.onclick = ()=>{
+    const nom = String(data.nom||'').trim();
+    if(!nom){ alert('Le nom du client est obligatoire.'); return; }
+    if((DATA.clients||[]).some(c=>c.id!==data.id && normName(c.nom)===normName(nom))){ alert('Un client avec ce nom existe déjà.'); return; }
+    data.nom = nom; data.tel = String(data.tel||'').trim(); data.adresse = String(data.adresse||'').trim(); data.commune = String(data.commune||'').trim();
+    DATA.clients = DATA.clients || [];
+    if(mode==='create'){
+      DATA.clients.push(data);
+      DATA.lists = DATA.lists || {}; DATA.lists.clients = DATA.lists.clients || [];
+      if(DATA.lists.clients.indexOf(nom)<0) DATA.lists.clients.push(nom);
+    } else {
+      const i = DATA.clients.findIndex(c=>c.id===data.id);
+      if(i>=0) DATA.clients[i] = data;
+      if(oldName && normName(oldName)!==normName(nom)){
+        (DATA.commandes||[]).forEach(c=>{ if(normName(c.client)===normName(oldName)) c.client = nom; });
+        if(DATA.lists && DATA.lists.clients) DATA.lists.clients = DATA.lists.clients.map(x=>normName(x)===normName(oldName)?nom:x);
+      }
+    }
+    view.clientModal = null;
+    saveState((mode==='create'?'Client ajouté : ':'Client modifié : ')+nom);
+  };
+  actions.appendChild(cancel); actions.appendChild(save); m.appendChild(actions);
+  overlay.appendChild(m);
+  overlay.onclick = (e)=>{ if(e.target===overlay){ view.clientModal=null; render(); } };
+  return overlay;
+}
+
 function clientNames(){
   const set = {};
   ((DATA.lists||{}).clients||[]).forEach(x=>{ if(x) set[x]=1; });
+  (DATA.clients||[]).forEach(x=>{ if(x && x.nom) set[x.nom]=1; });
   (DATA.commandes||[]).forEach(c=>{ if(c.client && String(c.client).trim()) set[String(c.client).trim()]=1; });
   return Object.keys(set);
 }
@@ -5119,6 +5295,7 @@ function rememberNames(data){
   DATA.lists = DATA.lists || {};
   const add = (key,val)=>{ val = String(val||'').trim(); if(!val) return; DATA.lists[key] = DATA.lists[key] || []; if(DATA.lists[key].indexOf(val)<0) DATA.lists[key].push(val); };
   add('clients', data.client); add('articles', data.article);
+  syncClients();
 }
 function renderModal(){
   const {mode, data} = view.modal;
