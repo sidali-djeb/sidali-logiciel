@@ -419,6 +419,15 @@ input[type=checkbox]{width:18px!important;height:18px;padding:0!important;border
 .lg-total{margin-top:10px;font-weight:800;font-size:14px;background:var(--pop-sun);border:2px solid var(--pop-navy);border-radius:10px;padding:8px 12px;display:inline-block}
 .dept-order-print{margin:10px 0 4px}
 .cl-count{font-size:12px;font-weight:700;color:#5c6a8c;margin:0 0 8px}
+.cl-kpis{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+.cl-kpi{flex:1;min-width:150px;background:var(--pop-sun);border:3px solid var(--pop-navy);border-radius:12px;padding:8px 12px;box-shadow:3px 3px 0 var(--pop-navy)}
+.cl-kpi.ok{background:var(--pop-mint)}
+.cl-kpi.bad{background:var(--pop-coral);color:#fff}
+.cl-kpi span{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.cl-kpi b{font-size:17px}
+.cl-table th,.cl-table td{padding:8px 7px;font-size:12.5px}
+.cl-table th{font-size:10.5px}
+.cl-table .cat-act-sel{width:108px;margin-right:4px;padding:6px 6px;font-size:12px}
 /* ---------- page d'accueil ---------- */
 .pop-home{min-height:100vh;display:flex;flex-direction:column}
 .pop-mq{background:var(--pop-navy);color:var(--pop-sun);font:800 14px Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:10px 0;overflow:hidden;white-space:nowrap}
@@ -1499,7 +1508,7 @@ async function loadSettingsFromSupabase(){
     console.log('Supabase non disponible, utilisation des paramètres par défaut');
   }
 }
-let view = {ecartFilter:'agerer', evalDetail:null, screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, catView:null, clientModal:null, clientSearch:'', clientWilaya:'', settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, teamPeriod:'tout', importModal:null, trackRef:'', trackId:null, trackSearched:false};
+let view = {ecartFilter:'agerer', evalDetail:null, screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, catView:null, clientModal:null, clientSearch:'', clientWilaya:'', clientSort:'az', settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, teamPeriod:'tout', importModal:null, trackRef:'', trackId:null, trackSearched:false};
 
 function fmtDate(d){
   if(!d) return '—';
@@ -1651,7 +1660,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 35 · fichier clients</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 36 · CA par client</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -5146,9 +5155,15 @@ function syncClients(){
   return n;
 }
 function clientOrderCount(cl){ return (DATA.commandes||[]).filter(c=>normName(c.client)===normName(cl.nom)).length; }
+function clientStats(cl){
+  const list = (DATA.commandes||[]).filter(c=>normName(c.client)===normName(cl.nom) && !(c.decoupe && c.decoupe.statut==='Annulée'));
+  let ca=0, paye=0, reste=0;
+  list.forEach(c=>{ const pi = payInfo(c); ca += pi.total; paye += Math.min(pi.paye, pi.total||pi.paye); reste += pi.reste; });
+  return {n:list.length, ca:ca, paye:paye, reste:reste};
+}
 function exportClientsCSV(){
-  csvFile('clients_djebs_'+todayISO()+'.csv', ['Référence','Nom','Téléphone','Adresse','Wilaya','Commune','Nb commandes'],
-    (DATA.clients||[]).map(c=>[c.ref,c.nom,c.tel||'',c.adresse||'',c.wilaya||'',c.commune||'',clientOrderCount(c)]));
+  csvFile('clients_djebs_'+todayISO()+'.csv', ['Référence','Nom','Téléphone','Adresse','Wilaya','Commune','Nb commandes','Chiffre d\'affaires (DA)','Payé (DA)','Reste à payer (DA)'],
+    (DATA.clients||[]).map(c=>{ const st = clientStats(c); return [c.ref,c.nom,c.tel||'',c.adresse||'',c.wilaya||'',c.commune||'',st.n,st.ca,st.paye,st.reste]; }));
 }
 function renderClientsPanel(){
   const box = document.createElement('div');
@@ -5157,12 +5172,15 @@ function renderClientsPanel(){
   const ws = document.createElement('select');
   const w0 = document.createElement('option'); w0.value=''; w0.textContent='Toutes les wilayas'; ws.appendChild(w0);
   WILAYA_LABELS.forEach(l=>{ const o=document.createElement('option'); o.value=l; o.textContent=l; if(l===view.clientWilaya) o.selected=true; ws.appendChild(o); });
-  bar.appendChild(q); bar.appendChild(ws); box.appendChild(bar);
+  const so = document.createElement('select');
+  [['az','Ordre alphabétique (A → Z)'],['ca','Plus gros chiffre d\'affaires'],['reste','Plus gros reste à payer'],['ref','Par référence']].forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; if((view.clientSort||'az')===v) o.selected=true; so.appendChild(o); });
+  bar.appendChild(q); bar.appendChild(ws); bar.appendChild(so); box.appendChild(bar);
+  const kp = el('<div class="cl-kpis"></div>'); box.appendChild(kp);
   const count = el('<div class="cl-count"></div>'); box.appendChild(count);
   const wrap = document.createElement('div'); wrap.className='table-wrap';
-  const t = document.createElement('table'); t.className='main';
+  const t = document.createElement('table'); t.className='main cl-table';
   const thead = document.createElement('thead'); const hr = document.createElement('tr');
-  ['Réf.','Nom','Téléphone','Adresse','Wilaya','Commune','Commandes','Actions'].forEach(h=>{ const th=document.createElement('th'); th.textContent=h; hr.appendChild(th); });
+  ['Réf.','Nom','Téléphone','Adresse','Wilaya','Commune','Cmd.','CA','Payé','Reste',''].forEach(h=>{ const th=document.createElement('th'); th.textContent=h; if(h==='Cmd.') th.title='Nombre de commandes'; if(h==='CA') th.title='Chiffre d\'affaires'; hr.appendChild(th); });
   thead.appendChild(hr); t.appendChild(thead);
   const tbody = document.createElement('tbody'); t.appendChild(tbody); wrap.appendChild(t); box.appendChild(wrap);
   const empty = el('<div class="empty-msg"></div>'); box.appendChild(empty);
@@ -5172,12 +5190,20 @@ function renderClientsPanel(){
       if(view.clientWilaya && c.wilaya!==view.clientWilaya) return false;
       if(!k) return true;
       return [c.nom,c.ref,c.tel,c.adresse,c.wilaya,c.commune].some(v=>normName(v).indexOf(k)>=0);
-    }).sort((a,b)=>String(a.nom||'').localeCompare(String(b.nom||''),'fr'));
+    }).sort((a,b)=>{
+      const m = view.clientSort||'az';
+      if(m==='ca') return clientStats(b).ca - clientStats(a).ca;
+      if(m==='reste') return clientStats(b).reste - clientStats(a).reste;
+      if(m==='ref') return String(a.ref||'').localeCompare(String(b.ref||''));
+      return String(a.nom||'').localeCompare(String(b.nom||''),'fr');
+    });
   }
   function fill(){
     tbody.innerHTML = '';
     const list = visible();
     count.textContent = list.length+' client'+(list.length>1?'s':'')+' sur '+(DATA.clients||[]).length;
+    const tot = list.reduce((a,c)=>{ const st = clientStats(c); a.ca+=st.ca; a.paye+=st.paye; a.reste+=st.reste; return a; }, {ca:0,paye:0,reste:0});
+    kp.innerHTML = '<div class="cl-kpi"><span>Chiffre d\'affaires</span><b>'+fmtDA(tot.ca)+'</b></div><div class="cl-kpi ok"><span>Encaissé</span><b>'+fmtDA(tot.paye)+'</b></div><div class="cl-kpi bad"><span>Reste à payer</span><b>'+fmtDA(tot.reste)+'</b></div>';
     empty.style.display = list.length ? 'none' : 'block';
     empty.textContent = (DATA.clients||[]).length ? 'Aucun client ne correspond à la recherche.' : 'Aucun client. Ajoute le premier avec « + Ajouter un client ».';
     list.forEach(c=>{
@@ -5188,8 +5214,13 @@ function renderClientsPanel(){
       const tc = document.createElement('td');
       if(c.tel){ const a = document.createElement('a'); a.href='tel:'+String(c.tel).replace(/\s/g,''); a.textContent=c.tel; a.style.color='inherit'; tc.appendChild(a); } else tc.textContent='—';
       tr.appendChild(tc);
-      const ad = td(c.adresse||'—'); ad.style.whiteSpace='normal'; ad.style.maxWidth='220px';
-      td(c.wilaya||'—'); td(c.commune||'—'); td(String(clientOrderCount(c)));
+      const ad = td(c.adresse||'—'); ad.style.whiteSpace='normal'; ad.style.maxWidth='150px';
+      td(c.wilaya||'—'); td(c.commune||'—');
+      const st = clientStats(c);
+      td(String(st.n));
+      td(st.ca>0?fmtDA(st.ca):'—').style.fontWeight='bold';
+      td(st.paye>0?fmtDA(st.paye):'—').style.color='#1E7A34';
+      td(st.reste>0?fmtDA(st.reste):'—').style.color = st.reste>0 ? '#E0392D' : '';
       const act = document.createElement('td'); act.style.whiteSpace='normal';
       const sel = document.createElement('select'); sel.className='cat-act-sel';
       [['','Options…'],['edit','Modifier'],['del','Supprimer']].forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; sel.appendChild(o); });
@@ -5211,6 +5242,7 @@ function renderClientsPanel(){
   }
   q.oninput = ()=>{ view.clientSearch = q.value; fill(); };
   ws.onchange = ()=>{ view.clientWilaya = ws.value; fill(); };
+  so.onchange = ()=>{ view.clientSort = so.value; fill(); };
   fill();
   return box;
 }
@@ -5220,6 +5252,7 @@ function renderClientModal(){
   const m = el('<div class="modal"></div>');
   m.appendChild(el('<h2>'+(mode==='create'?'Ajouter un client':'Modifier '+esc(data.nom||'ce client'))+'</h2>'));
   m.appendChild(el('<div style="font-size:12px;color:var(--text-soft);margin:-6px 0 12px;">Référence client : <b>'+esc(data.ref)+'</b> (automatique)</div>'));
+  if(mode==='edit'){ const st = clientStats(data); m.appendChild(el('<div class="cl-kpis" style="margin:0 0 12px"><div class="cl-kpi"><span>Chiffre d\'affaires</span><b>'+fmtDA(st.ca)+'</b></div><div class="cl-kpi ok"><span>Encaissé</span><b>'+fmtDA(st.paye)+'</b></div><div class="cl-kpi bad"><span>Reste</span><b>'+fmtDA(st.reste)+'</b></div></div>')); }
   function frow(fields){ const row = el('<div class="frow"></div>'); fields.forEach(f=>row.appendChild(f)); m.appendChild(row); }
   function field(label, value, onchange, type, ph){
     const w = el('<div></div>'); w.appendChild(el('<label>'+label+'</label>'));
