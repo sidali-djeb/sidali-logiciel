@@ -394,6 +394,19 @@ input[type=checkbox]{width:18px!important;height:18px;padding:0!important;border
 .cat-launch{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--pop-sun);border:3px solid var(--pop-navy);border-radius:14px;padding:10px 14px;margin:0 0 12px;box-shadow:4px 4px 0 var(--pop-navy)}
 .cat-launch b{font-size:13px}
 .cat-launch select{flex:1;min-width:180px;padding:9px 12px;border:2px solid var(--pop-navy);border-radius:10px;background:#fff;font-size:13px;font-weight:700;font-family:Arial,sans-serif}
+.cat-view-photo{display:block;width:100%;max-height:340px;object-fit:contain;background:var(--pop-cream);border:3px solid var(--pop-navy);border-radius:14px;margin:0 0 14px;cursor:zoom-in}
+.cat-view-nophoto{height:120px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#7a86a3;cursor:default}
+.cat-view-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.cat-view-item{background:#fff;border:2px solid var(--pop-navy);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:3px}
+.cat-view-item span{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#5c6a8c;font-weight:700}
+.cat-view-item b{font-size:14px;word-break:break-word}
+.cat-chip{display:inline-block;background:var(--pop-sun);border:2px solid var(--pop-navy);border-radius:999px;padding:1px 9px;margin:2px 4px 2px 0;font-size:12px;font-weight:700}
+.cat-view-cmds{font-size:12.5px;display:flex;flex-direction:column;gap:4px}
+.cat-view-cmds div{background:var(--pop-cream);border-radius:8px;padding:6px 10px}
+@media(max-width:520px){.cat-view-grid{grid-template-columns:1fr}}
+.cat-actions-v{display:flex;flex-direction:column;gap:8px;width:150px;padding:4px 8px 6px 0}
+.cat-actions-v .btn{width:100%;text-align:center}
+.cat-act-sel{width:130px;margin-right:8px;padding:8px 10px;border:2px solid var(--pop-navy);border-radius:10px;background:var(--pop-sun);font-size:13px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer}
 /* ---------- page d'accueil ---------- */
 .pop-home{min-height:100vh;display:flex;flex-direction:column}
 .pop-mq{background:var(--pop-navy);color:var(--pop-sun);font:800 14px Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:10px 0;overflow:hidden;white-space:nowrap}
@@ -1473,7 +1486,7 @@ async function loadSettingsFromSupabase(){
     console.log('Supabase non disponible, utilisation des paramètres par défaut');
   }
 }
-let view = {ecartFilter:'agerer', evalDetail:null, screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, teamPeriod:'tout', importModal:null, trackRef:'', trackId:null, trackSearched:false};
+let view = {ecartFilter:'agerer', evalDetail:null, screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, catView:null, settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, teamPeriod:'tout', importModal:null, trackRef:'', trackId:null, trackSearched:false};
 
 function fmtDate(d){
   if(!d) return '—';
@@ -1530,6 +1543,7 @@ function render(){
   if(view.modal) app.appendChild(renderModal());
   if(view.personModal) app.appendChild(renderPersonModal());
   if(view.catalogueModal) app.appendChild(renderCatalogueModal());
+  if(view.catView) app.appendChild(renderCatalogueView());
   if(view.settingsModal) app.appendChild(renderSettingsModal());
   if(view.scanModal) app.appendChild(renderScanModal());
   if(view.qrModal) app.appendChild(renderQrModal());
@@ -1623,7 +1637,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 28 · lancer commande dans le catalogue</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 31 · options en liste déroulante</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -3787,25 +3801,27 @@ function renderCatalogueTable(){
       } else {
         photoTd.appendChild(el('<div style="width:36px;height:36px;border-radius:5px;background:var(--bg);border:1px solid var(--border);"></div>'));
       }
+      photoTd.style.cursor='pointer'; photoTd.title='Afficher la fiche'; photoTd.onclick = ()=>{ view.catView = p.id; render(); };
       tr.appendChild(photoTd);
       function td(text){ const cell=document.createElement('td'); cell.textContent=text; tr.appendChild(cell); return cell; }
-      td(p.article||'—').style.fontWeight='bold';
+      { const c = td(p.article||'—'); c.style.fontWeight='bold'; c.style.cursor='pointer'; c.title='Afficher la fiche'; c.onclick = ()=>{ view.catView = p.id; render(); }; }
       td(p.refPatron||'—');
       td(p.tissu||'—');
       td((p.consoMoyenne!==''&&p.consoMoyenne!=null) ? p.consoMoyenne+' '+(p.consoUnite||'kg')+' / pièce' : '—');
       td((p.tailles||[]).join(' / ')||'—');
-      td(catDate(p.creeLe));
-      td(catDate(p.modifieLe));
-      const act = document.createElement('td'); act.style.whiteSpace='normal'; act.style.minWidth='150px';
-      const b0 = el('<button class="btn small primary">Lancer commande</button>');
-      b0.onclick = ()=>launchFromProduct(p);
-      const b1 = el('<button class="btn small">Modifier</button>');
-      b1.onclick = ()=>{ view.catalogueModal = {mode:'edit', data:JSON.parse(JSON.stringify(p))}; render(); };
-      const b2 = el('<button class="btn small">Dupliquer</button>');
-      b2.onclick = ()=>{ catDuplicate([p.id]); saveState('Produit dupliqué : '+p.article); };
-      const b3 = el('<button class="btn small" style="color:#E0392D;">Supprimer</button>');
-      b3.onclick = ()=>{ if(catDelete([p.id])) saveState('Produit supprimé du catalogue : '+p.article); };
-      const grp = el('<div style="display:flex;flex-wrap:wrap;gap:6px;max-width:190px;"></div>'); grp.appendChild(b0); grp.appendChild(b1); grp.appendChild(b2); grp.appendChild(b3); act.appendChild(grp);
+      { const c1 = td(catDate(p.creeLe)); c1.style.whiteSpace='normal'; c1.style.maxWidth='92px'; const c2 = td(catDate(p.modifieLe)); c2.style.whiteSpace='normal'; c2.style.maxWidth='92px'; }
+      const act = document.createElement('td'); act.style.whiteSpace='normal'; act.style.minWidth='140px';
+      const actSel = document.createElement('select'); actSel.className='cat-act-sel';
+      [['','Options…'],['voir','Afficher la fiche'],['lancer','Lancer commande'],['edit','Modifier'],['dup','Dupliquer'],['del','Supprimer']].forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; actSel.appendChild(o); });
+      actSel.onchange = ()=>{
+        const v = actSel.value; actSel.value='';
+        if(v==='voir'){ view.catView = p.id; render(); }
+        else if(v==='lancer') launchFromProduct(p);
+        else if(v==='edit'){ view.catalogueModal = {mode:'edit', data:JSON.parse(JSON.stringify(p))}; render(); }
+        else if(v==='dup'){ catDuplicate([p.id]); saveState('Produit dupliqué : '+p.article); }
+        else if(v==='del'){ if(catDelete([p.id])) saveState('Produit supprimé du catalogue : '+p.article); }
+      };
+      act.appendChild(actSel);
       tr.appendChild(act);
       tbody.appendChild(tr);
     });
@@ -3817,6 +3833,49 @@ function renderCatalogueTable(){
   sortSel.onchange = ()=>{ view.catSort = sortSel.value; fill(); };
   fill();
   return box;
+}
+
+function renderCatalogueView(){
+  const p = (DATA.catalogue||[]).find(x=>x.id===view.catView);
+  if(!p){ view.catView=null; return document.createElement('div'); }
+  const close = ()=>{ view.catView=null; render(); };
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal cat-view"></div>');
+  m.appendChild(el('<h2>'+esc(p.article||'Produit')+'</h2>'));
+  if(p.photo){
+    const img = document.createElement('img'); img.src = p.photo; img.className='cat-view-photo'; img.title='Ouvrir la photo en grand';
+    img.onclick = ()=>window.open(p.photo,'_blank');
+    m.appendChild(img);
+  } else {
+    m.appendChild(el('<div class="cat-view-photo cat-view-nophoto">Pas de photo</div>'));
+  }
+  const conso = (p.consoMoyenne!==''&&p.consoMoyenne!=null) ? esc(p.consoMoyenne)+' '+esc(p.consoUnite||'kg')+' / pièce' : '—';
+  const tailles = (p.tailles||[]).length ? (p.tailles||[]).map(t=>'<span class="cat-chip">'+esc(t)+'</span>').join('') : '—';
+  const cmds = (DATA.commandes||[]).filter(c=>c.catalogueId===p.id);
+  const totalPcs = cmds.reduce((a,c)=>a+(Number(c.quantite)||0),0);
+  const grid = el('<div class="cat-view-grid"></div>');
+  [['Article',esc(p.article||'—')],['Tissu',esc(p.tissu||'—')],['Réf. patron',esc(p.refPatron||'—')],['Conso moyenne',conso],['Tailles disponibles',tailles],['Ajouté le',catDate(p.creeLe)],['Modifié le',catDate(p.modifieLe)],['Commandes lancées',cmds.length+(cmds.length?' · '+totalPcs+' pièces':'')]].forEach(([k,v])=>{
+    grid.appendChild(el('<div class="cat-view-item"><span>'+k+'</span><b>'+v+'</b></div>'));
+  });
+  m.appendChild(grid);
+  if(cmds.length){
+    m.appendChild(el('<div style="font-weight:700;font-size:13px;margin:12px 0 6px;">Dernières commandes de ce produit</div>'));
+    const box = el('<div class="cat-view-cmds"></div>');
+    cmds.slice().reverse().slice(0,6).forEach(c=>{
+      box.appendChild(el('<div><b>'+esc(c.reference||'')+'</b> · '+esc(c.client||'—')+' · '+esc(c.quantite||'0')+' pcs · '+catDate(c.dateCommande)+'</div>'));
+    });
+    m.appendChild(box);
+  }
+  const actions = el('<div class="modal-actions"></div>');
+  const lc = el('<button class="btn primary">Lancer commande</button>'); lc.onclick = ()=>{ view.catView=null; launchFromProduct(p); };
+  const ed = el('<button class="btn">Modifier</button>'); ed.onclick = ()=>{ view.catView=null; view.catalogueModal={mode:'edit',data:JSON.parse(JSON.stringify(p))}; render(); };
+  const dp = el('<button class="btn">Dupliquer</button>'); dp.onclick = ()=>{ view.catView=null; catDuplicate([p.id]); saveState('Produit dupliqué : '+p.article); };
+  const cl = el('<button class="btn">Fermer</button>'); cl.onclick = close;
+  actions.appendChild(lc); actions.appendChild(ed); actions.appendChild(dp); actions.appendChild(cl);
+  m.appendChild(actions);
+  overlay.appendChild(m);
+  overlay.onclick = (e)=>{ if(e.target===overlay) close(); };
+  return overlay;
 }
 
 function renderCatalogueModal(){
