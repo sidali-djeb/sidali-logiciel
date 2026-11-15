@@ -1,0 +1,41 @@
+name: Supabase - ping quotidien et sauvegarde hebdomadaire
+
+on:
+  schedule:
+    - cron: '17 6 * * *'   # ping chaque jour (garde le projet actif)
+    - cron: '43 5 * * 1'   # sauvegarde chaque lundi
+  workflow_dispatch:        # bouton "Run workflow" pour tester à la main
+
+env:
+  SUPABASE_URL: https://dmpzpcvlscrlefedfung.supabase.co
+  SUPABASE_KEY: sb_publishable_BWzmJ3PduuaFKVADp3khIA_a5pnjo5r
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          out=$(curl -fsS "$SUPABASE_URL/rest/v1/app_data?id=eq.main&select=id" \
+            -H "apikey: $SUPABASE_KEY")
+          echo "$out"
+          echo "$out" | grep -q '"main"'
+
+  sauvegarde:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '43 5 * * 1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Télécharger toutes les données
+        run: |
+          mkdir -p backup
+          curl -fsS "$SUPABASE_URL/rest/v1/app_data?id=eq.main" \
+            -H "apikey: $SUPABASE_KEY" -o "backup/sauvegarde-$(date +%F).json"
+          # sécurité : la sauvegarde doit contenir les données (sinon on échoue et GitHub t'envoie un e-mail)
+          jq -e '.[0].data.people | length > 0' backup/sauvegarde-*.json
+          ls -la backup
+      - name: Garder la sauvegarde 90 jours
+        uses: actions/upload-artifact@v4
+        with:
+          name: sauvegarde-supabase-${{ github.run_id }}
+          path: backup/
+          retention-days: 90
