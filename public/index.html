@@ -1722,7 +1722,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 41 · rôle Superviseur</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 43 · cases pour tous</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -2067,6 +2067,7 @@ function renderDeptScreen(){
   w.appendChild(topbar('Espace '+DEPT_LABEL[view.role], newCount+ecarts.length));
   const wrap = el('<div class="wrap"></div>');
   myEvalSection(wrap);
+  if(allowedTiles(currentPerson()).length) wrap.appendChild(renderAdminScreen(true));
 
   const scanned = view.focusId ? (DATA.commandes||[]).find(x=>x.id===view.focusId) : null;
   if(scanned){
@@ -2567,6 +2568,7 @@ function renderCommercialScreen(){
   w.appendChild(topbar('Espace Commercial', ecarts.length));
   const wrap = el('<div class="wrap"></div>');
   myEvalSection(wrap);
+  if(allowedTiles(currentPerson()).length) wrap.appendChild(renderAdminScreen(true));
 
   if(ecarts.length){
     wrap.appendChild(el('<div class="section-title" style="background:var(--red);">Écarts de stock à gérer ('+ecarts.length+')</div>'));
@@ -3481,17 +3483,27 @@ function renderImportModal(){
   return overlay;
 }
 
-function renderAdminScreen(){
-  const ROLE_TILES = {crea:['conso','catalogue','listes'], superviseur:['commandes']};
-  const isCrea = !!ROLE_TILES[view.role];
+let RO_MODE = false;
+const ROLE_TILES = {crea:['conso','catalogue','listes'], superviseur:['commandes']};
+const TILE_CHOICES = [['commandes','Commandes (lecture seule)'],['stats','Statistiques'],['delai','Calculateur de délai'],['conso','Consommation tissu'],['recherche','Recherche par référence'],['clients','Clients (lecture seule)'],['paiements','Paiements (lecture seule)'],['catalogue','Catalogue produits'],['listes','Tailles / Tissus / Couleurs']];
+function allowedTiles(p){
+  const def = ROLE_TILES[p && p.role] || [];
+  if(p && Array.isArray(p.tiles) && p.tiles.length) return p.tiles.filter(k=>TILE_CHOICES.some(t=>t[0]===k));
+  return def;
+}
+function renderAdminScreen(extra){
+  extra = extra===true;
+  const isCrea = extra || !!ROLE_TILES[view.role];
+  RO_MODE = isCrea;
   const isSuperv = view.role==='superviseur';
   if(!isCrea) syncClients();
-  const CREA_KEYS = ROLE_TILES[view.role] || [];
-  if(isSuperv && !Object.keys(view.adminOpen||{}).length) view.adminOpen = {commandes:true};
+  const CREA_KEYS = isCrea ? allowedTiles(currentPerson()) : [];
+  if(!extra && isCrea && CREA_KEYS.length===1 && !Object.keys(view.adminOpen||{}).length) view.adminOpen = {[CREA_KEYS[0]]:true};
   if(isCrea){ Object.keys(view.adminOpen||{}).forEach(k=>{ if(CREA_KEYS.indexOf(k)<0) delete view.adminOpen[k]; }); }
   const w = el('<div></div>');
-  w.appendChild(topbar(isSuperv ? 'Espace Superviseur' : (isCrea ? 'Espace Créa' : 'Espace Admin')));
-  const wrap = el('<div class="wrap"></div>');
+  if(!extra) w.appendChild(topbar(isSuperv ? 'Espace Superviseur' : (isCrea ? 'Espace Créa' : 'Espace Admin')));
+  const wrap = el(extra ? '<div style="margin-bottom:14px;"></div>' : '<div class="wrap"></div>');
+  if(extra) wrap.appendChild(el('<div class="section-title" style="margin-bottom:8px;">Mes cases supplémentaires</div>'));
 
   const total = DATA.commandes.length;
   const urgentes = DATA.commandes.filter(c=>c.urgent).length;
@@ -3561,7 +3573,7 @@ function renderAdminScreen(){
   if(view.adminOpen.commandes){
     panel.appendChild(el('<div class="section-title">Toutes les commandes</div>'));
     const tableBody = el('<div class="section-body"></div>');
-    if(isSuperv){
+    if(isCrea){
       tableBody.appendChild(el('<div class="empty-msg" style="padding:0 0 10px;text-align:left;">Suivi de toutes les commandes, du lancement jusqu\'à la livraison. Clique sur <b>Afficher</b> pour voir le détail étape par étape, ou utilise le filtre d\'état.</div>'));
     } else {
       const addRow = el('<div class="add-row"></div>');
@@ -3594,8 +3606,7 @@ function renderAdminScreen(){
     const clAddBtn = el('<button class="btn primary">+ Ajouter un client</button>');
     clAddBtn.onclick = ()=>{ view.clientModal = {mode:'create', data:blankClient(), oldName:''}; render(); };
     clAddRow.appendChild(clAddBtn);
-    clBody.appendChild(clAddRow);
-    clBody.appendChild(ioBar([{label:'Exporter (Excel / CSV)', fn:exportClientsCSV}], []));
+    if(!isCrea){ clBody.appendChild(clAddRow); clBody.appendChild(ioBar([{label:'Exporter (Excel / CSV)', fn:exportClientsCSV}], [])); }
     clBody.appendChild(renderClientsPanel());
     panel.appendChild(clBody);
     if(view.clientsDirty){ view.clientsDirty=false; setTimeout(()=>saveState('Clients synchronisés'),0); }
@@ -3655,7 +3666,7 @@ function renderAdminScreen(){
   if(view.adminOpen.paiements){
     panel.appendChild(el('<div class="section-title">Suivi des paiements</div>'));
     const payBody = el('<div class="section-body"></div>');
-    payBody.appendChild(ioBar([{label:'Exporter les paiements (CSV)', fn:exportPaiementsCSV},{label:'Exporter les versements (CSV)', fn:exportVersementsCSV}], [{label:'Importer des versements (CSV)', onFile:importVersementsFile}]));
+    if(!isCrea) payBody.appendChild(ioBar([{label:'Exporter les paiements (CSV)', fn:exportPaiementsCSV},{label:'Exporter les versements (CSV)', fn:exportVersementsCSV}], [{label:'Importer des versements (CSV)', onFile:importVersementsFile}]));
     payBody.appendChild(renderPaymentsPanel());
     panel.appendChild(payBody);
   }
@@ -3674,6 +3685,7 @@ function renderAdminScreen(){
   wrap.appendChild(panel);
 
   w.appendChild(wrap);
+  RO_MODE = false;
   return w;
 }
 
@@ -3747,9 +3759,32 @@ function renderPersonModal(){
     field('Email', data.email, v=>data.email=v, 'email')
   ]);
   frow([
-    field('Rôle / département', data.role, v=>data.role=v, 'role-select'),
+    field('Rôle / département', data.role, v=>{ data.role=v; data.tiles=undefined; refreshPerm(); }, 'role-select'),
     field('Code (4 chiffres)', data.code, v=>data.code=v)
   ]);
+  const permBox = el('<div></div>');
+  m.appendChild(permBox);
+  function refreshPerm(){
+    permBox.innerHTML='';
+    if(data.role==='admin') return;
+    const cur = allowedTiles(data);
+    const box = el('<div style="background:#BFD2FF;border:2px solid #001D51;border-radius:12px;padding:10px 12px;margin:6px 0 10px;"></div>');
+    box.appendChild(el('<div style="font-weight:700;font-size:13px;margin-bottom:6px;">'+(ROLE_TILES[data.role] ? 'Cases visibles pour cette personne :' : 'Cases supplémentaires (en plus de son écran de travail) :')+'</div>'));
+    const grid = el('<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 12px;"></div>');
+    TILE_CHOICES.forEach(([k,lbl])=>{
+      const lab = el('<label style="display:flex;align-items:center;gap:6px;font-size:13px;"></label>');
+      const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = cur.indexOf(k)>=0;
+      cb.onchange = ()=>{
+        const now = TILE_CHOICES.map(t=>t[0]).filter(x=> x===k ? cb.checked : (data.tiles||allowedTiles(data)).indexOf(x)>=0);
+        data.tiles = now;
+      };
+      lab.appendChild(cb); lab.appendChild(document.createTextNode(lbl)); grid.appendChild(lab);
+    });
+    box.appendChild(grid);
+    box.appendChild(el('<div style="font-size:11px;margin-top:6px;opacity:.8;">'+(ROLE_TILES[data.role] ? 'Cette personne voit uniquement les cases cochées. ' : 'Ces cases s\'ajoutent à son écran habituel. ')+'Commandes, clients et paiements restent en lecture seule ; catalogue et listes sont modifiables.</div>'));
+    permBox.appendChild(box);
+  }
+  refreshPerm();
   const activeWrap = el('<div style="margin:6px 0 10px;"></div>');
   const activeLabel = el('<label style="display:flex;align-items:center;gap:6px;font-size:13px;"></label>');
   const activeInp = document.createElement('input'); activeInp.type='checkbox'; activeInp.checked = data.active!==false;
@@ -3771,6 +3806,7 @@ function renderPersonModal(){
     if(!data.name || !data.name.trim()){ alert('Le nom est obligatoire.'); return; }
     if(!data.email || !data.email.trim()){ alert("L'email est obligatoire."); return; }
     if(!data.code || !String(data.code).trim()){ alert('Le code est obligatoire.'); return; }
+    if(ROLE_TILES[data.role] && (!allowedTiles(data).length || (Array.isArray(data.tiles) && !data.tiles.length))){ alert('Coche au moins une case visible.'); return; }
     const wouldBeAdmin = data.role==='admin' && data.active!==false;
     if(!wouldBeAdmin && countActiveAdmins(data.id)===0 && (DATA.people||[]).some(p=>p.id===data.id && p.role==='admin')){
       alert("Impossible : il doit rester au moins un accès Admin actif.");
@@ -4339,7 +4375,8 @@ function renderPaymentsPanel(){
       const act = document.createElement('td');
       const b = document.createElement('button'); b.className='btn small'; b.textContent='Gérer';
       b.onclick = ()=>{ view.payModal = {id:c.id, data:JSON.parse(JSON.stringify(c.paiement||{total:'',versements:[]}))}; render(); };
-      act.appendChild(b); tr.appendChild(act);
+      if(!RO_MODE) act.appendChild(b);
+      tr.appendChild(act);
       tb.appendChild(tr);
     });
     t.appendChild(tb); tw.appendChild(t); box.appendChild(tw);
@@ -5388,7 +5425,7 @@ function renderTable(onlyMine){
     const vb = document.createElement('button'); vb.className='btn small primary'; vb.textContent='Afficher'; vb.style.marginRight='6px';
     vb.onclick = ()=>{ view.orderView = c.id; render(); };
     editTd.appendChild(vb);
-    if(view.role!=='superviseur'){
+    if(!RO_MODE){
       const b = document.createElement('button'); b.className='btn small'; b.textContent='Modifier';
       b.onclick = ()=>{ view.modal = {mode:'edit', data:JSON.parse(JSON.stringify(c))}; render(); };
       editTd.appendChild(b);
@@ -5542,7 +5579,8 @@ function renderClientsPanel(){
           saveState('Client supprimé : '+c.nom);
         }
       };
-      act.appendChild(sel); tr.appendChild(act);
+      if(!RO_MODE) act.appendChild(sel);
+      tr.appendChild(act);
       tbody.appendChild(tr);
     });
   }
