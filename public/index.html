@@ -428,6 +428,20 @@ input[type=checkbox]{width:18px!important;height:18px;padding:0!important;border
 .cl-table th,.cl-table td{padding:8px 7px;font-size:12.5px}
 .cl-table th{font-size:10.5px}
 .cl-table .cat-act-sel{width:108px;margin-right:4px;padding:6px 6px;font-size:12px}
+.etat-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--pop-sky);border:3px solid var(--pop-navy);border-radius:12px;padding:8px 12px;margin:0 0 12px}
+.etat-bar b{font-size:13px}
+.etat-bar select{flex:1;min-width:200px;padding:8px 10px;border:2px solid var(--pop-navy);border-radius:10px;background:#fff;font-weight:700;font-size:13px;font-family:Arial,sans-serif}
+.cmd-table th,.cmd-table td{padding:8px 6px;font-size:12.5px}
+.cmd-table th{font-size:10.5px}
+.ov-steps{display:flex;flex-direction:column;gap:8px}
+.ov-step{display:flex;gap:10px;align-items:flex-start;background:var(--pop-cream);border:2px solid var(--pop-navy);border-radius:10px;padding:8px 10px;font-size:13px}
+.ov-step .pill{flex:0 0 130px;text-align:center}
+.ov-table{border-collapse:collapse;width:100%}
+.ov-table th,.ov-table td{border:2px solid var(--pop-navy);padding:6px 8px;text-align:center;font-size:13px}
+.ov-table th{background:var(--pop-sky)}
+.ov-notes{margin-top:10px;font-size:13px;background:var(--pop-cream);border-radius:8px;padding:8px 10px}
+.order-view{max-width:760px}
+@media(max-width:520px){.ov-step{flex-direction:column}.ov-step .pill{flex:none}}
 /* ---------- page d'accueil ---------- */
 .pop-home{min-height:100vh;display:flex;flex-direction:column}
 .pop-mq{background:var(--pop-navy);color:var(--pop-sun);font:800 14px Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:10px 0;overflow:hidden;white-space:nowrap}
@@ -1508,7 +1522,7 @@ async function loadSettingsFromSupabase(){
     console.log('Supabase non disponible, utilisation des paramètres par défaut');
   }
 }
-let view = {ecartFilter:'agerer', evalDetail:null, screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, catView:null, clientModal:null, clientSearch:'', clientWilaya:'', clientSort:'az', settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, teamPeriod:'tout', importModal:null, trackRef:'', trackId:null, trackSearched:false};
+let view = {ecartFilter:'agerer', evalDetail:null, screen:'login', role:null, personId:null, loginId:'', loginCode:'', loginError:'', searchRef:'', modal:null, personModal:null, catalogueModal:null, catView:null, etatFilter:'', orderView:null, clientModal:null, clientSearch:'', clientWilaya:'', clientSort:'az', settingsModal:null, writable:null, showDone:{}, discussionOpen:false, adminOpen:{}, focusId:null, scanId:null, qrModal:null, payModal:null, payFilter:'tous', paySearch:'', scanModal:false, anPeriod:'tout', cmdFilter:'mes', chatWith:'team', chatRefocus:false, teamPeriod:'tout', importModal:null, trackRef:'', trackId:null, trackSearched:false};
 
 function fmtDate(d){
   if(!d) return '—';
@@ -1565,7 +1579,9 @@ function render(){
   if(view.modal) app.appendChild(renderModal());
   if(view.personModal) app.appendChild(renderPersonModal());
   if(view.catalogueModal) app.appendChild(renderCatalogueModal());
+  if(view.orderView && (view.modal || view.payModal)) view.orderView = null;
   if(view.catView) app.appendChild(renderCatalogueView());
+  if(view.orderView) app.appendChild(renderOrderView());
   if(view.clientModal) app.appendChild(renderClientModal());
   if(view.settingsModal) app.appendChild(renderSettingsModal());
   if(view.scanModal) app.appendChild(renderScanModal());
@@ -1660,7 +1676,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 36 · CA par client</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 38 · afficher et suivre la commande</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -5059,21 +5075,103 @@ function renderFiche(c){
   return f;
 }
 
+function renderOrderView(){
+  const c = (DATA.commandes||[]).find(x=>x.id===view.orderView);
+  if(!c){ view.orderView = null; return document.createElement('div'); }
+  const close = ()=>{ view.orderView = null; render(); };
+  const who = id=>{ const p = (DATA.people||[]).find(x=>x.id===id); return p ? p.name : ''; };
+  const D = x=>x ? fmtDate(x) : '—';
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal order-view"></div>');
+  const et = orderEtat(c);
+  m.appendChild(el('<h2>Suivi de la commande '+esc(c.reference)+' <span class="pill '+et.cls+'" style="font-size:12px;vertical-align:middle">'+esc(et.label)+'</span></h2>'));
+  m.appendChild(renderFiche(c));
+
+  // ---- détail du suivi, étape par étape ----
+  m.appendChild(el('<div class="grp-head" style="background:#001D51;margin-top:14px">Suivi étape par étape</div>'));
+  const d=c.decoupe||{}, f=c.confection||{}, e=c.emballage||{}, st=c.stock||{};
+  const ec = (typeof ecartStock==='function') ? ecartStock(c) : null;
+  const rows = [
+    ['Commande lancée', 'Date : '+D(c.dateCommande)+(c.dateLivraisonPrevue?' · livraison prévue : '+D(c.dateLivraisonPrevue):'')+(commercialOf(c)?' · commercial : '+esc(commercialOf(c).name):''), 'prete'],
+    ['Découpe', esc(d.statut||'En attente')+' · prévue : '+D(d.prevueLe)+' · faite : '+D(d.faiteLe)+(d.par&&who(d.par)?' · par '+esc(who(d.par)):''), STATUS_CLASS[d.statut]||'attente'],
+    ['Confection', esc(f.statut||'En attente')+(f.atelier?' · atelier : '+esc(f.atelier):'')+' · début : '+D(f.debut)+' · fin : '+D(f.fin)+(f.par&&who(f.par)?' · par '+esc(who(f.par)):''), STATUS_CLASS[f.statut]||'attente'],
+    ['Emballage', esc(e.statut||'En attente')+' · début : '+D(e.debut)+' · fin : '+D(e.fin)+(e.par&&who(e.par)?' · par '+esc(who(e.par)):''), STATUS_CLASS[e.statut]||'attente'],
+    ['Stock / réception', (st.quantiteRecue!==''&&st.quantiteRecue!=null ? 'Reçu : '+esc(st.quantiteRecue)+' pièces sur '+esc(c.quantite||0)+' · le '+D(st.dateReception)+(ec!==null&&ec!==0?' · écart '+(ec>0?'+':'')+ec:'')+(st.par&&who(st.par)?' · par '+esc(who(st.par)):'') : 'Pas encore reçue'), (st.quantiteRecue!==''&&st.quantiteRecue!=null) ? 'prete' : 'attente']
+  ];
+  const tl = el('<div class="ov-steps"></div>');
+  rows.forEach(r=>{ tl.appendChild(el('<div class="ov-step"><span class="pill '+r[2]+'">'+r[0]+'</span><div>'+r[1]+'</div></div>')); });
+  m.appendChild(tl);
+
+  // ---- produit : tissu, couleurs × tailles ----
+  m.appendChild(el('<div class="grp-head" style="background:#B8860B;margin-top:14px">Produit</div>'));
+  const lignes = (Array.isArray(c.lignes) && c.lignes.length) ? c.lignes : [{couleur:c.couleur||'', tailles:c.tailles||{}}];
+  const order = (DATA.lists && DATA.lists.tailles) || [];
+  const used = {}; lignes.forEach(l=>Object.keys(l.tailles||{}).forEach(k=>{ if(Number((l.tailles||{})[k])>0) used[k]=true; }));
+  const sizes = order.filter(k=>used[k]).concat(Object.keys(used).filter(k=>order.indexOf(k)===-1));
+  const info = el('<div class="cat-view-grid"></div>');
+  [['Client',esc(c.client||'—')],['Article',esc(c.article||'—')],['Tissu',esc(c.tissu||'—')],['Quantité',esc(c.quantite||0)+' pièces']].forEach(([k,v])=>info.appendChild(el('<div class="cat-view-item"><span>'+k+'</span><b>'+v+'</b></div>')));
+  m.appendChild(info);
+  if(sizes.length){
+    let html = '<table class="ov-table"><tr><th>Couleur</th>'+sizes.map(k=>'<th>'+esc(k)+'</th>').join('')+'<th>Total</th></tr>';
+    lignes.forEach(l=>{ let t=0; html += '<tr><th>'+esc(l.couleur||'—')+'</th>'+sizes.map(k=>{ const n=Number((l.tailles||{})[k])||0; t+=n; return '<td>'+(n||'')+'</td>'; }).join('')+'<td><b>'+t+'</b></td></tr>'; });
+    html += '</table>';
+    m.appendChild(el('<div style="margin-top:10px;overflow-x:auto">'+html+'</div>'));
+  }
+  if(c.notes) m.appendChild(el('<div class="ov-notes"><b>Notes :</b> '+esc(c.notes)+'</div>'));
+
+  const actions = el('<div class="modal-actions"></div>');
+  const cl = el('<button class="btn">Fermer</button>'); cl.onclick = close;
+  actions.appendChild(cl); m.appendChild(actions);
+  overlay.appendChild(m);
+  overlay.onclick = (ev)=>{ if(ev.target===overlay) close(); };
+  return overlay;
+}
+
+const ETAT_LIST = [['attente','En attente de découpe'],['decoupe','En découpe'],['decoupee','Découpe terminée'],['confection','En confection'],['confectionnee','Confection terminée'],['emballage','En emballage'],['emballee','Emballée · attente stock'],['recue','Reçue en stock'],['probleme','Problème / tissu manquant'],['annulee','Annulée']];
+function orderEtat(c){
+  const d=c.decoupe||{}, f=c.confection||{}, e=c.emballage||{}, st=c.stock||{};
+  if([d,f,e].some(x=>x.statut==='Annulée')) return {key:'annulee',label:'Annulée',cls:'annulee'};
+  if(st.quantiteRecue!=='' && st.quantiteRecue!=null) return {key:'recue',label:'Reçue en stock',cls:'prete'};
+  const prob = [['Découpe',d],['Confection',f],['Emballage',e]].find(x=>x[1].statut==='Problème' || x[1].statut==='Tissu non disponible');
+  if(prob) return {key:'probleme',label:(prob[1].statut==='Problème'?'Problème':'Tissu manquant')+' · '+prob[0],cls:'probleme'};
+  if(e.statut==='Prête') return {key:'emballee',label:'Emballée · attente stock',cls:'cours'};
+  if(e.statut==='En cours') return {key:'emballage',label:'En emballage',cls:'cours'};
+  if(f.statut==='Prête') return {key:'confectionnee',label:'Confection terminée',cls:'cours'};
+  if(f.statut==='En cours') return {key:'confection',label:'En confection',cls:'cours'};
+  if(d.statut==='Prête') return {key:'decoupee',label:'Découpe terminée',cls:'cours'};
+  if(d.statut==='En cours') return {key:'decoupe',label:'En découpe',cls:'cours'};
+  return {key:'attente',label:'En attente de découpe',cls:'attente'};
+}
 function renderTable(onlyMine){
+  const outer = document.createElement('div');
+  const baseList = DATA.commandes.slice().reverse().filter(c=>!onlyMine || c.commercialId===view.personId);
+  // filtre « Afficher l'état »
+  const fbar = el('<div class="etat-bar"><b>Afficher l\'état :</b></div>');
+  const fsel = document.createElement('select');
+  const o0 = document.createElement('option'); o0.value=''; o0.textContent='Toutes les commandes ('+baseList.length+')'; fsel.appendChild(o0);
+  ETAT_LIST.forEach(([k,l])=>{
+    const n = baseList.filter(c=>orderEtat(c).key===k).length;
+    const o = document.createElement('option'); o.value=k; o.textContent=l+' ('+n+')'; if(view.etatFilter===k) o.selected=true; fsel.appendChild(o);
+  });
+  fsel.onchange = ()=>{ view.etatFilter = fsel.value; render(); };
+  fbar.appendChild(fsel);
+  outer.appendChild(fbar);
+  const list = baseList.filter(c=>!view.etatFilter || orderEtat(c).key===view.etatFilter);
+
   // Table-structural elements (thead/tr/td) cannot be created via the el()
   // innerHTML-on-a-<div> trick — the HTML parser drops them outside a real
   // <table> context. Build them with createElement instead.
   const wrap = document.createElement('div'); wrap.className = 'table-wrap';
-  const t = document.createElement('table'); t.className = 'main';
+  const t = document.createElement('table'); t.className = 'main cmd-table';
   const thead = document.createElement('thead');
   const headRow = document.createElement('tr');
-  ['Référence','Article','Client','Responsable','Qté','Découpe','Confection','Emballage','Livraison prévue',''].forEach(h=>{
+  ['Référence','Article','Client','Resp.','Qté','État','Découpe','Confection','Emballage','Livraison',''].forEach(h=>{
     const th = document.createElement('th'); th.textContent = h; headRow.appendChild(th);
   });
   thead.appendChild(headRow);
   t.appendChild(thead);
   const tbody = document.createElement('tbody');
-  DATA.commandes.slice().reverse().filter(c=>!onlyMine || c.commercialId===view.personId).forEach(c=>{
+  list.forEach(c=>{
     const tr = document.createElement('tr');
     function td(html){ const cell=document.createElement('td'); cell.innerHTML=html; tr.appendChild(cell); }
     td('<b>'+c.reference+'</b>'+(Number(c.priorite)>0?' <span class="prio-tag">P'+Number(c.priorite)+'</span>':'')+(c.urgent?' <span class="pill probleme">URG</span>':''));
@@ -5081,11 +5179,15 @@ function renderTable(onlyMine){
     td(esc(c.client));
     { const cm = commercialOf(c); td(cm?esc(cm.name):'<span style="color:var(--red);">—</span>'); }
     td(String(c.quantite));
+    { const et = orderEtat(c); td('<span class="pill '+et.cls+'" style="white-space:normal">'+esc(et.label)+'</span>'); }
     td(pill(c.decoupe.statut));
     td(pill(c.confection.statut));
     td(pill(c.emballage.statut));
     td(c.dateLivraisonPrevue?fmtDate(c.dateLivraisonPrevue):'—');
-    const editTd = document.createElement('td');
+    const editTd = document.createElement('td'); editTd.style.whiteSpace='normal';
+    const vb = document.createElement('button'); vb.className='btn small primary'; vb.textContent='Afficher'; vb.style.marginRight='6px';
+    vb.onclick = ()=>{ view.orderView = c.id; render(); };
+    editTd.appendChild(vb);
     const b = document.createElement('button'); b.className='btn small'; b.textContent='Modifier';
     b.onclick = ()=>{ view.modal = {mode:'edit', data:JSON.parse(JSON.stringify(c))}; render(); };
     editTd.appendChild(b);
@@ -5097,7 +5199,9 @@ function renderTable(onlyMine){
   });
   t.appendChild(tbody);
   wrap.appendChild(t);
-  return wrap;
+  outer.appendChild(wrap);
+  if(!list.length) outer.appendChild(el('<div class="empty-msg">Aucune commande dans cet état.</div>'));
+  return outer;
 }
 
 // Numérotation automatique des références : JB0001, JB0002, ... à l'infini.
