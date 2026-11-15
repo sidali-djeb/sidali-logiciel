@@ -1473,6 +1473,44 @@ function resizeImageFile(file, maxDim, quality){
   });
 }
 
+// Photo de produit : JPEG redimensionné (beaucoup plus léger que le PNG)
+function canvasToJpeg(img, maxDim, quality){
+  let w = img.width, h = img.height;
+  if(w>maxDim || h>maxDim){ if(w>h){ h = Math.round(h*maxDim/w); w = maxDim; } else { w = Math.round(w*maxDim/h); h = maxDim; } }
+  const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+  return canvas.toDataURL('image/jpeg', quality);
+}
+function resizeImageFileJpeg(file, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{ const img = new Image(); img.onload = ()=>resolve(canvasToJpeg(img, maxDim, quality)); img.onerror = ()=>reject(new Error('image load failed')); img.src = reader.result; };
+    reader.onerror = ()=>reject(new Error('file read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+function dataUrlToImage(url){ return new Promise((resolve, reject)=>{ const img = new Image(); img.onload = ()=>resolve(img); img.onerror = ()=>reject(new Error('img')); img.src = url; }); }
+function photoBytes(){ return (DATA.catalogue||[]).reduce((a,p)=>a+(p.photo?String(p.photo).length:0),0); }
+function fmtMo(n){ return (n/1048576).toLocaleString('fr-FR',{maximumFractionDigits:2})+' Mo'; }
+async function optimizeCatalogPhotos(btn, info){
+  const list = (DATA.catalogue||[]).filter(p=>p.photo && String(p.photo).indexOf('data:image')===0);
+  if(!list.length){ alert('Aucune photo à optimiser.'); return; }
+  const before = photoBytes(); let changed = 0, done = 0;
+  btn.disabled = true;
+  for(const p of list){
+    done++; info.textContent = 'Optimisation… '+done+' / '+list.length;
+    try{
+      const img = await dataUrlToImage(p.photo);
+      const out = canvasToJpeg(img, 480, 0.72);
+      if(out.length < p.photo.length){ p.photo = out; changed++; }
+    }catch(e){}
+  }
+  const after = photoBytes();
+  btn.disabled = false;
+  if(!changed){ info.textContent = 'Les photos sont déjà légères : rien à changer.'; return; }
+  alert('Photos optimisées : '+changed+' photo(s). Poids '+fmtMo(before)+' → '+fmtMo(after)+'.');
+  saveState('Photos du catalogue allégées ('+fmtMo(before)+' → '+fmtMo(after)+')');
+}
 function formatTailles(c){
   const t = c.tailles;
   if(!t || typeof t!=='object') return '—';
@@ -1488,8 +1526,8 @@ const STATUS_CLASS = {
 };
 const DEPT_LABEL = {decoupe:"Découpe",confection:"Confection",emballage:"Emballage",stock:"Stock"};
 const DEPT_COLOR = {decoupe:"#6B4226",confection:"#A8492E",emballage:"#8A6D3B",stock:"#3E5C76"};
-const ROLE_LABEL = {admin:"Admin",commercial:"Commercial",decoupe:"Découpe",confection:"Confection",emballage:"Emballage",stock:"Stock",crea:"Créa"};
-const ROLE_OPTIONS = ["admin","commercial","decoupe","confection","emballage","stock","crea"];
+const ROLE_LABEL = {admin:"Admin",commercial:"Commercial",decoupe:"Découpe",confection:"Confection",emballage:"Emballage",stock:"Stock",crea:"Créa",superviseur:"Superviseur"};
+const ROLE_OPTIONS = ["admin","commercial","decoupe","confection","emballage","stock","crea","superviseur"];
 
 // Configuration Supabase
 const SUPABASE_URL = 'https://dmpzpcvlscrlefedfung.supabase.co';
@@ -1673,7 +1711,7 @@ function renderLogin(){
     }
     view.personId = person.id;
     view.role = person.role;
-    view.screen = person.role==='admin' ? 'admin' : (person.role==='commercial' ? 'commercial' : (person.role==='crea' ? 'crea' : 'dept'));
+    view.screen = person.role==='admin' ? 'admin' : (person.role==='commercial' ? 'commercial' : ((person.role==='crea' || person.role==='superviseur') ? 'crea' : 'dept'));
     view.loginId=''; view.loginCode=''; view.loginError='';
     saveSession(person.id);
     applyScan();
@@ -1684,7 +1722,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 39 · calculateur de délai</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 41 · rôle Superviseur</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -2876,7 +2914,7 @@ function starsHtml(v){
 }
 function fmt1(v){ return (Math.round(v*10)/10).toLocaleString('fr-FR',{maximumFractionDigits:1}); }
 function teamRows(){
-  const staff = (DATA.people||[]).filter(p=>p.active!==false && p.role!=='admin' && p.role!=='crea');
+  const staff = (DATA.people||[]).filter(p=>p.active!==false && p.role!=='admin' && p.role!=='crea' && p.role!=='superviseur');
   return staff.map(p=>({p:p, e:autoEval(p)}));
 }
 function renderTeamPanel(){
@@ -3208,7 +3246,7 @@ function openImport(name, headline, preview, applyLabel, apply){
 }
 function importFail(msg){ alert(msg || 'Impossible de lire ce fichier. Utilise un fichier CSV exporté depuis cette même case comme modèle.'); }
 function num(v){ const n = parseFloat(String(v||'').replace(/\s/g,'').replace(',','.')); return isNaN(n) ? null : n; }
-const ROLE_FROM_TEXT = {admin:'admin', commercial:'commercial', decoupe:'decoupe', confection:'confection', emballage:'emballage', stock:'stock', crea:'crea'};
+const ROLE_FROM_TEXT = {admin:'admin', commercial:'commercial', decoupe:'decoupe', confection:'confection', emballage:'emballage', stock:'stock', crea:'crea', superviseur:'superviseur'};
 
 // ----- Commandes -----
 function exportCommandesList(list){
@@ -3368,6 +3406,16 @@ function exportConsoCSV(){
 }
 
 // ----- Sauvegarde complète (dans Paramètres) -----
+function renderPhotoOptBlock(){
+  const box = el('<div class="bk-card" style="margin-top:14px;"><div class="bk-title">Photos du catalogue</div><div class="bk-text"></div></div>');
+  const n = (DATA.catalogue||[]).filter(p=>p.photo).length;
+  box.querySelector('.bk-text').textContent = n+' photo(s) · poids total : '+fmtMo(photoBytes())+'. Les nouvelles photos sont déjà allégées automatiquement. Ce bouton allège les photos déjà enregistrées (même qualité à l\'écran, 5 à 10 fois plus léger).';
+  const info = el('<div style="font-size:12px;font-weight:700;margin:6px 0"></div>');
+  const btn = el('<button class="btn primary">Optimiser les photos</button>');
+  btn.onclick = ()=>optimizeCatalogPhotos(btn, info);
+  box.appendChild(btn); box.appendChild(info);
+  return box;
+}
 function renderFullBackupBlock(){
   const box = el('<div class="bk-card" style="margin-top:14px;"><div class="bk-title">Sauvegarde complète</div><div class="bk-text"></div></div>');
   const n = {cmd:(DATA.commandes||[]).length, cat:(DATA.catalogue||[]).length, ppl:(DATA.people||[]).length, msg:(DATA.messages||[]).length, ev:(DATA.evaluations||[]).length};
@@ -3434,12 +3482,15 @@ function renderImportModal(){
 }
 
 function renderAdminScreen(){
-  const isCrea = view.role==='crea';
+  const ROLE_TILES = {crea:['conso','catalogue','listes'], superviseur:['commandes']};
+  const isCrea = !!ROLE_TILES[view.role];
+  const isSuperv = view.role==='superviseur';
   if(!isCrea) syncClients();
-  const CREA_KEYS = ['conso','catalogue','listes'];
+  const CREA_KEYS = ROLE_TILES[view.role] || [];
+  if(isSuperv && !Object.keys(view.adminOpen||{}).length) view.adminOpen = {commandes:true};
   if(isCrea){ Object.keys(view.adminOpen||{}).forEach(k=>{ if(CREA_KEYS.indexOf(k)<0) delete view.adminOpen[k]; }); }
   const w = el('<div></div>');
-  w.appendChild(topbar(isCrea ? 'Espace Créa' : 'Espace Admin'));
+  w.appendChild(topbar(isSuperv ? 'Espace Superviseur' : (isCrea ? 'Espace Créa' : 'Espace Admin')));
   const wrap = el('<div class="wrap"></div>');
 
   const total = DATA.commandes.length;
@@ -3510,12 +3561,16 @@ function renderAdminScreen(){
   if(view.adminOpen.commandes){
     panel.appendChild(el('<div class="section-title">Toutes les commandes</div>'));
     const tableBody = el('<div class="section-body"></div>');
-    const addRow = el('<div class="add-row"></div>');
-    const addBtn = el('<button class="btn primary">+ Nouvelle commande</button>');
-    addBtn.onclick = ()=>{ view.modal = {mode:'create', data:blankCommande()}; render(); };
-    addRow.appendChild(addBtn);
-    tableBody.appendChild(addRow);
-    tableBody.appendChild(ioBar([{label:'Exporter (Excel / CSV)', fn:exportCommandesCSV}], [{label:'Importer (CSV)', onFile:importCommandesFile}]));
+    if(isSuperv){
+      tableBody.appendChild(el('<div class="empty-msg" style="padding:0 0 10px;text-align:left;">Suivi de toutes les commandes, du lancement jusqu\'à la livraison. Clique sur <b>Afficher</b> pour voir le détail étape par étape, ou utilise le filtre d\'état.</div>'));
+    } else {
+      const addRow = el('<div class="add-row"></div>');
+      const addBtn = el('<button class="btn primary">+ Nouvelle commande</button>');
+      addBtn.onclick = ()=>{ view.modal = {mode:'create', data:blankCommande()}; render(); };
+      addRow.appendChild(addBtn);
+      tableBody.appendChild(addRow);
+      tableBody.appendChild(ioBar([{label:'Exporter (Excel / CSV)', fn:exportCommandesCSV}], [{label:'Importer (CSV)', onFile:importCommandesFile}]));
+    }
     tableBody.appendChild(renderTable());
     panel.appendChild(tableBody);
   }
@@ -3561,6 +3616,7 @@ function renderAdminScreen(){
     const info = el('<div style="margin-top:14px;font-size:13px;color:var(--text-soft);"></div>');
     info.innerHTML = '<strong>Entreprise:</strong> '+(DATA.settings.companyName||'—')+'<br/><strong>Couleur primaire:</strong> <span style="display:inline-block;width:20px;height:20px;background:'+(DATA.settings.primaryColor||'#DBC4A0')+';border:1px solid var(--border);vertical-align:middle;"></span><br/><strong>Couleur secondaire:</strong> <span style="display:inline-block;width:20px;height:20px;background:'+(DATA.settings.secondaryColor||'#001D51')+';border:1px solid var(--border);vertical-align:middle;"></span>';
     settingsBody.appendChild(info);
+    settingsBody.appendChild(renderPhotoOptBlock());
     settingsBody.appendChild(renderFullBackupBlock());
     panel.appendChild(settingsBody);
   }
@@ -4048,7 +4104,7 @@ function renderCatalogueModal(){
     const f = photoInput.files[0];
     if(!f) return;
     try{
-      data.photo = await resizeImageFile(f, 480, 0.72);
+      data.photo = await resizeImageFileJpeg(f, 480, 0.72);
       render();
     }catch(e){ alert("Impossible de charger cette image."); }
   };
@@ -4216,6 +4272,7 @@ function applyScan(){
   view.searchRef = c.reference;
   view.scrollToFiche = true;
   if(view.role==='admin') view.adminOpen = {recherche:true};
+  if(view.role==='superviseur'){ view.orderView = c.id; }
 }
 
 function canManagePay(){ return view.role==='admin' || view.role==='commercial'; }
@@ -4540,6 +4597,7 @@ async function handleScanText(text){
   view.searchRef = c.reference;
   view.scrollToFiche = true;
   if(view.role==='admin') view.adminOpen = {recherche:true};
+  if(view.role==='superviseur'){ view.orderView = c.id; }
   render();
   if(view.role!=='admin' && view.role!=='commercial') window.scrollTo(0,0);
   return true;
@@ -5330,9 +5388,11 @@ function renderTable(onlyMine){
     const vb = document.createElement('button'); vb.className='btn small primary'; vb.textContent='Afficher'; vb.style.marginRight='6px';
     vb.onclick = ()=>{ view.orderView = c.id; render(); };
     editTd.appendChild(vb);
-    const b = document.createElement('button'); b.className='btn small'; b.textContent='Modifier';
-    b.onclick = ()=>{ view.modal = {mode:'edit', data:JSON.parse(JSON.stringify(c))}; render(); };
-    editTd.appendChild(b);
+    if(view.role!=='superviseur'){
+      const b = document.createElement('button'); b.className='btn small'; b.textContent='Modifier';
+      b.onclick = ()=>{ view.modal = {mode:'edit', data:JSON.parse(JSON.stringify(c))}; render(); };
+      editTd.appendChild(b);
+    }
     const qb = document.createElement('button'); qb.className='btn small'; qb.textContent='QR'; qb.style.marginLeft='6px';
     qb.onclick = ()=>{ view.qrModal = {id:c.id}; render(); };
     editTd.appendChild(qb);
@@ -6033,7 +6093,7 @@ function restoreSession(){
   if(!person){ clearSession(); return; }
   view.personId = person.id;
   view.role = person.role;
-  view.screen = person.role==='admin' ? 'admin' : (person.role==='commercial' ? 'commercial' : (person.role==='crea' ? 'crea' : 'dept'));
+  view.screen = person.role==='admin' ? 'admin' : (person.role==='commercial' ? 'commercial' : ((person.role==='crea' || person.role==='superviseur') ? 'crea' : 'dept'));
 }
 
 async function boot(){
