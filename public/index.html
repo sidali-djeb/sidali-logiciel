@@ -1722,7 +1722,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 43 · cases pour tous</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 44 · données protégées</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -6065,41 +6065,156 @@ function showToast(msg){
 
 // Lecture : la clé publishable s'envoie uniquement dans l'en-tête apikey.
 // Pas d'en-tête Authorization : la clé sb_publishable_ n'est pas un JWT.
+// ---------- Synchronisation sécurisée (plusieurs personnes en même temps) ----------
+// Chaque enregistrement porte un numéro de version (_rev). Si quelqu'un d'autre a enregistré
+// entre-temps (onglet resté ouvert, autre téléphone...), on FUSIONNE au lieu d'écraser.
+let BASE = null;          // copie de ce que la base contenait au dernier chargement / enregistrement
+let REMOTE_REV = null;    // numéro de version connu de la base
+function cloneJSON(x){ return JSON.parse(JSON.stringify(x)); }
+function sameJSON(a,b){ return JSON.stringify(a)===JSON.stringify(b); }
+function isIdArray(a){ return Array.isArray(a) && a.every(x=>x && typeof x==='object' && !Array.isArray(x) && x.id!=null); }
+function isPlainObj(o){ return o && typeof o==='object' && !Array.isArray(o); }
+// fusion à 3 voies : l = ma version, b = version de départ, r = version actuelle de la base
+function mergeValue(l,b,r){
+  if(sameJSON(l,b)) return r;
+  if(sameJSON(r,b)) return l;
+  if(sameJSON(l,r)) return l;
+  if(Array.isArray(l) && Array.isArray(r)){
+    const bb = Array.isArray(b) ? b : [];
+    if(isIdArray(l) && isIdArray(r) && isIdArray(bb)){
+      const bm = new Map(bb.map(x=>[x.id,x])), lm = new Map(l.map(x=>[x.id,x])), rm = new Map(r.map(x=>[x.id,x]));
+      const out = [];
+      r.forEach(rx=>{
+        const bx = bm.get(rx.id), lx = lm.get(rx.id);
+        if(bx && !lx){ if(sameJSON(rx,bx)) return; out.push(rx); return; }   // supprimé chez moi : on retire (sauf si modifié ailleurs)
+        if(!bx && !lx){ out.push(rx); return; }                               // ajouté par un autre
+        if(!bx && lx){ out.push(mergeValue(lx,{},rx)); return; }
+        out.push(mergeValue(lx,bx,rx));
+      });
+      l.forEach(lx=>{ if(!rm.has(lx.id)){ const bx = bm.get(lx.id); if(!bx || !sameJSON(lx,bx)) out.push(lx); } });  // ajouté chez moi (ou modifié alors que supprimé ailleurs)
+      return out;
+    }
+    if(l.concat(r).every(x=>typeof x!=='object' || x===null)){
+      const bb2 = Array.isArray(b) ? b : [];
+      const added = l.filter(x=>bb2.indexOf(x)<0), removed = bb2.filter(x=>l.indexOf(x)<0);
+      const out = r.filter(x=>removed.indexOf(x)<0);
+      added.forEach(x=>{ if(out.indexOf(x)<0) out.push(x); });
+      return out;
+    }
+    return l;
+  }
+  if(isPlainObj(l) && isPlainObj(r)){
+    const bb = isPlainObj(b) ? b : {};
+    const out = {};
+    new Set(Object.keys(l).concat(Object.keys(r))).forEach(k=>{
+      if(!(k in l)){ if(k in bb && sameJSON(r[k],bb[k])) return; out[k]=r[k]; return; }
+      if(!(k in r)){ if(k in bb && sameJSON(l[k],bb[k])) return; out[k]=l[k]; return; }
+      out[k] = mergeValue(l[k], bb[k], r[k]);
+    });
+    return out;
+  }
+  return l;
+}
+function mergeDoc(local, base, remote){
+  const out = mergeValue(local, base||{}, remote);
+  // les messages de discussion : on garde l'union
+  const seen = new Set(), msgs = [];
+  (remote.messages||[]).concat(local.messages||[]).forEach(m=>{ if(m && m.id && !seen.has(m.id)){ seen.add(m.id); msgs.push(m); } });
+  msgs.sort((a,b)=>(a.ts||'').localeCompare(b.ts||''));
+  out.messages = msgs.length>200 ? msgs.slice(-200) : msgs;
+  // clients créés automatiquement en double par deux appareils : on garde le premier de chaque nom
+  if(Array.isArray(out.clients)){
+    const names = new Set();
+    out.clients = out.clients.filter(c=>{ const k = (typeof normName==='function') ? normName(c.nom) : String(c.nom||'').trim().toLowerCase(); if(!k) return true; if(names.has(k)) return false; names.add(k); return true; });
+  }
+  return out;
+}
+async function fetchRemoteRev(){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main&select=data->_rev`, { headers:{ 'apikey': SUPABASE_KEY }, cache:'no-store' });
+    if(!res.ok) return undefined;
+    const rows = await res.json();
+    if(!rows || !rows.length) return undefined;
+    const v = rows[0]._rev;
+    return v==null ? 0 : Number(v);
+  }catch(e){ return undefined; }
+}
+async function fetchRemoteDoc(){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main`, { headers:{ 'apikey': SUPABASE_KEY }, cache:'no-store' });
+    if(!res.ok) return null;
+    const txt = await res.text();
+    const rows = JSON.parse(txt);
+    return (rows && rows.length && rows[0].data) ? rows[0].data : null;
+  }catch(e){ return null; }
+}
+
+// Lecture : la clé publishable s'envoie uniquement dans l'en-tête apikey.
+// Pas d'en-tête Authorization : la clé sb_publishable_ n'est pas un JWT.
 async function loadDataFromSupabase(){
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main`, {
-      headers: { 'apikey': SUPABASE_KEY }
+      headers: { 'apikey': SUPABASE_KEY }, cache:'no-store'
     });
     if(!res.ok){
       console.log('Chargement Supabase échoué:', res.status, await res.text());
       return;
     }
-    const rows = await res.json();
+    const txt = await res.text();
+    const rows = JSON.parse(txt);
     if(rows && rows.length && rows[0].data){
       // on garde les valeurs par défaut pour toute clé absente de la base
       DATA = Object.assign({}, DATA, rows[0].data);
+      BASE = JSON.parse(txt)[0].data;
+      REMOTE_REV = Number(rows[0].data._rev||0);
     }
   } catch(e){
     console.log('Supabase non disponible:', e.message);
   }
 }
 
-async function saveToSupabase(){
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ data: DATA })
-    });
-    if(!res.ok){
-      console.log('Enregistrement Supabase échoué:', res.status, await res.text());
-      return false;
+async function patchIfRev(doc, rev){
+  const cond = rev ? `data->>_rev=eq.${rev}` : `data->>_rev=is.null`;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main&${cond}&select=id`, {
+    method: 'PATCH',
+    headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify({ data: doc })
+  });
+  if(!res.ok){ console.log('Enregistrement Supabase échoué:', res.status, await res.text()); return {ok:false, conflict:false}; }
+  const rows = await res.json().catch(()=>[]);
+  return (rows && rows.length) ? {ok:true} : {ok:false, conflict:true};
+}
+
+let saveChain = Promise.resolve(true);
+let lastMergeNotice = 0;
+function saveToSupabase(){
+  saveChain = saveChain.then(doSave, doSave);
+  return saveChain;
+}
+async function doSave(){
+  try{
+    let merged = false;
+    for(let attempt=0; attempt<4; attempt++){
+      const doc = Object.assign({}, DATA, {_rev: (REMOTE_REV||0)+1});
+      const r = await patchIfRev(doc, REMOTE_REV||0);
+      if(r.ok){
+        REMOTE_REV = doc._rev; DATA._rev = doc._rev;
+        BASE = cloneJSON(doc);
+        if(merged){ render(); if(Date.now()-lastMergeNotice>4000){ lastMergeNotice=Date.now(); showToast('↻ Données mises à jour avec les changements des autres'); } }
+        return true;
+      }
+      if(!r.conflict) return false;
+      // quelqu'un d'autre a enregistré entre-temps : on fusionne avec sa version
+      const remote = await fetchRemoteDoc();
+      if(!remote) return false;
+      const m = mergeDoc(DATA, BASE, remote);
+      DATA = Object.assign({}, DATA, m);
+      Object.keys(DATA).forEach(k=>{ if(!(k in m)) delete DATA[k]; });
+      BASE = cloneJSON(remote);
+      REMOTE_REV = Number(remote._rev||0);
+      merged = true;
     }
-    return true;
+    return false;
   } catch(e){
     console.log('Erreur Supabase:', e.message);
     return false;
@@ -6114,6 +6229,32 @@ async function saveState(toastMsg){
     return;
   }
   if(toastMsg) showToast('✓ '+toastMsg);
+}
+
+// Rafraîchissement automatique : si quelqu'un d'autre a modifié les données, on les récupère.
+let refreshBusy = false;
+function userIsEditing(){
+  if(view.modal||view.personModal||view.catalogueModal||view.clientModal||view.payModal||view.settingsModal||view.importModal||view.scanModal) return true;
+  const a = document.activeElement;
+  return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+}
+async function refreshIfStale(){
+  if(refreshBusy || document.hidden || !view.personId || BASE===null) return;
+  refreshBusy = true;
+  try{
+    const rev = await fetchRemoteRev();
+    if(rev===undefined || rev===REMOTE_REV) return;
+    if(userIsEditing()) return;          // on ne dérange pas une saisie en cours
+    const remote = await fetchRemoteDoc();
+    if(!remote) return;
+    const msgsLocal = DATA.messages;
+    const m = mergeDoc(DATA, BASE, remote);
+    DATA = Object.assign({}, DATA, m);
+    BASE = cloneJSON(remote);
+    REMOTE_REV = Number(remote._rev||0);
+    DATA._rev = REMOTE_REV;
+    render();
+  } finally { refreshBusy = false; }
 }
 
 // Session : on garde la personne connectée même si on actualise la page.
@@ -6147,7 +6288,8 @@ async function boot(){
   render();
   // Discussion en direct : on récupère les nouveaux messages toutes les 4 secondes
   setInterval(pollMessages, 4000);
-  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) pollMessages(); });
+  setInterval(refreshIfStale, 15000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ pollMessages(); refreshIfStale(); } });
 }
 
 boot();
