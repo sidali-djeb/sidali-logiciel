@@ -1746,7 +1746,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 54 · évaluation personnalisation</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 55 · tableau de bord et évaluations</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -3514,10 +3514,10 @@ function renderImportModal(){
 
 let RO_MODE = false;
 function screenForRole(r){ return r==='admin' ? 'admin' : r==='commercial' ? 'commercial' : (r==='crea'||r==='superviseur') ? 'crea' : r==='tricotage' ? 'trico' : r==='personnalisation' ? 'perso' : 'dept'; }
-const TRI_TILE_CHOICES = [['fil','Stock de fil'],['prod','Production'],['fini','Finition'],['stock','Stock tissu fini'],['vente','Vente tissu fini'],['clients','Clients']];
-const PS_TILE_CHOICES = [['cmd','Commandes'],['dtf','DTF'],['broderie','Broderie'],['serigraphie','Sérigraphie'],['conso','Stock consommables'],['devis','Tarifs & devis (prix)'],['clients','Clients'],['eval','Évaluation']];
+const TRI_TILE_CHOICES = [['fil','Stock de fil'],['prod','Production'],['fini','Finition'],['stock','Stock tissu fini'],['vente','Vente tissu fini'],['clients','Clients'],['eval','Évaluation']];
+const PS_TILE_CHOICES = [['board','Tableau de bord'],['cmd','Commandes'],['dtf','DTF'],['broderie','Broderie'],['serigraphie','Sérigraphie'],['conso','Stock consommables'],['devis','Tarifs & devis (prix)'],['clients','Clients'],['eval','Évaluation']];
 function allowedTri(p){ if(p && Array.isArray(p.triTiles) && p.triTiles.length) return p.triTiles.filter(k=>TRI_TILE_CHOICES.some(t=>t[0]===k)); return (p && p.role==='tricotage') ? ['fil','prod','fini','stock'] : []; }
-function allowedPs(p){ if(p && Array.isArray(p.psTiles) && p.psTiles.length) return p.psTiles.filter(k=>PS_TILE_CHOICES.some(t=>t[0]===k)); return (p && p.role==='personnalisation') ? ['cmd','dtf','broderie','serigraphie','conso'] : []; }
+function allowedPs(p){ if(p && Array.isArray(p.psTiles) && p.psTiles.length) return p.psTiles.filter(k=>PS_TILE_CHOICES.some(t=>t[0]===k)); return (p && p.role==='personnalisation') ? ['board','cmd','dtf','broderie','serigraphie','conso'] : []; }
 function trMoney(){ return view.role==='admin' || allowedTri(currentPerson()).indexOf('vente')>=0; }
 function psMoney(){ return view.role==='admin' || allowedPs(currentPerson()).indexOf('devis')>=0; }
 // cases des autres départements ajoutées à l'écran d'une personne
@@ -3532,6 +3532,7 @@ function renderStaffDept(dep){
   w.appendChild(topbar('Espace '+(dep==='tricotage'?'Tricotage':'Personnalisation')));
   const wrap = el('<div class="wrap"></div>');
   if(dep==='personnalisation') psMyEval(wrap);
+  if(dep==='tricotage') trMyEval(wrap);
   if(dep==='tricotage') renderTricotage(null, wrap, {allowed:allowedTri(p), embedded:true, main:true});
   else renderPerso(null, wrap, {allowed:allowedPs(p), embedded:true, main:true});
   if(allowedTiles(p).length) wrap.appendChild(renderAdminScreen(true));
@@ -6461,6 +6462,70 @@ function trEnsureClient(nom){
   if(t.clients.some(c=>normName(c.nom)===normName(nom))) return;
   t.clients.push({id:'ct_'+Date.now()+Math.floor(Math.random()*1000), ref:trNextRef('CT', t.clients, 3), nom:nom, tel:'', adresse:'', wilaya:'', commune:'', note:'', creeLe:new Date().toISOString()});
 }
+function trDelai(p){
+  if(!p.finPrevue) return null;
+  if(p.statut==='Terminé' && p.finDate){ const r = psDays(p.finPrevue, p.finDate); return {done:true, late:r>0, jours:r, txt: r>0 ? '⚠ fini avec '+r+' j de retard' : (r<0 ? '✓ fini '+(-r)+' j en avance' : '✓ fini à temps')}; }
+  const r = psDays(todayISO(), p.finPrevue);
+  return {done:false, late:r<0, jours:r, txt: r<0 ? '⚠ '+(-r)+' j de retard' : (r===0 ? 'à finir aujourd\'hui' : 'reste '+r+' j')};
+}
+function trEvalCfg(){ const t = TR(); t.evalCfg = t.evalCfg || {}; return {dechet: t.evalCfg.dechet!=null && t.evalCfg.dechet!=='' ? trNum(t.evalCfg.dechet) : 5, perte: t.evalCfg.perte!=null && t.evalCfg.perte!=='' ? trNum(t.evalCfg.perte) : 10}; }
+function trDechet(p){ const fil = (p.fils||[]).reduce((a,u)=>a+trNum(u.qte),0); const q = trNum(p.qteProduite); return (fil && q) ? 100*(fil-q)/fil : null; }
+function trPerte(p){ const q = trNum(p.qteProduite), f = trNum(p.qteFinie); return (p.dateStock && q && f) ? 100*(q-f)/q : null; }
+function trEvalStats(lots){
+  const cfg = trEvalCfg();
+  const fin = lots.filter(p=>p.statut==='Terminé');
+  const wd = fin.filter(p=>p.finPrevue && p.finDate); const ontime = wd.filter(p=>!trDelai(p).late);
+  const wdc = fin.filter(p=>trDechet(p)!==null); const okd = wdc.filter(p=>trDechet(p)<=cfg.dechet);
+  const wpe = lots.filter(p=>trPerte(p)!==null); const okp = wpe.filter(p=>trPerte(p)<=cfg.perte);
+  const pD = wd.length ? 100*ontime.length/wd.length : null, pQ = wdc.length ? 100*okd.length/wdc.length : null, pP = wpe.length ? 100*okp.length/wpe.length : null;
+  const parts = [pD,pQ].filter(x=>x!==null);
+  const score = parts.length ? parts.reduce((a,b)=>a+b,0)/parts.length : null;
+  const dMoy = wdc.length ? wdc.reduce((a,p)=>a+trDechet(p),0)/wdc.length : null;
+  const pMoy = wpe.length ? wpe.reduce((a,p)=>a+trPerte(p),0)/wpe.length : null;
+  return {fin:fin.length, wd:wd.length, ontime:ontime.length, pD:pD, wdc:wdc.length, okd:okd.length, pQ:pQ, dMoy:dMoy, wpe:wpe.length, okp:okp.length, pP:pP, pMoy:pMoy, stars: score===null ? null : Math.round(score/20*10)/10, cfg:cfg};
+}
+function trEvalCard(st, withPerte){
+  const col = v=>v===null?'#fff':(v>=85?'#37D6A5':(v>=60?'#FFC933':'#FF5A4D'));
+  const g = el('<div class="kpi-row"></div>');
+  g.appendChild(el('<div class="kpi" style="background:'+col(st.pD)+';"><div class="num" style="font-size:22px;">'+psPct(st.pD)+'</div><div class="label">Délai respecté ('+st.ontime+' / '+st.wd+')</div></div>'));
+  g.appendChild(el('<div class="kpi" style="background:'+col(st.pQ)+';"><div class="num" style="font-size:22px;">'+psPct(st.pQ)+'</div><div class="label">Lots avec déchet ≤ '+st.cfg.dechet+' % ('+st.okd+' / '+st.wdc+')'+(st.dMoy!==null?' · moy. '+fmt1(st.dMoy)+' %':'')+'</div></div>'));
+  if(withPerte) g.appendChild(el('<div class="kpi" style="background:'+col(st.pP)+';"><div class="num" style="font-size:22px;">'+psPct(st.pP)+'</div><div class="label">Finition : perte ≤ '+st.cfg.perte+' % ('+st.okp+' / '+st.wpe+')'+(st.pMoy!==null?' · moy. '+fmt1(st.pMoy)+' %':'')+'</div></div>'));
+  g.appendChild(el('<div class="kpi"><div class="num" style="font-size:22px;">'+(st.stars===null?'—':fmt1(st.stars)+' ★')+'</div><div class="label">Note / 5</div></div>'));
+  return g;
+}
+function trPanelEval(panel){
+  const t = TR(); const body = trSection(panel, 'Évaluation — tricotage');
+  view.trico.evalPer = view.trico.evalPer || '30';
+  const row = el('<div class="add-row" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-start;align-items:center;"></div>');
+  [['30','30 jours'],['90','90 jours'],['tout','Tout']].forEach(([v,l])=>row.appendChild(trBtn(l, ()=>{ view.trico.evalPer = v; render(); }, view.trico.evalPer===v)));
+  if(view.role==='admin') row.appendChild(trBtn('Seuils', ()=>{ view.tricoModal = {type:'evalcfg', mode:'edit', data:Object.assign({dechet:'', perte:''}, t.evalCfg||{})}; render(); }));
+  body.appendChild(row);
+  const lim = view.trico.evalPer==='tout' ? '' : new Date(Date.now()-Number(view.trico.evalPer)*86400000).toISOString().slice(0,10);
+  const lots = t.prods.filter(p=>!lim || String(p.finDate||p.date||'')>=lim);
+  const st = trEvalStats(lots);
+  if(st.stars!==null) body.appendChild(el('<div style="font-size:15px;margin:2px 0 8px;">Note du département : '+starsHtml(st.stars)+' <b>'+fmt1(st.stars)+' / 5</b></div>'));
+  body.appendChild(trEvalCard(st, true));
+  body.appendChild(el('<div style="font-size:12px;opacity:.8;margin:-4px 0 10px;">Délai : lot terminé avant la « fin prévue ». Déchet : fil utilisé – tissu produit. Perte finition : tissu produit – tissu fini (information). La note est la moyenne du délai et du déchet.</div>'));
+  const ids = Array.from(new Set(lots.map(p=>p.termineePar).filter(Boolean)));
+  if(ids.length){
+    body.appendChild(el('<div style="font-weight:800;margin:10px 0 6px;">Par personne (qui a terminé le lot)</div>'));
+    body.appendChild(trTable(['Personne','Lots terminés','Délai respecté','Déchet ok','Déchet moyen','Note'], ids.map(id=>{ const pp = (DATA.people||[]).find(x=>x.id===id); const s2 = trEvalStats(lots.filter(p=>p.termineePar===id)); return ['<b>'+esc(pp?pp.name:'—')+'</b>', s2.fin, psPct(s2.pD), psPct(s2.pQ), s2.dMoy===null?'—':fmt1(s2.dMoy)+' %', s2.stars===null?'—':starsHtml(s2.stars)+' '+fmt1(s2.stars)]; })));
+  }
+  const pb = lots.filter(p=>(trDelai(p) && trDelai(p).late && p.statut==='Terminé') || (trDechet(p)!==null && trDechet(p)>st.cfg.dechet) || (trPerte(p)!==null && trPerte(p)>st.cfg.perte));
+  if(pb.length){
+    body.appendChild(el('<div style="font-weight:800;margin:14px 0 6px;">À améliorer ('+pb.length+')</div>'));
+    body.appendChild(trTable(['Lot','Tissu','Délai','Déchet','Perte finition'], pb.map(p=>{ const dl = trDelai(p), d = trDechet(p), pe = trPerte(p); return ['<b>'+esc(p.ref)+'</b>', esc(p.tissu||''), dl?'<span style="color:'+(dl.late?'#E0392D':'#1E7A34')+'">'+dl.txt+'</span>':'—', d===null?'—':'<span style="color:'+(d>st.cfg.dechet?'#E0392D':'#1E7A34')+'">'+fmt1(d)+' %</span>', pe===null?'—':'<span style="color:'+(pe>st.cfg.perte?'#E0392D':'#1E7A34')+'">'+fmt1(pe)+' %</span>']; })));
+  }
+}
+function trMyEval(wrap){
+  const me = currentPerson(); if(!me) return;
+  const st = trEvalStats(TR().prods.filter(p=>p.termineePar===me.id));
+  wrap.appendChild(el('<div class="section-title" style="background:#B8860B;">Mon évaluation'+(st.stars===null?'':' — '+fmt1(st.stars)+' ★')+'</div>'));
+  const b = el('<div class="section-body"></div>');
+  if(!st.fin) b.appendChild(el('<div class="empty-msg" style="text-align:left;">Pas encore de lot terminé : ton évaluation apparaîtra ici (délai et déchet de fil).</div>'));
+  else b.appendChild(trEvalCard(st, false));
+  wrap.appendChild(b);
+}
 function trTissuOptions(){
   const s = new Set(Object.keys((DATA.lists||{}).tissus||{}).map(x=>x.toUpperCase()));
   TR().prods.forEach(p=>{ if(p.tissu) s.add(String(p.tissu).toUpperCase()); });
@@ -6501,7 +6566,8 @@ function renderTricotage(w, wrap, opts){
     {key:'fini', label:'Finition', sub:'Lavage · Repassage · Grattage', badge: enFini || null, ic: JOURNEY_ICONS.emballage},
     {key:'stock', label:'Stock tissu fini', badge: null, ic: JOURNEY_ICONS.stock},
     {key:'vente', label:'Vente tissu fini', badge: t.ventes.length || null, ic: ICONS.paiements || ''},
-    {key:'clients', label:'Clients', badge: t.clients.length || null, ic: ICONS.clients || ICONS.acces}
+    {key:'clients', label:'Clients', badge: t.clients.length || null, ic: ICONS.clients || ICONS.acces},
+    {key:'eval', label:'Évaluation', sub:'Délai · déchet', badge: null, ic: ICONS.equipe}
   ];
   const grid = el('<div class="icon-grid"></div>');
   tiles.filter(it=>!opts.allowed || opts.allowed.indexOf(it.key)>=0).forEach(it=>{
@@ -6523,6 +6589,7 @@ function renderTricotage(w, wrap, opts){
   if(o==='stock') trPanelStock(panel);
   if(o==='vente') trPanelVente(panel);
   if(o==='clients') trPanelClients(panel);
+  if(o==='eval') trPanelEval(panel);
   wrap.appendChild(panel);
   if(w && !opts.embedded) w.appendChild(wrap);
   return w;
@@ -6580,14 +6647,16 @@ function trPanelProd(panel){
   }, true));
   body.appendChild(row);
   if(!t.prods.length){ trEmpty(body, 'Aucun lot. Crée un lot de tricotage : la consommation de fil est déduite du stock automatiquement.'); return; }
-  body.appendChild(trTable(['Réf.','Date','Machine','Tissu','Fils utilisés','Produit','Rouleaux','État',''], t.prods.slice().reverse().map(p=>{
+  body.appendChild(trTable(['Réf.','Date','Machine','Tissu','Fils utilisés','Produit','Rouleaux','Fin prévue','État',''], t.prods.slice().reverse().map(p=>{
     const st = trStage(p);
+    const dl = trDelai(p);
     return ['<b>'+esc(p.ref)+'</b>', fmtDate(p.date), esc(p.machine||'—'), esc(p.tissu||'—'),
       (p.fils||[]).map(u=>esc(trFilLabel(trFil(u.filId)))+' : '+trKg(u.qte)).join('<br>') || '—',
       p.qteProduite?trKg(p.qteProduite):'—', esc(p.rouleaux||'—'),
+      dl ? fmtDate(p.finPrevue)+'<br><span style="font-size:11px;font-weight:700;color:'+(dl.late?'#E0392D':(dl.done?'#1E7A34':'#001D51'))+'">'+dl.txt+'</span>' : '—',
       '<span class="pill '+st.cls+'">'+st.label+'</span>',
       trActions([
-        p.statut!=='Terminé' ? trBtn('Terminer', ()=>{ if(!trNum(p.qteProduite)){ alert('Indique d\'abord la quantité produite (Modifier).'); return; } p.statut='Terminé'; p.finDate=todayISO(); saveState('Lot '+p.ref+' terminé → en finition'); }, true) : null,
+        p.statut!=='Terminé' ? trBtn('Terminer', ()=>{ if(!trNum(p.qteProduite)){ alert('Indique d\'abord la quantité produite (Modifier).'); return; } p.statut='Terminé'; p.finDate=todayISO(); p.termineePar=view.personId; saveState('Lot '+p.ref+' terminé → en finition'); }, true) : null,
         trBtn('Modifier', ()=>{ view.tricoModal = {type:'prod', mode:'edit', data:JSON.parse(JSON.stringify(p))}; render(); }),
         trBtn('QR', ()=>{ view.tricoLotView = p.id; render(); })
       ])];
@@ -6737,7 +6806,7 @@ function renderTricoModal(){
   const {type, mode, data} = view.tricoModal; const t = TR();
   const overlay = el('<div class="modal-overlay"></div>');
   const m = el('<div class="modal"></div>');
-  const titles = {client: mode==='create'?'Nouveau client':'Client '+(data.ref||''), couts:'Réglages des coûts de production', fil: mode==='create'?'Nouveau fil':'Modifier le fil '+data.ref, mvt: data.type==='entree'?'Réception de fil':'Sortie / ajustement de fil', prod: (mode==='create'?'Nouveau lot de tricotage ':'Lot ')+data.ref, stock:'Envoyer '+data.ref+' au stock tissu fini', ajust:'Stock initial / ajustement', vente:(mode==='create'?'Nouvelle vente ':'Vente ')+data.ref};
+  const titles = {evalcfg:'Seuils de l\'évaluation', client: mode==='create'?'Nouveau client':'Client '+(data.ref||''), couts:'Réglages des coûts de production', fil: mode==='create'?'Nouveau fil':'Modifier le fil '+data.ref, mvt: data.type==='entree'?'Réception de fil':'Sortie / ajustement de fil', prod: (mode==='create'?'Nouveau lot de tricotage ':'Lot ')+data.ref, stock:'Envoyer '+data.ref+' au stock tissu fini', ajust:'Stock initial / ajustement', vente:(mode==='create'?'Nouvelle vente ':'Vente ')+data.ref};
   m.appendChild(el('<h2>'+esc(titles[type])+'</h2>'));
   function frow(fields){ const r = el('<div class="frow"></div>'); fields.forEach(f=>r.appendChild(f)); m.appendChild(r); }
   function field(label, key, opt){
@@ -6758,6 +6827,9 @@ function renderTricoModal(){
   const filOpts = t.fils.map(f=>[f.id, f.ref+' · '+trFilLabel(f)+' (stock '+trKg(trFilStock(f.id).stock)+')']);
   datalist('dl-tr-tissus', trTissuOptions());
 
+  if(type==='evalcfg'){
+    frow([field('Déchet de fil accepté (%)','dechet',{type:'number', ph:'5'}), field('Perte finition acceptée (%)','perte',{type:'number', ph:'10'})]);
+  }
   if(type==='client'){
     if(mode==='edit'){
       const st = trClientStats(Object.assign({}, data, {nom:view.tricoModal.oldName||data.nom}));
@@ -6811,7 +6883,8 @@ function renderTricoModal(){
     }
     drawFils();
     frow([field('Quantité produite (kg)','qteProduite',{type:'number'}), field('Nombre de rouleaux','rouleaux',{type:'number'})]);
-    frow([select('Statut','statut',[['En cours','En tricotage'],['Terminé','Terminé (passe en finition)']]), field('Note','note')]);
+    frow([select('Statut','statut',[['En cours','En tricotage'],['Terminé','Terminé (passe en finition)']]), field('Fin prévue le (délai)','finPrevue',{type:'date'})]);
+    frow([field('Note','note')]);
   }
   if(type==='stock'){
     m.appendChild(el('<div style="font-size:13px;margin:-4px 0 10px;">Tissu : <b>'+esc(data.tissu||'—')+'</b></div>'));
@@ -6845,7 +6918,7 @@ function renderTricoModal(){
   const cancel = el('<button class="btn">Annuler</button>'); cancel.onclick = ()=>{ view.tricoModal=null; render(); };
   const lists = {fil:'fils', mvt:'mvtFil', prod:'prods', ajust:'ajustFini', vente:'ventes', client:'clients'};
   let del = null;
-  if(mode==='edit' && type!=='stock' && type!=='couts'){
+  if(mode==='edit' && type!=='stock' && type!=='couts' && type!=='evalcfg'){
     del = el('<button class="btn" style="color:#A42834;border-color:#A42834;">Supprimer</button>');
     del.onclick = ()=>{
       if(type==='fil'){ const used = t.mvtFil.some(x=>x.filId===data.id) || t.prods.some(p=>(p.fils||[]).some(u=>u.filId===data.id)); if(used){ alert('Impossible : ce fil a déjà des mouvements ou des lots.'); return; } }
@@ -6859,6 +6932,7 @@ function renderTricoModal(){
   const save = el('<button class="btn primary">Enregistrer</button>');
   save.onclick = ()=>{
     if(type==='couts'){ TR().couts = data; view.tricoModal=null; saveState('Coûts de production enregistrés'); return; }
+    if(type==='evalcfg'){ TR().evalCfg = data; view.tricoModal=null; saveState('Seuils enregistrés'); return; }
     if(type==='client'){
       const nom = String(data.nom||'').trim();
       if(!nom){ alert('Le nom du client est obligatoire.'); return; }
@@ -6878,7 +6952,9 @@ function renderTricoModal(){
       const old = t.prods.find(x=>x.id===data.id);
       const over = data.fils.filter(u=>trNum(u.qte) > trFilStock(u.filId).stock + (old ? (old.fils||[]).filter(o=>o.filId===u.filId).reduce((a,o)=>a+trNum(o.qte),0) : 0));
       if(over.length && !confirm('Attention : pas assez de fil en stock pour '+over.map(u=>trFilLabel(trFil(u.filId))).join(', ')+'. Continuer ?')) return;
-      if(data.statut==='Terminé' && !data.finDate) data.finDate = todayISO();
+      if(data.statut==='Terminé' && !data.finDate){ data.finDate = todayISO(); data.termineePar = view.personId; }
+      if(data.statut!=='Terminé'){ data.finDate = ''; data.termineePar = ''; }
+      if(!data.creePar) data.creePar = view.personId;
     }
     if(type==='stock'){
       if(!(trNum(data.qteFinie)>0)){ alert('Indique la quantité finie.'); return; }
@@ -7077,10 +7153,10 @@ function psPanelEval(panel){
 function psMyEval(wrap){
   const me = currentPerson(); if(!me) return;
   const st = psEvalStats(PS().jobs.filter(j=>j.termineePar===me.id));
-  if(!st.fin) return;
   wrap.appendChild(el('<div class="section-title" style="background:#B8860B;">Mon évaluation'+(st.stars===null?'':' — '+fmt1(st.stars)+' ★')+'</div>'));
   const b = el('<div class="section-body"></div>');
-  b.appendChild(psEvalCard(st));
+  if(!st.fin) b.appendChild(el('<div class="empty-msg" style="text-align:left;">Pas encore de commande terminée : ton évaluation apparaîtra ici (délai et satisfaction client).</div>'));
+  else b.appendChild(psEvalCard(st));
   wrap.appendChild(b);
 }
 // commercial : satisfaction des commandes reçues
@@ -7161,6 +7237,7 @@ function renderPerso(w, wrap, opts){
 
   const cnt = t=>enCours.filter(j=>j.technique===t).length || null;
   const tiles = [
+    {key:'board', label:'Tableau de bord', sub:'Vue d\'ensemble · retards', badge: retard || null, ic: ICONS.stats},
     {key:'cmd', label:'Commandes', badge: enCours.length || null, ic: ICONS.commandes},
     {key:'dtf', label:'DTF', sub:'Impression · pressage', badge: cnt('dtf'), ic: PS_ICON_TECH.dtf},
     {key:'broderie', label:'Broderie', sub:'Programme · broderie', badge: cnt('broderie'), ic: PS_ICON_TECH.broderie},
@@ -7184,6 +7261,7 @@ function renderPerso(w, wrap, opts){
 
   const panel = el('<div class="admin-panel"></div>');
   const o = view.perso.open;
+  if(o==='board') psPanelBoard(panel);
   if(o==='cmd') psPanelJobs(panel, '');
   if(PS_TECH[o]) psPanelJobs(panel, o);
   if(o==='conso') psPanelConso(panel);
@@ -7231,6 +7309,57 @@ function psPanelJobs(panel, tech){
       selBox, !psMoney() ? '—' : '<b>'+fmtDA(total)+'</b>'+(rest>0?'<br><span style="font-size:11px;color:#E0392D">reste '+fmtDA(rest)+'</span>':'<br><span style="font-size:11px;color:#1E7A34">payé</span>'),
       trActions([next, trBtn('Afficher', ()=>{ view.psView = j.id; render(); }), trBtn('Modifier', ()=>{ view.psModal = {type:'job', mode:'edit', data:JSON.parse(JSON.stringify(j))}; render(); })])];
   })));
+}
+
+// ---- Tableau de bord de suivi ----
+const PS_BOARD_COLS = ['Maquette / BAT','Préparation','Production','Finition','Contrôle','Terminé (à envoyer)','Envoyée (pas reçue)'];
+function psPanelBoard(panel){
+  const p = PS(); const body = trSection(panel, 'Tableau de bord — suivi des commandes');
+  view.perso.boardTech = view.perso.boardTech || '';
+  const row = el('<div class="add-row" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-start;"></div>');
+  [['','Toutes']].concat(Object.keys(PS_TECH).map(k=>[k,PS_TECH[k].label])).forEach(([v,l])=>row.appendChild(trBtn(l, ()=>{ view.perso.boardTech = v; render(); }, view.perso.boardTech===v)));
+  body.appendChild(row);
+  const jobs = p.jobs.filter(j=>!view.perso.boardTech || j.technique===view.perso.boardTech);
+  const actifs = jobs.filter(j=>!psLivre(j) || !j.recuLe);
+  const today = todayISO(), in7 = new Date(Date.now()+7*86400000).toISOString().slice(0,10);
+  const due = j=>j.finPrevue || j.dateLivraison || '';
+  const enRetard = actifs.filter(psRetard);
+  const auj = actifs.filter(j=>!psDone(j) && due(j)===today);
+  const semaine = actifs.filter(j=>!psDone(j) && due(j)>today && due(j)<=in7);
+  const pcs = actifs.filter(j=>!psDone(j)).reduce((a,j)=>a+trNum(j.quantite),0);
+  const g = el('<div class="kpi-row"></div>');
+  g.appendChild(el('<div class="kpi'+(enRetard.length?' alert':'')+'"><div class="num">'+enRetard.length+'</div><div class="label">En retard</div></div>'));
+  g.appendChild(el('<div class="kpi" style="background:#FFC933;"><div class="num">'+auj.length+'</div><div class="label">À finir aujourd\'hui</div></div>'));
+  g.appendChild(el('<div class="kpi" style="background:#BFD2FF;"><div class="num">'+semaine.length+'</div><div class="label">À finir dans les 7 jours</div></div>'));
+  g.appendChild(el('<div class="kpi"><div class="num">'+pcs+'</div><div class="label">Pièces en production</div></div>'));
+  body.appendChild(g);
+  // charge par technique
+  const charge = el('<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:4px 0 14px;"></div>');
+  Object.keys(PS_TECH).forEach(k=>{ const js = p.jobs.filter(j=>j.technique===k && !psDone(j)); const q = js.reduce((a,j)=>a+trNum(j.quantite),0); const late = js.filter(psRetard).length;
+    charge.appendChild(el('<div style="border:2px solid #001D51;border-radius:12px;padding:8px 12px;background:'+PS_TECH[k].color+';"><b>'+PS_TECH[k].label+'</b><div style="font-size:13px;">'+js.length+' commande(s) · '+q+' pièces'+(late?' · <b style="color:#A42834">'+late+' en retard</b>':'')+'</div></div>')); });
+  body.appendChild(charge);
+  // colonnes (kanban)
+  const board = el('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;padding-bottom:8px;"></div>');
+  PS_BOARD_COLS.forEach((title, i)=>{
+    const col = el('<div data-col="1" style="background:#FFF6E6;border:2px solid #001D51;border-radius:14px;padding:8px;min-height:120px;"></div>');
+    const items = actifs.filter(j=>psEtape(j).i===i).sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0) || String(due(a)||'9999').localeCompare(String(due(b)||'9999')));
+    col.appendChild(el('<div style="font-weight:800;font-size:13px;margin-bottom:6px;display:flex;justify-content:space-between;"><span>'+title+'</span><span class="icon-tile-badge" style="position:static;">'+items.length+'</span></div>'));
+    if(!items.length) col.appendChild(el('<div style="font-size:12px;opacity:.5;">—</div>'));
+    items.forEach(j=>{
+      const dl = psDelai(j); const late = psRetard(j);
+      const card = el('<button style="display:block;width:100%;text-align:left;border:2px solid #001D51;border-radius:10px;padding:6px 8px;margin-bottom:6px;background:'+(late?'#FFE1DE':'#fff')+';cursor:pointer;font-family:inherit;color:#001D51;box-shadow:2px 2px 0 #001D51;"></button>');
+      card.innerHTML = '<div style="display:flex;justify-content:space-between;gap:4px;"><b>'+esc(j.ref)+'</b><span class="pill" style="background:'+PS_TECH[j.technique].color+';color:#001D51;font-size:10px;padding:1px 6px;">'+PS_TECH[j.technique].label+'</span></div>'
+        +'<div style="font-size:12px;">'+esc(j.client||'')+' · '+esc(j.quantite||'')+' pcs</div>'
+        +'<div style="font-size:11px;opacity:.85;">'+esc(psStepLabel(j, psEtape(j).i))+'</div>'
+        +(dl?'<div style="font-size:11px;font-weight:700;color:'+(dl.late?'#E0392D':(dl.done?'#1E7A34':'#001D51'))+'">'+dl.txt+'</div>':(j.dateLivraison?'<div style="font-size:11px;">livraison '+fmtDate(j.dateLivraison)+'</div>':''))
+        +(j.urgent?'<div style="font-size:10px;font-weight:800;color:#E0392D;">URGENT</div>':'');
+      card.onclick = ()=>{ view.psView = j.id; render(); };
+      col.appendChild(card);
+    });
+    board.appendChild(col);
+  });
+  body.appendChild(board);
+  body.appendChild(el('<div style="font-size:12px;opacity:.75;">Clique sur une carte pour ouvrir la commande. Les cartes en rose sont en retard. Les commandes envoyées et reçues ne s\'affichent plus.</div>'));
 }
 
 // ---- Stock consommables ----
