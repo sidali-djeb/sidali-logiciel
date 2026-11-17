@@ -1746,7 +1746,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 55 · tableau de bord et évaluations</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 56 · tableau de bord équipe</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -3517,7 +3517,7 @@ function screenForRole(r){ return r==='admin' ? 'admin' : r==='commercial' ? 'co
 const TRI_TILE_CHOICES = [['fil','Stock de fil'],['prod','Production'],['fini','Finition'],['stock','Stock tissu fini'],['vente','Vente tissu fini'],['clients','Clients'],['eval','Évaluation']];
 const PS_TILE_CHOICES = [['board','Tableau de bord'],['cmd','Commandes'],['dtf','DTF'],['broderie','Broderie'],['serigraphie','Sérigraphie'],['conso','Stock consommables'],['devis','Tarifs & devis (prix)'],['clients','Clients'],['eval','Évaluation']];
 function allowedTri(p){ if(p && Array.isArray(p.triTiles) && p.triTiles.length) return p.triTiles.filter(k=>TRI_TILE_CHOICES.some(t=>t[0]===k)); return (p && p.role==='tricotage') ? ['fil','prod','fini','stock'] : []; }
-function allowedPs(p){ if(p && Array.isArray(p.psTiles) && p.psTiles.length) return p.psTiles.filter(k=>PS_TILE_CHOICES.some(t=>t[0]===k)); return (p && p.role==='personnalisation') ? ['board','cmd','dtf','broderie','serigraphie','conso'] : []; }
+function allowedPs(p){ if(p && Array.isArray(p.psTiles) && p.psTiles.length){ const l = p.psTiles.filter(k=>PS_TILE_CHOICES.some(t=>t[0]===k)); if(p.role==='personnalisation' && l.indexOf('board')<0) l.unshift('board'); return l; } return (p && p.role==='personnalisation') ? ['board','cmd','dtf','broderie','serigraphie','conso'] : []; }
 function trMoney(){ return view.role==='admin' || allowedTri(currentPerson()).indexOf('vente')>=0; }
 function psMoney(){ return view.role==='admin' || allowedPs(currentPerson()).indexOf('devis')>=0; }
 // cases des autres départements ajoutées à l'écran d'une personne
@@ -3998,6 +3998,7 @@ function renderPersonModal(){
       choices.forEach(([k,lbl])=>{
         const lab = el('<label style="display:flex;align-items:center;gap:6px;font-size:13px;"></label>');
         const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = cur.indexOf(k)>=0; cb.setAttribute('data-'+key, k);
+        if(key==='psTiles' && k==='board' && data.role==='personnalisation'){ cb.checked = true; cb.disabled = true; }
         cb.onchange = ()=>{ data[key] = Array.from(b.querySelectorAll('input[data-'+key+']')).filter(x=>x.checked).map(x=>x.getAttribute('data-'+key)); };
         lab.appendChild(cb); lab.appendChild(document.createTextNode(lbl)); g.appendChild(lab);
       });
@@ -7212,7 +7213,7 @@ function renderPerso(w, wrap, opts){
   const p = PS();
   view.perso = view.perso || {open:''};
   if(opts.allowed && view.perso.open && opts.allowed.indexOf(view.perso.open)<0) view.perso.open = '';
-  if(opts.main && opts.allowed && opts.allowed.length===1 && !view.perso.open) view.perso.open = opts.allowed[0];
+  if(opts.main && opts.allowed && !view.perso.open && !view.perso.touched) view.perso.open = opts.allowed.indexOf('board')>=0 ? 'board' : (opts.allowed.length===1 ? opts.allowed[0] : '');
   const bar = el('<div class="dept-bar"></div>');
   const back = el('<button class="btn small">← Départements</button>');
   back.onclick = ()=>{ view.adminDept=null; view.perso={open:''}; try{ localStorage.removeItem('dj_dept'); }catch(e){} render(); };
@@ -7254,7 +7255,7 @@ function renderPerso(w, wrap, opts){
     tile.appendChild(el('<div class="icon-tile-ic">'+it.ic+'</div>'));
     tile.appendChild(el('<div class="icon-tile-lbl">'+it.label+(it.sub?'<div style="font-size:10px;font-weight:600;opacity:.75;margin-top:2px;">'+it.sub+'</div>':'')+'</div>'));
     if(it.badge!=null) tile.appendChild(el('<div class="icon-tile-badge">'+it.badge+'</div>'));
-    tile.onclick = ()=>{ view.perso.open = isOpen ? '' : it.key; render(); };
+    tile.onclick = ()=>{ view.perso.open = isOpen ? '' : it.key; view.perso.touched = true; render(); };
     grid.appendChild(tile);
   });
   wrap.appendChild(grid);
