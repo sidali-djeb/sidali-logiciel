@@ -449,6 +449,23 @@ input[type=checkbox]{width:18px!important;height:18px;padding:0!important;border
 .dl-note{font-size:12.5px;color:#33406a;margin:0 0 10px}
 .dl-sim{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--pop-cream);border:3px dashed var(--pop-navy);border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px}
 .dl-sim input{width:110px;padding:7px 9px;border:2px solid var(--pop-navy);border-radius:10px;font-weight:700}
+/* ---------- départements (accueil admin) ---------- */
+.dept-hello{font-family:'Bricolage Grotesque',Arial,sans-serif;font-weight:800;font-size:20px;color:var(--pop-navy,#001D51);margin:6px 2px 14px}
+.dept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:10px}
+.dept-tile{display:flex;align-items:center;gap:16px;text-align:left;background:#FFC933;border:3px solid #001D51;border-radius:18px;box-shadow:5px 5px 0 #001D51;padding:20px 18px;cursor:pointer;color:#001D51;font-family:inherit;width:100%}
+.dept-tile:hover{transform:translate(-1px,-1px);box-shadow:6px 6px 0 #001D51}
+.dept-tile:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #001D51}
+.dept-ic{flex:0 0 auto;width:64px;height:64px;border-radius:50%;background:#fff;border:3px solid #001D51;display:flex;align-items:center;justify-content:center}
+.dept-ic svg{width:34px;height:34px}
+.dept-name{font-weight:800;font-size:19px;line-height:1.15}
+.dept-sub{font-size:13px;margin-top:6px;opacity:.85}
+.dept-soon{display:flex;align-items:center;justify-content:center;text-align:center;border:3px dashed #001D51;border-radius:18px;padding:20px;font-size:13px;color:#001D51;opacity:.55;min-height:110px}
+.dept-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 12px}
+.dept-bar .dept-title{font-weight:800;font-size:18px;color:#001D51}
+/* ---------- calculateur tricotage ---------- */
+.tr-calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:8px}
+.tr-calc label{display:block;font-size:11px;font-weight:700;color:var(--pop-navy,#001D51);margin-bottom:3px}
+.tr-calc input,.tr-calc select{width:100%;box-sizing:border-box;padding:7px 8px;border:2px solid var(--pop-navy,#001D51);border-radius:10px;background:var(--pop-cream,#FFF6E6);font-weight:600;font-size:13px;font-family:inherit}
 /* ---------- page d'accueil ---------- */
 .pop-home{min-height:100vh;display:flex;flex-direction:column}
 .pop-mq{background:var(--pop-navy);color:var(--pop-sun);font:800 14px Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:10px 0;overflow:hidden;white-space:nowrap}
@@ -1629,6 +1646,8 @@ function render(){
   if(view.catView) app.appendChild(renderCatalogueView());
   if(view.orderView) app.appendChild(renderOrderView());
   if(view.clientModal) app.appendChild(renderClientModal());
+  if(view.tricoModal) app.appendChild(renderTricoModal());
+  if(view.tricoLotView) app.appendChild(renderTricoLotView());
   if(view.settingsModal) app.appendChild(renderSettingsModal());
   if(view.scanModal) app.appendChild(renderScanModal());
   if(view.qrModal) app.appendChild(renderQrModal());
@@ -1722,7 +1741,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 44 · données protégées</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 48 · bénéfice et QR</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -3516,6 +3535,84 @@ function renderAdminScreen(extra){
   kpi.appendChild(el('<div class="kpi'+(alertes>0?' alert':'')+'"><div class="num">'+alertes+'</div><div class="label">Alertes poids/pièce</div></div>'));
   const nbConso = consoAlertCount();
   kpi.appendChild(el('<div class="kpi'+(nbConso>0?' alert':'')+'"><div class="num">'+nbConso+'</div><div class="label">Alertes conso tissu</div></div>'));
+  // ---- Accueil admin : les départements ----
+  const isAdminHub = !extra && !isCrea;
+  if(isAdminHub && view.adminDept===undefined){ try{ view.adminDept = localStorage.getItem('dj_dept') || null; }catch(e){ view.adminDept = null; } }
+  if(isAdminHub && view.adminDept && view.adminDept!=='confection' && !deptList().some(d=>d.id===view.adminDept)) view.adminDept = null;
+  if(isAdminHub && view.adminDept==='tricotage' && !Object.keys(view.adminOpen||{}).length){ RO_MODE = false; return renderTricotage(w, wrap); }
+  if(isAdminHub && view.adminDept && view.adminDept!=='confection' && !Object.keys(view.adminOpen||{}).length){
+    const d = deptList().find(x=>x.id===view.adminDept);
+    const bar = el('<div class="dept-bar"></div>');
+    const back = el('<button class="btn small">← Départements</button>');
+    back.onclick = ()=>{ view.adminDept=null; try{ localStorage.removeItem('dj_dept'); }catch(e){} render(); };
+    bar.appendChild(back);
+    bar.appendChild(el('<div class="dept-title">Département '+esc(d.nom)+'</div>'));
+    wrap.appendChild(bar);
+    const box = el('<div class="bk-card"></div>');
+    box.appendChild(el('<div class="bk-title">Équipe du département</div>'));
+    const mem = (DATA.people||[]).filter(p=>deptOf(p)===d.id);
+    if(!mem.length) box.appendChild(el('<div class="empty-msg" style="text-align:left;padding:6px 0;">Personne pour le moment. Ajoute des personnes à ce département dans Département Confection → Gérer les accès.</div>'));
+    else mem.forEach(p=>box.appendChild(el('<div style="padding:6px 0;border-bottom:1px dashed #ccd;">'+esc(p.name||'—')+' · '+esc(ROLE_LABEL[p.role]||p.role)+(p.active===false?' (bloqué)':'')+'</div>')));
+    wrap.appendChild(box);
+    wrap.appendChild(el('<div class="empty-msg" style="margin-top:12px;">Les outils de ce département seront ajoutés plus tard.</div>'));
+    w.appendChild(wrap);
+    RO_MODE = false;
+    return w;
+  }
+  const inDept = view.adminDept==='confection' || Object.keys(view.adminOpen||{}).length>0;
+  if(isAdminHub && !inDept){
+    wrap.appendChild(el('<div class="dept-hello">Choisis un département</div>'));
+    const unAlH = chatUnread()['alertes'] || 0;
+    if(unAlH>0) wrap.appendChild(buildConsoBanner(unAlH));
+    const grid = el('<div class="dept-grid"></div>');
+    const enCours = DATA.commandes.filter(c=>{ const e=orderEtat(c); return e.key!=='recue' && e.key!=='annulee'; }).length;
+    const dt = el('<button class="dept-tile"></button>');
+    dt.appendChild(el('<div class="dept-ic">'+JOURNEY_ICONS.confection+'</div>'));
+    const txt = el('<div></div>');
+    txt.appendChild(el('<div class="dept-name">Département Confection</div>'));
+    txt.appendChild(el('<div class="dept-sub">'+total+' commande(s) · '+enCours+' en cours'+(urgentes>0?' · <b>'+urgentes+' urgente(s)</b>':'')+'</div>'));
+    dt.appendChild(txt);
+    dt.onclick = ()=>{ view.adminDept='confection'; try{ localStorage.setItem('dj_dept','confection'); }catch(e){} render(); };
+    grid.appendChild(dt);
+    {
+      const tt = TR();
+      const filKg = tt.fils.reduce((a,f)=>a+trFilStock(f.id).stock,0);
+      const finiKg = trFiniStock().reduce((a,x)=>a+x.stock,0);
+      const enProd = tt.prods.filter(p=>{ const k=trStage(p).key; return k!=='stock'; }).length;
+      const t3 = el('<button class="dept-tile" style="background:#37D6A5;"></button>');
+      t3.appendChild(el('<div class="dept-ic">'+JOURNEY_ICONS.emballage+'</div>'));
+      const tx3 = el('<div></div>');
+      tx3.appendChild(el('<div class="dept-name">Département Tricotage</div>'));
+      tx3.appendChild(el('<div class="dept-sub">Fil : '+trKg(filKg)+' · '+enProd+' lot(s) en cours · Tissu fini : '+trKg(finiKg)+'</div>'));
+      t3.appendChild(tx3);
+      t3.onclick = ()=>{ view.adminDept='tricotage'; view.adminOpen={}; try{ localStorage.setItem('dj_dept','tricotage'); }catch(e){} render(); };
+      grid.appendChild(t3);
+    }
+    deptList().filter(d=>d.id!=='confection' && d.id!=='tricotage').forEach(d=>{
+      const n = (DATA.people||[]).filter(p=>deptOf(p)===d.id && p.active!==false).length;
+      const t2 = el('<button class="dept-tile" style="background:#BFD2FF;"></button>');
+      t2.appendChild(el('<div class="dept-ic">'+ICONS.acces+'</div>'));
+      const tx2 = el('<div></div>');
+      tx2.appendChild(el('<div class="dept-name">Département '+esc(d.nom)+'</div>'));
+      tx2.appendChild(el('<div class="dept-sub">'+n+' personne(s)</div>'));
+      t2.appendChild(tx2);
+      t2.onclick = ()=>{ view.adminDept=d.id; view.adminOpen={}; try{ localStorage.setItem('dj_dept',d.id); }catch(e){} render(); };
+      grid.appendChild(t2);
+    });
+    grid.appendChild(el('<div class="dept-soon">Ajoute d\'autres départements dans « Gérer les accès »</div>'));
+    wrap.appendChild(grid);
+    w.appendChild(wrap);
+    RO_MODE = false;
+    return w;
+  }
+  if(isAdminHub){
+    const bar = el('<div class="dept-bar"></div>');
+    const back = el('<button class="btn small">← Départements</button>');
+    back.onclick = ()=>{ view.adminDept=null; view.adminOpen={}; try{ localStorage.removeItem('dj_dept'); }catch(e){} render(); };
+    bar.appendChild(back);
+    bar.appendChild(el('<div class="dept-title">Département Confection</div>'));
+    wrap.appendChild(bar);
+  }
   if(!isCrea) wrap.appendChild(kpi);
 
   // Bandeau : alertes de consommation non lues
@@ -3679,6 +3776,7 @@ function renderAdminScreen(extra){
     accessAddRow.appendChild(accessAddBtn);
     accessBody.appendChild(accessAddRow);
     accessBody.appendChild(ioBar([{label:'Exporter (Excel / CSV)', fn:exportAccesCSV}], [{label:'Importer (CSV)', onFile:importAccesFile}]));
+    accessBody.insertBefore(renderDeptManager(), accessBody.firstChild);
     accessBody.appendChild(renderPeopleTable());
     panel.appendChild(accessBody);
   }
@@ -3690,7 +3788,52 @@ function renderAdminScreen(extra){
 }
 
 function blankPerson(){
-  return {id:'p_'+Date.now(), name:'', email:'', role:'decoupe', code:'', active:true};
+  return {id:'p_'+Date.now(), name:'', email:'', role:'decoupe', code:'', active:true, departement:'confection'};
+}
+// ----- Départements -----
+function deptList(){
+  if(!Array.isArray(DATA.departements)) DATA.departements = [];
+  if(!DATA.departements.some(d=>d.id==='confection')) DATA.departements.unshift({id:'confection', nom:'Confection'});
+  if(!DATA.departements.some(d=>d.id==='tricotage')) DATA.departements.splice(1,0,{id:'tricotage', nom:'Tricotage'});
+  return DATA.departements;
+}
+function deptOf(p){ const id = (p && p.departement) || 'confection'; return deptList().some(d=>d.id===id) ? id : 'confection'; }
+function deptName(id){ const d = deptList().find(x=>x.id===id); return d ? d.nom : 'Confection'; }
+function renderDeptManager(){
+  const box = el('<div class="bk-card" style="margin-bottom:14px;"><div class="bk-title">Départements</div></div>');
+  const chips = el('<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;"></div>');
+  deptList().forEach(d=>{
+    const n = (DATA.people||[]).filter(p=>deptOf(p)===d.id).length;
+    const chip = el('<span class="pill" style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:2px solid #001D51;border-radius:999px;background:'+(d.id==='confection'?'#FFC933':'#fff')+';font-size:13px;font-weight:700;"></span>');
+    chip.appendChild(document.createTextNode(d.nom+' · '+n+' pers.'));
+    if(d.id!=='confection' && d.id!=='tricotage'){
+      const x = el('<button class="btn small" style="padding:0 7px;min-height:0;line-height:18px;" title="Supprimer">✕</button>');
+      x.onclick = ()=>{
+        if(n>0){ alert('Impossible : '+n+' personne(s) sont dans le département '+d.nom+'. Change d\'abord leur département.'); return; }
+        if(!confirm('Supprimer le département « '+d.nom+' » ?')) return;
+        DATA.departements = deptList().filter(x=>x.id!==d.id);
+        if(view.adminDept===d.id) view.adminDept=null;
+        saveState('Département supprimé : '+d.nom);
+      };
+      chip.appendChild(x);
+    }
+    chips.appendChild(chip);
+  });
+  box.appendChild(chips);
+  const row = el('<div style="display:flex;gap:8px;flex-wrap:wrap;"></div>');
+  const inp = document.createElement('input'); inp.placeholder='Nom du nouveau département (ex : Magasin)'; inp.style.flex='1'; inp.style.minWidth='200px';
+  const add = el('<button class="btn primary">+ Ajouter</button>');
+  add.onclick = ()=>{
+    const nom = inp.value.trim();
+    if(!nom){ alert('Écris le nom du département.'); return; }
+    if(deptList().some(d=>d.nom.toLowerCase()===nom.toLowerCase())){ alert('Ce département existe déjà.'); return; }
+    deptList().push({id:'dep_'+Date.now(), nom:nom});
+    saveState('Département ajouté : '+nom);
+  };
+  inp.onkeydown = e=>{ if(e.key==='Enter') add.onclick(); };
+  row.appendChild(inp); row.appendChild(add);
+  box.appendChild(row);
+  return box;
 }
 
 function renderPeopleTable(){
@@ -3698,7 +3841,7 @@ function renderPeopleTable(){
   const t = document.createElement('table'); t.className='main';
   const thead = document.createElement('thead');
   const headRow = document.createElement('tr');
-  ['Nom','Email','Rôle','Code','Actif',''].forEach(h=>{
+  ['Nom','Email','Rôle','Département','Code','Actif',''].forEach(h=>{
     const th = document.createElement('th'); th.textContent=h; headRow.appendChild(th);
   });
   thead.appendChild(headRow);
@@ -3710,6 +3853,7 @@ function renderPeopleTable(){
     td(p.name||'—');
     td(p.email||'—');
     td(ROLE_LABEL[p.role]||p.role);
+    td(deptName(deptOf(p)));
     td(p.code||'—');
     td(p.active!==false ? 'Oui' : 'Non');
     const editTd = document.createElement('td');
@@ -3762,6 +3906,14 @@ function renderPersonModal(){
     field('Rôle / département', data.role, v=>{ data.role=v; data.tiles=undefined; refreshPerm(); }, 'role-select'),
     field('Code (4 chiffres)', data.code, v=>data.code=v)
   ]);
+  const depWrap = el('<div style="margin:2px 0 8px;"></div>');
+  depWrap.appendChild(el('<label>Département</label>'));
+  const depSel = document.createElement('select');
+  deptList().forEach(d=>{ const o=document.createElement('option'); o.value=d.id; o.textContent=d.nom; if(d.id===deptOf(data)) o.selected=true; depSel.appendChild(o); });
+  data.departement = deptOf(data);
+  depSel.onchange = ()=>{ data.departement = depSel.value; };
+  depWrap.appendChild(depSel);
+  m.appendChild(depWrap);
   const permBox = el('<div></div>');
   m.appendChild(permBox);
   function refreshPerm(){
@@ -4298,6 +4450,7 @@ function qrSvg(text, px){
 }
 // Ouvre la commande scannée (QR) juste après la connexion
 function applyScan(){
+  if(view.lotScanId && view.personId){ const lid = view.lotScanId; view.lotScanId = null; try{ history.replaceState(null, '', location.pathname); }catch(e){} openLotFromScan(lid); }
   const id = view.scanId;
   if(!id || !view.personId) return;
   view.scanId = null;
@@ -4616,7 +4769,26 @@ function extractCmdId(text){
   if(/^cmd_\w+$/.test(text)) return text;
   return null;
 }
+function extractLotId(text){
+  text = String(text||'').trim();
+  try{ const u = new URL(text); const id = u.searchParams.get('lot'); if(id) return id; }catch(e){}
+  if(/^tr_\d+$/.test(text)) return text;
+  return null;
+}
+function openLotFromScan(id){
+  const p = trLot(id);
+  if(!p){ showToast('⚠ Lot introuvable'); return false; }
+  view.tricoLotView = p.id;
+  if(view.role==='admin'){ view.adminDept='tricotage'; view.adminOpen={}; view.trico={open: p.dateStock ? 'stock' : (p.statut==='Terminé' ? 'fini' : 'prod')}; try{ localStorage.setItem('dj_dept','tricotage'); }catch(e){} }
+  return true;
+}
 async function handleScanText(text){
+  const lotId = extractLotId(text);
+  if(lotId){
+    if(!trLot(lotId)) await loadDataFromSupabase();
+    if(!trLot(lotId)){ if(Date.now()-scanLastMsg > 2500){ scanLastMsg = Date.now(); showToast('⚠ Lot introuvable'); } return false; }
+    stopScanner(); view.scanModal = false; openLotFromScan(lotId); render(); return true;
+  }
   const id = extractCmdId(text);
   if(!id){
     if(Date.now()-scanLastMsg > 2500){ scanLastMsg = Date.now(); showToast('⚠ Ce code QR n\'est pas une commande'); }
@@ -6065,6 +6237,499 @@ function showToast(msg){
 
 // Lecture : la clé publishable s'envoie uniquement dans l'en-tête apikey.
 // Pas d'en-tête Authorization : la clé sb_publishable_ n'est pas un JWT.
+// =====================================================================
+// ----- Département TRICOTAGE : stock de fil, production, finition, stock tissu fini, vente -----
+// =====================================================================
+function TR(){
+  DATA.tricotage = DATA.tricotage || {};
+  const t = DATA.tricotage;
+  ['fils','mvtFil','prods','ventes','ajustFini'].forEach(k=>{ if(!Array.isArray(t[k])) t[k]=[]; });
+  return t;
+}
+function trNum(x){ const n = parseFloat(String(x==null?'':x).replace(',','.')); return isNaN(n) ? 0 : n; }
+function trKg(n){ return (Number(n)||0).toLocaleString('fr-FR',{maximumFractionDigits:2})+' kg'; }
+function trNextRef(prefix, arr, digits){
+  let max = 0; (arr||[]).forEach(x=>{ const m = String(x.ref||'').match(/(\d+)$/); if(m) max = Math.max(max, Number(m[1])); });
+  return prefix + String(max+1).padStart(digits||4,'0');
+}
+const TR_STEPS = [['lavage','Lavage'],['repassage','Repassage'],['grattage','Grattage']];
+function trFil(id){ return TR().fils.find(f=>f.id===id); }
+function trFilLabel(f){ return f ? (f.nom + (f.couleur ? ' · '+f.couleur : '')) : '—'; }
+function trFilStock(id){
+  const t = TR();
+  let s = 0, entree = 0, conso = 0;
+  t.mvtFil.forEach(m=>{ if(m.filId!==id) return; if(m.type==='entree'){ s+=trNum(m.qte); entree+=trNum(m.qte); } else { s-=trNum(m.qte); conso+=trNum(m.qte); } });
+  t.prods.forEach(p=>(p.fils||[]).forEach(u=>{ if(u.filId===id){ s-=trNum(u.qte); conso+=trNum(u.qte); } }));
+  return {stock:s, entree:entree, conso:conso};
+}
+function trStage(p){
+  if(p.dateStock) return {key:'stock', label:'En stock tissu fini', cls:'prete'};
+  if(p.statut!=='Terminé') return {key:'tricot', label:'En tricotage', cls:'cours'};
+  const f = p.finition || {};
+  const req = TR_STEPS.filter(([k])=>!f[k] || f[k].statut!=='Non requis');
+  if(req.every(([k])=>f[k] && f[k].statut==='Fait')) return {key:'pret', label:'Finition terminée', cls:'cours'};
+  return {key:'finition', label:'En finition', cls:'attente'};
+}
+function trFiniKey(tissu, couleur){ return String(tissu||'').trim().toUpperCase()+'|'+String(couleur||'').trim().toUpperCase(); }
+function trFiniStock(){
+  const t = TR(); const map = {};
+  function g(tissu, couleur){ const k = trFiniKey(tissu,couleur); if(!map[k]) map[k] = {tissu:String(tissu||'').trim().toUpperCase(), couleur:String(couleur||'').trim().toUpperCase(), entre:0, vendu:0}; return map[k]; }
+  t.prods.forEach(p=>{ if(p.dateStock) g(p.tissu, p.couleurFinie||p.couleur).entre += trNum(p.qteFinie||p.qteProduite); });
+  t.ajustFini.forEach(a=>{ g(a.tissu, a.couleur).entre += trNum(a.qte); });
+  t.ventes.forEach(v=>{ g(v.tissu, v.couleur).vendu += trNum(v.qte); });
+  return Object.values(map).map(x=>Object.assign(x,{stock:x.entre-x.vendu})).sort((a,b)=>(a.tissu+a.couleur).localeCompare(b.tissu+b.couleur));
+}
+function trCouts(){ const t = TR(); t.couts = t.couts || {}; return t.couts; }
+function trFilPrixMoyen(id){
+  let q=0, v=0; TR().mvtFil.forEach(m=>{ if(m.filId===id && m.type==='entree' && trNum(m.prixKg)>0){ q+=trNum(m.qte); v+=trNum(m.qte)*trNum(m.prixKg); } });
+  return q ? v/q : 0;
+}
+function trLotCout(p){
+  const c = trCouts(); const qp = trNum(p.qteProduite);
+  const fil = (p.fils||[]).reduce((a,u)=>a+trNum(u.qte)*trFilPrixMoyen(u.filId),0);
+  const f = p.finition || {};
+  let fac = trNum(c.tricotageKg) + trNum(c.autresKg);
+  TR_STEPS.forEach(([k])=>{ if(!(f[k] && f[k].statut==='Non requis')) fac += trNum(c[k+'Kg']); });
+  const total = fil + qp*fac;
+  const base = trNum(p.qteFinie) || qp;
+  return {fil:fil, facon:qp*fac, total:total, kg: base ? total/base : 0};
+}
+function trCoutMoyenFini(tissu, couleur){
+  const key = trFiniKey(tissu, couleur); let q=0, v=0;
+  TR().prods.forEach(p=>{ if(p.dateStock && trFiniKey(p.tissu, p.couleurFinie||p.couleur)===key){ const kg = p.coutKg!=null && p.coutKg!=='' ? trNum(p.coutKg) : trLotCout(p).kg; const qq = trNum(p.qteFinie||p.qteProduite); q+=qq; v+=qq*kg; } });
+  TR().ajustFini.forEach(a=>{ if(trFiniKey(a.tissu,a.couleur)===key && trNum(a.qte)>0 && trNum(a.coutKg)>0){ q+=trNum(a.qte); v+=trNum(a.qte)*trNum(a.coutKg); } });
+  return q ? v/q : 0;
+}
+function trBenef(v){ const ca = trNum(v.qte)*trNum(v.prixKg), cout = trNum(v.qte)*trNum(v.coutKg); return {ca:ca, cout:cout, benef:ca-cout, marge: ca ? 100*(ca-cout)/ca : 0}; }
+function trLotUrl(p){ return siteBase()+'/?lot='+encodeURIComponent(p.id); }
+function trLot(id){ return TR().prods.find(p=>p.id===id); }
+function trPrintLabels(p){
+  const n = Math.max(1, Math.round(trNum(p.rouleaux)) || 1);
+  const w = window.open('', '_blank', 'width=460,height=640');
+  if(!w){ alert("Le navigateur a bloqué la fenêtre d'impression. Autorise les pop-ups pour ce site."); return; }
+  const logo = (DATA.settings && DATA.settings.logoUrl) || DEFAULT_LOGO;
+  const qr = qrSvg(trLotUrl(p), 230);
+  let html = '';
+  for(let i=1;i<=n;i++){
+    html += '<div class="lab"><img class="l" src="'+logo+'">'+qr+'<div class="r">'+esc(p.ref)+'</div><div class="i"><b>'+esc(p.tissu||'')+(p.couleurFinie||p.couleur?' · '+esc(p.couleurFinie||p.couleur):'')+'</b></div>'
+      +'<div class="i">Rouleau '+i+' / '+n+(p.qteFinie?' · lot '+esc(trKg(p.qteFinie)):'')+'</div><div class="i">'+(p.dateStock?'Entré en stock le '+fmtDate(p.dateStock):'Tricoté le '+fmtDate(p.date))+'</div></div>';
+  }
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(p.ref)+'</title><style>body{font-family:Arial,sans-serif;margin:0;color:#000}.lab{text-align:center;padding:18px;page-break-after:always}.lab:last-child{page-break-after:auto}img.l{height:44px;margin-bottom:6px}.r{font-size:28px;font-weight:bold;margin-top:6px}.i{font-size:15px;margin-top:4px}</style></head><body>'
+    + html + '<script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>');
+  w.document.close();
+}
+function renderTricoLotView(){
+  const p = trLot(view.tricoLotView);
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal"></div>');
+  if(!p){ m.appendChild(el('<h2>Lot introuvable</h2>')); }
+  else{
+    const st = trStage(p);
+    m.appendChild(el('<h2>Lot '+esc(p.ref)+' <span class="pill '+st.cls+'" style="font-size:12px;vertical-align:middle;">'+st.label+'</span></h2>'));
+    const grid = el('<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;"></div>');
+    const qr = el('<div style="text-align:center;border:3px solid #001D51;border-radius:14px;padding:10px;background:#fff;">'+qrSvg(trLotUrl(p),170)+'<div style="font-weight:800;margin-top:4px;">'+esc(p.ref)+'</div></div>');
+    grid.appendChild(qr);
+    const f = p.finition || {};
+    const info = el('<div style="flex:1;min-width:220px;font-size:14px;line-height:1.7;"></div>');
+    info.innerHTML = '<b>Tissu :</b> '+esc(p.tissu||'—')+(p.couleurFinie||p.couleur?' · '+esc(p.couleurFinie||p.couleur):'')
+      +'<br><b>Tricoté le :</b> '+fmtDate(p.date)+(p.machine?' · '+esc(p.machine):'')
+      +'<br><b>Produit :</b> '+trKg(p.qteProduite)+(p.rouleaux?' · '+esc(p.rouleaux)+' rouleau(x)':'')
+      +'<br><b>Fils :</b> '+((p.fils||[]).map(u=>esc(trFilLabel(trFil(u.filId)))+' '+trKg(u.qte)).join(', ')||'—')
+      +'<br><b>Finition :</b> '+TR_STEPS.map(([k,l])=>l+' '+(f[k]?esc(f[k].statut)+(f[k].date?' ('+fmtDate(f[k].date)+')':''):'En attente')).join(' · ')
+      +(p.dateStock?'<br><b>En stock le :</b> '+fmtDate(p.dateStock)+' · <b>'+trKg(p.qteFinie)+'</b> fini':'')
+      +(view.role==='admin'?'<br><b>Coût de revient :</b> '+fmtDA(p.coutKg!=null&&p.coutKg!==''?trNum(p.coutKg):trLotCout(p).kg)+' / kg':'');
+    grid.appendChild(info);
+    m.appendChild(grid);
+  }
+  const actions = el('<div class="actions"></div>');
+  const close = el('<button class="btn">Fermer</button>'); close.onclick = ()=>{ view.tricoLotView=null; render(); };
+  actions.appendChild(close);
+  if(p){ const pr = el('<button class="btn primary">Imprimer les étiquettes'+(trNum(p.rouleaux)>1?' ('+Math.round(trNum(p.rouleaux))+')':'')+'</button>'); pr.onclick = ()=>trPrintLabels(p); actions.appendChild(pr); }
+  m.appendChild(actions);
+  overlay.appendChild(m);
+  overlay.onclick = (e)=>{ if(e.target===overlay){ view.tricoLotView=null; render(); } };
+  return overlay;
+}
+function trTissuOptions(){
+  const s = new Set(Object.keys((DATA.lists||{}).tissus||{}).map(x=>x.toUpperCase()));
+  TR().prods.forEach(p=>{ if(p.tissu) s.add(String(p.tissu).toUpperCase()); });
+  return Array.from(s).sort();
+}
+
+function renderTricotage(w, wrap){
+  const t = TR();
+  view.trico = view.trico || {open:''};
+  const bar = el('<div class="dept-bar"></div>');
+  const back = el('<button class="btn small">← Départements</button>');
+  back.onclick = ()=>{ view.adminDept=null; view.trico={open:''}; try{ localStorage.removeItem('dj_dept'); }catch(e){} render(); };
+  bar.appendChild(back);
+  bar.appendChild(el('<div class="dept-title">Département Tricotage</div>'));
+  wrap.appendChild(bar);
+
+  const filTotal = t.fils.reduce((a,f)=>a+trFilStock(f.id).stock,0);
+  const filAlert = t.fils.filter(f=>trNum(f.seuil)>0 && trFilStock(f.id).stock < trNum(f.seuil)).length;
+  const enTricot = t.prods.filter(p=>trStage(p).key==='tricot').length;
+  const enFini = t.prods.filter(p=>{ const k=trStage(p).key; return k==='finition'||k==='pret'; }).length;
+  const finiTotal = trFiniStock().reduce((a,x)=>a+x.stock,0);
+  const mois = todayISO().slice(0,7);
+  const ventesMois = t.ventes.filter(v=>String(v.date||'').slice(0,7)===mois).reduce((a,v)=>a+trNum(v.qte)*trNum(v.prixKg),0);
+  const kpi = el('<div class="kpi-row"></div>');
+  kpi.appendChild(el('<div class="kpi'+(filAlert?' alert':'')+'"><div class="num" style="font-size:20px;">'+trKg(filTotal)+'</div><div class="label">Stock de fil'+(filAlert?' · '+filAlert+' en alerte':'')+'</div></div>'));
+  kpi.appendChild(el('<div class="kpi"><div class="num">'+enTricot+'</div><div class="label">Lots en tricotage</div></div>'));
+  kpi.appendChild(el('<div class="kpi"><div class="num">'+enFini+'</div><div class="label">Lots en finition</div></div>'));
+  kpi.appendChild(el('<div class="kpi"><div class="num" style="font-size:20px;">'+trKg(finiTotal)+'</div><div class="label">Stock tissu fini</div></div>'));
+  kpi.appendChild(el('<div class="kpi"><div class="num" style="font-size:18px;">'+fmtDA(ventesMois)+'</div><div class="label">Ventes du mois</div></div>'));
+  wrap.appendChild(kpi);
+
+  const tiles = [
+    {key:'fil', label:'Stock de fil', badge: filAlert || null, ic: ICONS.ecarts || ''},
+    {key:'prod', label:'Production', badge: enTricot || null, ic: JOURNEY_ICONS.confection},
+    {key:'fini', label:'Finition', sub:'Lavage · Repassage · Grattage', badge: enFini || null, ic: JOURNEY_ICONS.emballage},
+    {key:'stock', label:'Stock tissu fini', badge: null, ic: JOURNEY_ICONS.stock},
+    {key:'vente', label:'Vente tissu fini', badge: t.ventes.length || null, ic: ICONS.paiements || ''}
+  ];
+  const grid = el('<div class="icon-grid"></div>');
+  tiles.forEach(it=>{
+    const isOpen = view.trico.open===it.key;
+    const tile = el('<button class="icon-tile'+(isOpen?' active':'')+'"></button>');
+    tile.appendChild(el('<div class="icon-tile-ic">'+it.ic+'</div>'));
+    tile.appendChild(el('<div class="icon-tile-lbl">'+it.label+(it.sub?'<div style="font-size:10px;font-weight:600;opacity:.75;margin-top:2px;">'+it.sub+'</div>':'')+'</div>'));
+    if(it.badge!=null) tile.appendChild(el('<div class="icon-tile-badge">'+it.badge+'</div>'));
+    tile.onclick = ()=>{ view.trico.open = isOpen ? '' : it.key; render(); };
+    grid.appendChild(tile);
+  });
+  wrap.appendChild(grid);
+
+  const panel = el('<div class="admin-panel"></div>');
+  const o = view.trico.open;
+  if(o==='fil') trPanelFil(panel);
+  if(o==='prod') trPanelProd(panel);
+  if(o==='fini') trPanelFini(panel);
+  if(o==='stock') trPanelStock(panel);
+  if(o==='vente') trPanelVente(panel);
+  wrap.appendChild(panel);
+  w.appendChild(wrap);
+  return w;
+}
+
+function trTable(headers, rows){
+  const tw = el('<div class="table-wrap"></div>');
+  const tb = document.createElement('table'); tb.className='main cmd-table';
+  const th = document.createElement('thead'); const hr = document.createElement('tr');
+  headers.forEach(h=>{ const c=document.createElement('th'); c.textContent=h; hr.appendChild(c); }); th.appendChild(hr); tb.appendChild(th);
+  const body = document.createElement('tbody');
+  rows.forEach(r=>{ const tr=document.createElement('tr'); r.forEach(cell=>{ const td=document.createElement('td'); if(cell instanceof Node) td.appendChild(cell); else td.innerHTML = cell==null?'—':cell; tr.appendChild(td); }); body.appendChild(tr); });
+  tb.appendChild(body); tw.appendChild(tb); return tw;
+}
+function trBtn(label, fn, primary){ const b = el('<button class="btn small'+(primary?' primary':'')+'">'+label+'</button>'); b.onclick = fn; return b; }
+function trActions(list){ const d = el('<div style="display:flex;flex-wrap:wrap;gap:4px;"></div>'); list.forEach(b=>b && d.appendChild(b)); return d; }
+function trSection(panel, title){ panel.appendChild(el('<div class="section-title">'+title+'</div>')); const body = el('<div class="section-body"></div>'); panel.appendChild(body); return body; }
+function trEmpty(body, txt){ body.appendChild(el('<div class="empty-msg">'+txt+'</div>')); }
+
+// ---- Stock de fil ----
+function trPanelFil(panel){
+  const t = TR(); const body = trSection(panel, 'Stock de fil');
+  const row = el('<div class="add-row" style="gap:8px;flex-wrap:wrap;"></div>');
+  row.appendChild(trBtn('+ Nouveau fil', ()=>{ view.tricoModal = {type:'fil', mode:'create', data:{id:'fil_'+Date.now(), ref:trNextRef('FL', t.fils, 3), nom:'', couleur:'', fournisseur:'', seuil:''}}; render(); }, true));
+  if(t.fils.length){
+    row.appendChild(trBtn('+ Réception de fil', ()=>{ view.tricoModal = {type:'mvt', mode:'create', data:{id:'mv_'+Date.now(), filId:t.fils[0].id, type:'entree', date:todayISO(), qte:'', prixKg:'', note:''}}; render(); }, true));
+    row.appendChild(trBtn('Sortie / ajustement', ()=>{ view.tricoModal = {type:'mvt', mode:'create', data:{id:'mv_'+Date.now(), filId:t.fils[0].id, type:'sortie', date:todayISO(), qte:'', prixKg:'', note:''}}; render(); }));
+  }
+  body.appendChild(row);
+  if(!t.fils.length){ trEmpty(body, 'Aucun fil. Commence par « + Nouveau fil » (ex : Coton peigné 30/1, Polyester 150D…).'); return; }
+  body.appendChild(trTable(['Réf.','Fil','Fournisseur','Entrées','Consommé','Stock',''], t.fils.map(f=>{
+    const s = trFilStock(f.id); const low = trNum(f.seuil)>0 && s.stock < trNum(f.seuil);
+    return ['<b>'+esc(f.ref)+'</b>', esc(trFilLabel(f)), esc(f.fournisseur||'—'), trKg(s.entree), trKg(s.conso),
+      '<b style="color:'+(low||s.stock<0?'#E0392D':'#1E7A34')+'">'+trKg(s.stock)+'</b>'+(low?' <span class="pill" style="background:#FF5A4D;color:#fff;padding:1px 6px;border-radius:8px;font-size:11px;">sous le seuil</span>':''),
+      trActions([trBtn('Modifier', ()=>{ view.tricoModal = {type:'fil', mode:'edit', data:JSON.parse(JSON.stringify(f))}; render(); })])];
+  })));
+  const mv = t.mvtFil.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,15);
+  if(mv.length){
+    body.appendChild(el('<div style="font-weight:700;margin:14px 0 6px;">Derniers mouvements</div>'));
+    body.appendChild(trTable(['Date','Fil','Type','Quantité','Prix / kg','Note',''], mv.map(m=>[
+      fmtDate(m.date), esc(trFilLabel(trFil(m.filId))), m.type==='entree'?'Réception':'Sortie', trKg(m.qte), m.prixKg?fmtDA(m.prixKg):'—', esc(m.note||''),
+      trActions([trBtn('Modifier', ()=>{ view.tricoModal = {type:'mvt', mode:'edit', data:JSON.parse(JSON.stringify(m))}; render(); })])
+    ])));
+  }
+}
+
+// ---- Production (tricotage) ----
+function trPanelProd(panel){
+  const t = TR(); const body = trSection(panel, 'Production — tricotage');
+  const row = el('<div class="add-row"></div>');
+  row.appendChild(trBtn('+ Nouveau lot de tricotage', ()=>{
+    if(!t.fils.length){ alert('Ajoute d\'abord un fil dans « Stock de fil ».'); return; }
+    view.tricoModal = {type:'prod', mode:'create', data:{id:'tr_'+Date.now(), ref:trNextRef('TR', t.prods, 4), date:todayISO(), machine:'', tissu:'', couleur:'ÉCRU', fils:[{filId:t.fils[0].id, qte:''}], qteProduite:'', rouleaux:'', statut:'En cours', note:'', finition:{}}};
+    render();
+  }, true));
+  body.appendChild(row);
+  if(!t.prods.length){ trEmpty(body, 'Aucun lot. Crée un lot de tricotage : la consommation de fil est déduite du stock automatiquement.'); return; }
+  body.appendChild(trTable(['Réf.','Date','Machine','Tissu','Fils utilisés','Produit','Rouleaux','État',''], t.prods.slice().reverse().map(p=>{
+    const st = trStage(p);
+    return ['<b>'+esc(p.ref)+'</b>', fmtDate(p.date), esc(p.machine||'—'), esc(p.tissu||'—'),
+      (p.fils||[]).map(u=>esc(trFilLabel(trFil(u.filId)))+' : '+trKg(u.qte)).join('<br>') || '—',
+      p.qteProduite?trKg(p.qteProduite):'—', esc(p.rouleaux||'—'),
+      '<span class="pill '+st.cls+'">'+st.label+'</span>',
+      trActions([
+        p.statut!=='Terminé' ? trBtn('Terminer', ()=>{ if(!trNum(p.qteProduite)){ alert('Indique d\'abord la quantité produite (Modifier).'); return; } p.statut='Terminé'; p.finDate=todayISO(); saveState('Lot '+p.ref+' terminé → en finition'); }, true) : null,
+        trBtn('Modifier', ()=>{ view.tricoModal = {type:'prod', mode:'edit', data:JSON.parse(JSON.stringify(p))}; render(); }),
+        trBtn('QR', ()=>{ view.tricoLotView = p.id; render(); })
+      ])];
+  })));
+}
+
+// ---- Finition ----
+function trPanelFini(panel){
+  const t = TR(); const body = trSection(panel, 'Finition — lavage, repassage, grattage');
+  const lots = t.prods.filter(p=>{ const k=trStage(p).key; return k==='finition'||k==='pret'; });
+  body.appendChild(el('<div class="empty-msg" style="text-align:left;padding:0 0 10px;">Les lots arrivent ici quand le tricotage est terminé. Mets « Non requis » pour une étape inutile. Quand tout est fait, envoie le lot au stock tissu fini.</div>'));
+  if(!lots.length){ trEmpty(body, 'Aucun lot en finition.'); return; }
+  const opts = ['En attente','En cours','Fait','Non requis'];
+  body.appendChild(trTable(['Réf.','Tissu','Quantité'].concat(TR_STEPS.map(s=>s[1])).concat(['']), lots.map(p=>{
+    p.finition = p.finition || {};
+    const cells = TR_STEPS.map(([k])=>{
+      const cur = (p.finition[k] && p.finition[k].statut) || 'En attente';
+      const sel = document.createElement('select'); sel.className='cat-act-sel';
+      opts.forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; if(v===cur) op.selected=true; sel.appendChild(op); });
+      sel.style.background = cur==='Fait' ? '#37D6A5' : (cur==='En cours' ? '#BFD2FF' : (cur==='Non requis' ? '#eee' : '#fff'));
+      sel.onchange = ()=>{ p.finition[k] = {statut:sel.value, date: sel.value==='Fait' ? todayISO() : ((p.finition[k]||{}).date||'')}; saveState(TR_STEPS.find(s=>s[0]===k)[1]+' : '+sel.value+' ('+p.ref+')'); };
+      const wrapC = el('<div></div>'); wrapC.appendChild(sel);
+      if(cur==='Fait' && p.finition[k].date) wrapC.appendChild(el('<div style="font-size:10px;opacity:.7;margin-top:2px;">'+fmtDate(p.finition[k].date)+'</div>'));
+      return wrapC;
+    });
+    const ready = trStage(p).key==='pret';
+    return ['<b>'+esc(p.ref)+'</b>', esc(p.tissu||'—'), trKg(p.qteProduite)].concat(cells).concat([
+      trActions([ ready ? trBtn('Envoyer au stock', ()=>{ view.tricoModal = {type:'stock', mode:'edit', data:{id:p.id, ref:p.ref, tissu:p.tissu, qteFinie:p.qteProduite, couleurFinie:(p.couleur&&p.couleur!=='ÉCRU')?p.couleur:'', dateStock:todayISO()}}; render(); }, true) : el('<span style="font-size:11px;opacity:.7;">en cours…</span>') ])
+    ]);
+  })));
+}
+
+// ---- Stock tissu fini ----
+function trPanelStock(panel){
+  const t = TR(); const body = trSection(panel, 'Stock tissu fini');
+  const row = el('<div class="add-row"></div>');
+  row.appendChild(trBtn('+ Stock initial / ajustement', ()=>{ view.tricoModal = {type:'ajust', mode:'create', data:{id:'aj_'+Date.now(), date:todayISO(), tissu:'', couleur:'', qte:'', note:''}}; render(); }));
+  body.appendChild(row);
+  const st = trFiniStock();
+  if(!st.length){ trEmpty(body, 'Pas encore de tissu fini. Il arrive ici depuis « Finition → Envoyer au stock », ou par un stock initial.'); return; }
+  body.appendChild(trTable(['Tissu','Couleur','Entré','Vendu','Stock'], st.map(x=>[
+    '<b>'+esc(x.tissu||'—')+'</b>', esc(x.couleur||'—'), trKg(x.entre), trKg(x.vendu), '<b style="color:'+(x.stock<0?'#E0392D':'#1E7A34')+'">'+trKg(x.stock)+'</b>'
+  ])));
+  const lots = t.prods.filter(p=>p.dateStock).slice().reverse().slice(0,15);
+  if(lots.length){
+    body.appendChild(el('<div style="font-weight:700;margin:14px 0 6px;">Derniers lots entrés en stock</div>'));
+    body.appendChild(trTable(['Réf.','Date','Tissu','Couleur','Produit','Fini','Perte','Coût / kg',''], lots.map(p=>{
+      const perte = trNum(p.qteProduite) ? (100*(trNum(p.qteProduite)-trNum(p.qteFinie))/trNum(p.qteProduite)) : 0;
+      return ['<b>'+esc(p.ref)+'</b>', fmtDate(p.dateStock), esc(p.tissu||'—'), esc(p.couleurFinie||p.couleur||'—'), trKg(p.qteProduite), trKg(p.qteFinie), perte ? perte.toFixed(1)+' %' : '—', fmtDA(p.coutKg!=null&&p.coutKg!==''?trNum(p.coutKg):trLotCout(p).kg), trActions([trBtn('QR', ()=>{ view.tricoLotView = p.id; render(); }, true)])];
+    })));
+  }
+}
+
+// ---- Vente tissu fini ----
+function trPanelVente(panel){
+  const t = TR(); const body = trSection(panel, 'Vente tissu fini');
+  const tot = t.ventes.reduce((a,v)=>a+trNum(v.qte)*trNum(v.prixKg),0), paye = t.ventes.reduce((a,v)=>a+trNum(v.paye),0);
+  const kpi = el('<div class="kpi-row"></div>');
+  kpi.appendChild(el('<div class="kpi"><div class="num" style="font-size:18px;">'+fmtDA(tot)+'</div><div class="label">Total ventes</div></div>'));
+  kpi.appendChild(el('<div class="kpi" style="background:var(--green);"><div class="num" style="font-size:18px;">'+fmtDA(paye)+'</div><div class="label">Encaissé</div></div>'));
+  kpi.appendChild(el('<div class="kpi'+(tot-paye>0?' alert':'')+'"><div class="num" style="font-size:18px;">'+fmtDA(tot-paye)+'</div><div class="label">Reste à encaisser</div></div>'));
+  const benTot = t.ventes.reduce((a,v)=>a+trBenef(v).benef,0);
+  kpi.appendChild(el('<div class="kpi" style="background:'+(benTot>=0?'#37D6A5':'#FF5A4D')+';"><div class="num" style="font-size:18px;">'+fmtDA(benTot)+'</div><div class="label">Bénéfice total'+(tot?' · '+(100*benTot/tot).toFixed(1)+' %':'')+'</div></div>'));
+  body.appendChild(kpi);
+  body.appendChild(trCalcBox());
+  const row = el('<div class="add-row"></div>');
+  row.appendChild(trBtn('+ Nouvelle vente', ()=>{ view.tricoModal = {type:'vente', mode:'create', data:{id:'vt_'+Date.now(), ref:trNextRef('VT', t.ventes, 4), date:todayISO(), client:'', tissu:'', couleur:'', qte:'', prixKg:'', coutKg:'', paye:'', note:''}}; render(); }, true));
+  row.appendChild(trBtn('Réglages des coûts', ()=>{ view.tricoModal = {type:'couts', mode:'edit', data:JSON.parse(JSON.stringify(trCouts()))}; render(); }));
+  row.style.gap='8px'; row.style.flexWrap='wrap';
+  body.appendChild(row);
+  if(!t.ventes.length){ trEmpty(body, 'Aucune vente.'); return; }
+  body.appendChild(trTable(['Réf.','Date','Client','Tissu','Qté','Prix / kg','Coût / kg','Total','Bénéfice','Payé','Reste',''], t.ventes.slice().reverse().map(v=>{
+    const total = trNum(v.qte)*trNum(v.prixKg), reste = total - trNum(v.paye); const b = trBenef(v);
+    return ['<b>'+esc(v.ref)+'</b>', fmtDate(v.date), esc(v.client||'—'), esc(v.tissu||'—')+(v.couleur?'<br><span style="font-size:11px">'+esc(v.couleur)+'</span>':''), trKg(v.qte), fmtDA(v.prixKg), v.coutKg!==''&&v.coutKg!=null?fmtDA(v.coutKg):'<span style="color:#E0392D">à saisir</span>', '<b>'+fmtDA(total)+'</b>', '<b style="color:'+(b.benef>=0?'#1E7A34':'#E0392D')+'">'+fmtDA(b.benef)+'</b><br><span style="font-size:11px">'+b.marge.toFixed(1)+' %</span>', fmtDA(v.paye),
+      '<b style="color:'+(reste>0?'#E0392D':'#1E7A34')+'">'+fmtDA(reste)+'</b>',
+      trActions([trBtn('Modifier', ()=>{ view.tricoModal = {type:'vente', mode:'edit', data:JSON.parse(JSON.stringify(v))}; render(); })])];
+  })));
+}
+
+// ---- Calculateur de bénéfice ----
+function trCalcBox(){
+  const c = view.trCalc = view.trCalc || {cle:'', qte:'', prix:'', cout:'', marge:'20'};
+  const box = el('<div class="bk-card" style="margin-bottom:14px;"><div class="bk-title">Calculateur de bénéfice</div></div>');
+  const st = trFiniStock();
+  const g = el('<div class="tr-calc"></div>');
+  function cell(label, node){ const w = el('<div></div>'); w.appendChild(el('<label>'+label+'</label>')); w.appendChild(node); g.appendChild(w); }
+  const s = document.createElement('select');
+  const o0 = document.createElement('option'); o0.value=''; o0.textContent='— Choisir un tissu —'; s.appendChild(o0);
+  st.forEach(x=>{ const k = trFiniKey(x.tissu,x.couleur); const o=document.createElement('option'); o.value=k; o.textContent=x.tissu+(x.couleur?' '+x.couleur:'')+' ('+trKg(x.stock)+')'; if(k===c.cle) o.selected=true; s.appendChild(o); });
+  function num(key, ph){ const i=document.createElement('input'); i.type='number'; i.step='any'; i.placeholder=ph||''; i.value=c[key]; i.oninput=()=>{ c[key]=i.value; if(key==='cout') c.coutManuel=true; out(); }; return i; }
+  const iCout = num('cout','auto');
+  s.onchange = ()=>{ c.cle = s.value; const x = st.find(y=>trFiniKey(y.tissu,y.couleur)===c.cle); c.coutManuel=false; const k = x ? trCoutMoyenFini(x.tissu,x.couleur) : 0; c.cout = k ? String(Math.round(k*100)/100) : ''; iCout.value = c.cout; out(); };
+  cell('Tissu en stock', s); cell('Quantité (kg)', num('qte')); cell('Prix de vente / kg (DA)', num('prix')); cell('Coût de revient / kg (DA)', iCout); cell('Marge voulue (%)', num('marge'));
+  box.appendChild(g);
+  const res = el('<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;"></div>');
+  box.appendChild(res);
+  function out(){
+    const q = trNum(c.qte), p = trNum(c.prix), k = trNum(c.cout), mg = trNum(c.marge);
+    const ca = q*p, cout = q*k, ben = ca-cout, marge = ca ? 100*ben/ca : 0;
+    const conseil = (mg<100 && k) ? k/(1-mg/100) : 0;
+    const chip = (l,v,col)=>'<div style="border:2px solid #001D51;border-radius:12px;padding:6px 12px;background:'+(col||'#fff')+';"><div style="font-size:11px;">'+l+'</div><div style="font-weight:800;">'+v+'</div></div>';
+    res.innerHTML = chip('Chiffre d\'affaires', fmtDA(ca)) + chip('Coût total', fmtDA(cout)) + chip('Bénéfice', fmtDA(ben), ben>=0?'#37D6A5':'#FF5A4D') + chip('Marge', marge.toFixed(1)+' %') + chip('Prix conseillé pour '+mg+' %', conseil?fmtDA(Math.ceil(conseil))+' / kg':'—', '#FFC933');
+  }
+  out();
+  if(!st.length) box.appendChild(el('<div style="font-size:12px;opacity:.75;margin-top:6px;">Pas encore de tissu fini en stock : tu peux quand même saisir un coût à la main.</div>'));
+  return box;
+}
+
+// ---- Fenêtres de saisie ----
+function renderTricoModal(){
+  const {type, mode, data} = view.tricoModal; const t = TR();
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal"></div>');
+  const titles = {couts:'Réglages des coûts de production', fil: mode==='create'?'Nouveau fil':'Modifier le fil '+data.ref, mvt: data.type==='entree'?'Réception de fil':'Sortie / ajustement de fil', prod: (mode==='create'?'Nouveau lot de tricotage ':'Lot ')+data.ref, stock:'Envoyer '+data.ref+' au stock tissu fini', ajust:'Stock initial / ajustement', vente:(mode==='create'?'Nouvelle vente ':'Vente ')+data.ref};
+  m.appendChild(el('<h2>'+esc(titles[type])+'</h2>'));
+  function frow(fields){ const r = el('<div class="frow"></div>'); fields.forEach(f=>r.appendChild(f)); m.appendChild(r); }
+  function field(label, key, opt){
+    opt = opt||{}; const w = el('<div></div>'); w.appendChild(el('<label>'+label+'</label>'));
+    const inp = document.createElement('input'); inp.type = opt.type||'text'; if(opt.ph) inp.placeholder=opt.ph; if(opt.list) inp.setAttribute('list', opt.list);
+    if(opt.type==='number'){ inp.step='any'; inp.min='0'; }
+    inp.setAttribute('data-k', key);
+    inp.value = data[key]==null?'':data[key]; inp.oninput = ()=>{ data[key] = inp.value; if(opt.onchange) opt.onchange(); };
+    w.appendChild(inp); return w;
+  }
+  function select(label, key, options, onchange){
+    const w = el('<div></div>'); w.appendChild(el('<label>'+label+'</label>'));
+    const s = document.createElement('select');
+    options.forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; if(String(v)===String(data[key])) o.selected=true; s.appendChild(o); });
+    s.onchange = ()=>{ data[key]=s.value; if(onchange) onchange(); }; w.appendChild(s); return w;
+  }
+  function datalist(id, values){ const dl = document.createElement('datalist'); dl.id=id; values.forEach(v=>{ const o=document.createElement('option'); o.value=v; dl.appendChild(o); }); m.appendChild(dl); }
+  const filOpts = t.fils.map(f=>[f.id, f.ref+' · '+trFilLabel(f)+' (stock '+trKg(trFilStock(f.id).stock)+')']);
+  datalist('dl-tr-tissus', trTissuOptions());
+
+  if(type==='couts'){
+    m.appendChild(el('<div style="font-size:13px;margin:-4px 0 10px;">Coûts par kg de tissu produit, ajoutés au prix du fil pour calculer le coût de revient. Le prix du fil vient des réceptions (prix moyen).</div>'));
+    frow([field('Tricotage (DA / kg)','tricotageKg',{type:'number'}), field('Lavage (DA / kg)','lavageKg',{type:'number'})]);
+    frow([field('Repassage (DA / kg)','repassageKg',{type:'number'}), field('Grattage (DA / kg)','grattageKg',{type:'number'})]);
+    frow([field('Autres frais (DA / kg)','autresKg',{type:'number', ph:'électricité, main d\'œuvre…'})]);
+  }
+  if(type==='fil'){
+    frow([field('Nom du fil *','nom',{ph:'ex : Coton peigné 30/1'}), field('Couleur','couleur',{ph:'ex : Écru, Noir…'})]);
+    frow([field('Fournisseur','fournisseur'), field('Seuil d\'alerte (kg)','seuil',{type:'number', ph:'ex : 200'})]);
+  }
+  if(type==='mvt'){
+    frow([select('Fil','filId',filOpts), select('Type','type',[['entree','Réception (entrée)'],['sortie','Sortie / perte / ajustement']])]);
+    frow([field('Date','date',{type:'date'}), field('Quantité (kg) *','qte',{type:'number'})]);
+    frow([field('Prix par kg (DA)','prixKg',{type:'number'}), field('Note','note',{ph:'ex : bon de livraison n°…'})]);
+  }
+  if(type==='prod'){
+    frow([field('Date','date',{type:'date'}), field('Machine','machine',{ph:'ex : Machine 3'})]);
+    frow([field('Tissu produit *','tissu',{list:'dl-tr-tissus', ph:'ex : MOLLETON, JERSEY…'}), field('Couleur','couleur',{ph:'ÉCRU'})]);
+    m.appendChild(el('<label style="margin-top:6px;display:block;">Fils utilisés (kg)</label>'));
+    const fbox = el('<div></div>'); m.appendChild(fbox);
+    function drawFils(){
+      fbox.innerHTML='';
+      data.fils = data.fils || [];
+      data.fils.forEach((u,i)=>{
+        const r = el('<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;"></div>');
+        const s = document.createElement('select'); s.style.flex='2';
+        filOpts.forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; if(v===u.filId) o.selected=true; s.appendChild(o); });
+        s.onchange = ()=>u.filId=s.value;
+        const q = document.createElement('input'); q.type='number'; q.step='any'; q.min='0'; q.placeholder='kg'; q.value=u.qte||''; q.style.flex='1'; q.oninput=()=>u.qte=q.value;
+        const x = el('<button class="btn small">✕</button>'); x.onclick = ()=>{ data.fils.splice(i,1); drawFils(); };
+        r.appendChild(s); r.appendChild(q); r.appendChild(x); fbox.appendChild(r);
+      });
+      const add = el('<button class="btn small">+ Ajouter un fil</button>'); add.onclick = ()=>{ data.fils.push({filId:(t.fils[0]||{}).id, qte:''}); drawFils(); };
+      fbox.appendChild(add);
+    }
+    drawFils();
+    frow([field('Quantité produite (kg)','qteProduite',{type:'number'}), field('Nombre de rouleaux','rouleaux',{type:'number'})]);
+    frow([select('Statut','statut',[['En cours','En tricotage'],['Terminé','Terminé (passe en finition)']]), field('Note','note')]);
+  }
+  if(type==='stock'){
+    m.appendChild(el('<div style="font-size:13px;margin:-4px 0 10px;">Tissu : <b>'+esc(data.tissu||'—')+'</b></div>'));
+    frow([field('Quantité finie (kg) *','qteFinie',{type:'number'}), field('Couleur finale','couleurFinie',{ph:'ex : NOIR'})]);
+    frow([field('Date d\'entrée en stock','dateStock',{type:'date'})]);
+    m.appendChild(el('<div style="font-size:12px;opacity:.8;">Un code QR sera créé pour ce lot, avec une étiquette par rouleau à imprimer.</div>'));
+  }
+  if(type==='ajust'){
+    frow([field('Tissu *','tissu',{list:'dl-tr-tissus'}), field('Couleur','couleur')]);
+    frow([field('Quantité (kg) — négatif pour retirer *','qte',{type:'number'}), field('Date','date',{type:'date'})]);
+    frow([field('Note','note',{ph:'ex : inventaire du …'}), field('Coût de revient / kg (DA)','coutKg',{type:'number'})]);
+    m.querySelectorAll('input[type=number]').forEach(i=>i.removeAttribute('min'));
+  }
+  if(type==='vente'){
+    datalist('dl-tr-clients', (DATA.clients||[]).map(c=>c.nom));
+    const stockList = trFiniStock().filter(x=>x.stock>0);
+    if(stockList.length) m.appendChild(el('<div style="font-size:12px;background:#BFD2FF;border:2px solid #001D51;border-radius:10px;padding:6px 10px;margin-bottom:10px;">Disponible : '+stockList.map(x=>esc(x.tissu)+(x.couleur?' '+esc(x.couleur):'')+' = <b>'+trKg(x.stock)+'</b>').join(' · ')+'</div>'));
+    const totalBox = el('<div style="font-weight:800;margin:4px 0 10px;"></div>');
+    if(mode==='create' && (data.coutKg==null || data.coutKg==='')) data.coutKg = '';
+    const upd = ()=>{ const tt = trNum(data.qte)*trNum(data.prixKg); const b = trBenef(data); totalBox.innerHTML = 'Total : '+fmtDA(tt)+'  ·  Reste : '+fmtDA(tt-trNum(data.paye))+'<br><span style="color:'+(b.benef>=0?'#1E7A34':'#E0392D')+'">Bénéfice : '+fmtDA(b.benef)+' · marge '+b.marge.toFixed(1)+' %</span>'; };
+    const autoCout = ()=>{ if(!data._coutManuel){ const c = trCoutMoyenFini(data.tissu, data.couleur); data.coutKg = c ? Math.round(c*100)/100 : ''; const ci = m.querySelector('input[data-k=coutKg]'); if(ci) ci.value = data.coutKg; } upd(); };
+    frow([field('Date','date',{type:'date'}), field('Client *','client',{list:'dl-tr-clients'})]);
+    frow([field('Tissu *','tissu',{list:'dl-tr-tissus', onchange:autoCout}), field('Couleur','couleur',{onchange:autoCout})]);
+    frow([field('Quantité (kg) *','qte',{type:'number', onchange:upd}), field('Prix de vente / kg (DA)','prixKg',{type:'number', onchange:upd})]);
+    frow([field('Coût de revient / kg (DA)','coutKg',{type:'number', onchange:()=>{ data._coutManuel = true; upd(); }}), field('Montant payé (DA)','paye',{type:'number', onchange:upd})]);
+    frow([field('Note','note')]);
+    m.appendChild(totalBox); if(mode==='create') autoCout(); else upd();
+  }
+
+  const actions = el('<div class="actions"></div>');
+  const cancel = el('<button class="btn">Annuler</button>'); cancel.onclick = ()=>{ view.tricoModal=null; render(); };
+  const lists = {fil:'fils', mvt:'mvtFil', prod:'prods', ajust:'ajustFini', vente:'ventes'};
+  let del = null;
+  if(mode==='edit' && type!=='stock' && type!=='couts'){
+    del = el('<button class="btn" style="color:#A42834;border-color:#A42834;">Supprimer</button>');
+    del.onclick = ()=>{
+      if(type==='fil'){ const used = t.mvtFil.some(x=>x.filId===data.id) || t.prods.some(p=>(p.fils||[]).some(u=>u.filId===data.id)); if(used){ alert('Impossible : ce fil a déjà des mouvements ou des lots.'); return; } }
+      if(type==='prod' && data.dateStock){ alert('Impossible : ce lot est déjà dans le stock tissu fini.'); return; }
+      if(!confirm('Supprimer définitivement ?')) return;
+      t[lists[type]] = t[lists[type]].filter(x=>x.id!==data.id);
+      view.tricoModal=null; saveState('Supprimé');
+    };
+  }
+  const save = el('<button class="btn primary">Enregistrer</button>');
+  save.onclick = ()=>{
+    if(type==='couts'){ TR().couts = data; view.tricoModal=null; saveState('Coûts de production enregistrés'); return; }
+    if(type==='fil' && !String(data.nom||'').trim()){ alert('Le nom du fil est obligatoire.'); return; }
+    if(type==='mvt' && !(trNum(data.qte)>0)){ alert('Indique une quantité.'); return; }
+    if(type==='mvt' && data.type==='sortie' && trNum(data.qte) > trFilStock(data.filId).stock + (mode==='edit' ? trNum((t.mvtFil.find(x=>x.id===data.id)||{}).qte) : 0)){ if(!confirm('Attention : la sortie dépasse le stock disponible. Continuer ?')) return; }
+    if(type==='prod'){
+      if(!String(data.tissu||'').trim()){ alert('Indique le tissu produit.'); return; }
+      data.tissu = String(data.tissu).trim().toUpperCase(); data.couleur = String(data.couleur||'').trim().toUpperCase();
+      data.fils = (data.fils||[]).filter(u=>u.filId && trNum(u.qte)>0);
+      if(data.statut==='Terminé' && !trNum(data.qteProduite)){ alert('Indique la quantité produite pour terminer le lot.'); return; }
+      const old = t.prods.find(x=>x.id===data.id);
+      const over = data.fils.filter(u=>trNum(u.qte) > trFilStock(u.filId).stock + (old ? (old.fils||[]).filter(o=>o.filId===u.filId).reduce((a,o)=>a+trNum(o.qte),0) : 0));
+      if(over.length && !confirm('Attention : pas assez de fil en stock pour '+over.map(u=>trFilLabel(trFil(u.filId))).join(', ')+'. Continuer ?')) return;
+      if(data.statut==='Terminé' && !data.finDate) data.finDate = todayISO();
+    }
+    if(type==='stock'){
+      if(!(trNum(data.qteFinie)>0)){ alert('Indique la quantité finie.'); return; }
+      const p = t.prods.find(x=>x.id===data.id);
+      if(p){ p.qteFinie = data.qteFinie; p.couleurFinie = String(data.couleurFinie||'').trim().toUpperCase(); p.dateStock = data.dateStock || todayISO(); p.coutKg = Math.round(trLotCout(p).kg*100)/100; }
+      view.tricoModal=null; view.tricoLotView = data.id; saveState('Lot '+data.ref+' entré en stock — code QR prêt'); return;
+    }
+    if(type==='ajust'){ if(!String(data.tissu||'').trim() || !trNum(data.qte)){ alert('Indique le tissu et la quantité.'); return; } data.tissu=String(data.tissu).trim().toUpperCase(); data.couleur=String(data.couleur||'').trim().toUpperCase(); }
+    if(type==='vente'){
+      if(!String(data.client||'').trim() || !String(data.tissu||'').trim() || !(trNum(data.qte)>0)){ alert('Client, tissu et quantité sont obligatoires.'); return; }
+      data.tissu=String(data.tissu).trim().toUpperCase(); data.couleur=String(data.couleur||'').trim().toUpperCase();
+      const dispo = (trFiniStock().find(x=>trFiniKey(x.tissu,x.couleur)===trFiniKey(data.tissu,data.couleur))||{stock:0}).stock + (mode==='edit' ? trNum((t.ventes.find(x=>x.id===data.id)||{}).qte) : 0);
+      if(trNum(data.qte) > dispo && !confirm('Attention : stock disponible '+trKg(dispo)+' seulement pour '+data.tissu+(data.couleur?' '+data.couleur:'')+'. Continuer ?')) return;
+    }
+    delete data._coutManuel;
+    const arr = t[lists[type]];
+    const i = arr.findIndex(x=>x.id===data.id);
+    if(i>=0) arr[i] = data; else arr.push(data);
+    view.tricoModal=null;
+    saveState({fil:'Fil enregistré', mvt:'Mouvement de fil enregistré', prod:'Lot '+data.ref+' enregistré', ajust:'Stock tissu fini ajusté', vente:'Vente '+data.ref+' enregistrée'}[type]);
+  };
+  actions.appendChild(cancel); if(del) actions.appendChild(del); actions.appendChild(save);
+  m.appendChild(actions);
+  overlay.appendChild(m);
+  overlay.onclick = (e)=>{ if(e.target===overlay){ view.tricoModal=null; render(); } };
+  return overlay;
+}
+
 // ---------- Synchronisation sécurisée (plusieurs personnes en même temps) ----------
 // Chaque enregistrement porte un numéro de version (_rev). Si quelqu'un d'autre a enregistré
 // entre-temps (onglet resté ouvert, autre téléphone...), on FUSIONNE au lieu d'écraser.
@@ -6234,7 +6899,7 @@ async function saveState(toastMsg){
 // Rafraîchissement automatique : si quelqu'un d'autre a modifié les données, on les récupère.
 let refreshBusy = false;
 function userIsEditing(){
-  if(view.modal||view.personModal||view.catalogueModal||view.clientModal||view.payModal||view.settingsModal||view.importModal||view.scanModal) return true;
+  if(view.modal||view.tricoModal||view.personModal||view.catalogueModal||view.clientModal||view.payModal||view.settingsModal||view.importModal||view.scanModal) return true;
   const a = document.activeElement;
   return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
 }
@@ -6276,7 +6941,7 @@ function restoreSession(){
 }
 
 async function boot(){
-  try{ view.scanId = new URLSearchParams(location.search).get('cmd'); }catch(e){}
+  try{ view.scanId = new URLSearchParams(location.search).get('cmd'); view.lotScanId = new URLSearchParams(location.search).get('lot'); }catch(e){}
   await loadDataFromSupabase();
   restoreSession();
   if(!view.personId && view.scanId){
