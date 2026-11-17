@@ -1741,7 +1741,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 48 · bénéfice et QR</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 49 · clients tricotage</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -6243,7 +6243,7 @@ function showToast(msg){
 function TR(){
   DATA.tricotage = DATA.tricotage || {};
   const t = DATA.tricotage;
-  ['fils','mvtFil','prods','ventes','ajustFini'].forEach(k=>{ if(!Array.isArray(t[k])) t[k]=[]; });
+  ['fils','mvtFil','prods','ventes','ajustFini','clients'].forEach(k=>{ if(!Array.isArray(t[k])) t[k]=[]; });
   return t;
 }
 function trNum(x){ const n = parseFloat(String(x==null?'':x).replace(',','.')); return isNaN(n) ? 0 : n; }
@@ -6350,6 +6350,17 @@ function renderTricoLotView(){
   overlay.onclick = (e)=>{ if(e.target===overlay){ view.tricoLotView=null; render(); } };
   return overlay;
 }
+function trClientStats(c){
+  const k = normName(c.nom); let n=0, ca=0, paye=0, kg=0;
+  TR().ventes.forEach(v=>{ if(normName(v.client)===k){ n++; ca += trNum(v.qte)*trNum(v.prixKg); paye += trNum(v.paye); kg += trNum(v.qte); } });
+  return {n:n, ca:ca, paye:paye, reste:ca-paye, kg:kg};
+}
+function trEnsureClient(nom){
+  nom = String(nom||'').trim(); if(!nom) return;
+  const t = TR();
+  if(t.clients.some(c=>normName(c.nom)===normName(nom))) return;
+  t.clients.push({id:'ct_'+Date.now()+Math.floor(Math.random()*1000), ref:trNextRef('CT', t.clients, 3), nom:nom, tel:'', adresse:'', wilaya:'', commune:'', note:'', creeLe:new Date().toISOString()});
+}
 function trTissuOptions(){
   const s = new Set(Object.keys((DATA.lists||{}).tissus||{}).map(x=>x.toUpperCase()));
   TR().prods.forEach(p=>{ if(p.tissu) s.add(String(p.tissu).toUpperCase()); });
@@ -6386,7 +6397,8 @@ function renderTricotage(w, wrap){
     {key:'prod', label:'Production', badge: enTricot || null, ic: JOURNEY_ICONS.confection},
     {key:'fini', label:'Finition', sub:'Lavage · Repassage · Grattage', badge: enFini || null, ic: JOURNEY_ICONS.emballage},
     {key:'stock', label:'Stock tissu fini', badge: null, ic: JOURNEY_ICONS.stock},
-    {key:'vente', label:'Vente tissu fini', badge: t.ventes.length || null, ic: ICONS.paiements || ''}
+    {key:'vente', label:'Vente tissu fini', badge: t.ventes.length || null, ic: ICONS.paiements || ''},
+    {key:'clients', label:'Clients', badge: t.clients.length || null, ic: ICONS.clients || ICONS.acces}
   ];
   const grid = el('<div class="icon-grid"></div>');
   tiles.forEach(it=>{
@@ -6407,6 +6419,7 @@ function renderTricotage(w, wrap){
   if(o==='fini') trPanelFini(panel);
   if(o==='stock') trPanelStock(panel);
   if(o==='vente') trPanelVente(panel);
+  if(o==='clients') trPanelClients(panel);
   wrap.appendChild(panel);
   w.appendChild(wrap);
   return w;
@@ -6551,6 +6564,42 @@ function trPanelVente(panel){
   })));
 }
 
+// ---- Clients du tricotage ----
+function trPanelClients(panel){
+  const t = TR(); const body = trSection(panel, 'Clients — tissu');
+  view.trico.clSearch = view.trico.clSearch || '';
+  const row = el('<div class="add-row" style="gap:8px;flex-wrap:wrap;align-items:center;"></div>');
+  const q = document.createElement('input'); q.placeholder='Rechercher : nom, référence ou téléphone'; q.value=view.trico.clSearch; q.style.flex='1'; q.style.minWidth='220px';
+  q.style.cssText += ';flex:1 1 260px;width:auto;padding:8px 10px;border:2px solid #001D51;border-radius:10px;background:#FFF6E6;font-weight:600;';
+  row.style.display='flex'; row.style.justifyContent='space-between';
+  row.appendChild(q);
+  row.appendChild(trBtn('+ Ajouter un client', ()=>{ view.tricoModal = {type:'client', mode:'create', data:{id:'ct_'+Date.now(), ref:trNextRef('CT', t.clients, 3), nom:'', tel:'', adresse:'', wilaya:'', commune:'', note:'', creeLe:new Date().toISOString()}}; render(); }, true));
+  body.appendChild(row);
+  const tot = t.clients.reduce((a,c)=>{ const s=trClientStats(c); a.ca+=s.ca; a.reste+=s.reste; return a; }, {ca:0, reste:0});
+  const kpi = el('<div class="kpi-row"></div>');
+  kpi.appendChild(el('<div class="kpi"><div class="num">'+t.clients.length+'</div><div class="label">Clients</div></div>'));
+  kpi.appendChild(el('<div class="kpi"><div class="num" style="font-size:18px;">'+fmtDA(tot.ca)+'</div><div class="label">Chiffre d\'affaires</div></div>'));
+  kpi.appendChild(el('<div class="kpi'+(tot.reste>0?' alert':'')+'"><div class="num" style="font-size:18px;">'+fmtDA(tot.reste)+'</div><div class="label">Reste à encaisser</div></div>'));
+  body.appendChild(kpi);
+  const list = el('<div></div>'); body.appendChild(list);
+  function draw(){
+    list.innerHTML='';
+    const s = normName(view.trico.clSearch);
+    const rows = t.clients.filter(c=>!s || normName(c.nom).indexOf(s)>=0 || normName(c.ref).indexOf(s)>=0 || String(c.tel||'').replace(/\s/g,'').indexOf(s.replace(/\s/g,''))>=0)
+      .slice().sort((a,b)=>String(a.nom).localeCompare(String(b.nom)));
+    if(!t.clients.length){ trEmpty(list, 'Aucun client. Ajoute-en un, ou il sera créé tout seul à la première vente.'); return; }
+    if(!rows.length){ trEmpty(list, 'Aucun client ne correspond à la recherche.'); return; }
+    list.appendChild(trTable(['Réf.','Client','Téléphone','Wilaya','Commune','Ventes','CA','Payé','Reste',''], rows.map(c=>{
+      const st = trClientStats(c);
+      return ['<b>'+esc(c.ref)+'</b>', '<b>'+esc(c.nom)+'</b>', esc(c.tel||'—'), esc(c.wilaya||'—'), esc(c.commune||'—'), st.n+(st.kg?'<br><span style="font-size:11px">'+trKg(st.kg)+'</span>':''),
+        '<b>'+fmtDA(st.ca)+'</b>', '<span style="color:#1E7A34">'+fmtDA(st.paye)+'</span>', '<b style="color:'+(st.reste>0?'#E0392D':'#1E7A34')+'">'+fmtDA(st.reste)+'</b>',
+        trActions([trBtn('Afficher', ()=>{ view.tricoModal = {type:'client', mode:'edit', data:JSON.parse(JSON.stringify(c)), oldName:c.nom}; render(); }, true)])];
+    })));
+  }
+  q.oninput = ()=>{ view.trico.clSearch = q.value; draw(); };
+  draw();
+}
+
 // ---- Calculateur de bénéfice ----
 function trCalcBox(){
   const c = view.trCalc = view.trCalc || {cle:'', qte:'', prix:'', cout:'', marge:'20'};
@@ -6585,7 +6634,7 @@ function renderTricoModal(){
   const {type, mode, data} = view.tricoModal; const t = TR();
   const overlay = el('<div class="modal-overlay"></div>');
   const m = el('<div class="modal"></div>');
-  const titles = {couts:'Réglages des coûts de production', fil: mode==='create'?'Nouveau fil':'Modifier le fil '+data.ref, mvt: data.type==='entree'?'Réception de fil':'Sortie / ajustement de fil', prod: (mode==='create'?'Nouveau lot de tricotage ':'Lot ')+data.ref, stock:'Envoyer '+data.ref+' au stock tissu fini', ajust:'Stock initial / ajustement', vente:(mode==='create'?'Nouvelle vente ':'Vente ')+data.ref};
+  const titles = {client: mode==='create'?'Nouveau client':'Client '+(data.ref||''), couts:'Réglages des coûts de production', fil: mode==='create'?'Nouveau fil':'Modifier le fil '+data.ref, mvt: data.type==='entree'?'Réception de fil':'Sortie / ajustement de fil', prod: (mode==='create'?'Nouveau lot de tricotage ':'Lot ')+data.ref, stock:'Envoyer '+data.ref+' au stock tissu fini', ajust:'Stock initial / ajustement', vente:(mode==='create'?'Nouvelle vente ':'Vente ')+data.ref};
   m.appendChild(el('<h2>'+esc(titles[type])+'</h2>'));
   function frow(fields){ const r = el('<div class="frow"></div>'); fields.forEach(f=>r.appendChild(f)); m.appendChild(r); }
   function field(label, key, opt){
@@ -6606,6 +6655,22 @@ function renderTricoModal(){
   const filOpts = t.fils.map(f=>[f.id, f.ref+' · '+trFilLabel(f)+' (stock '+trKg(trFilStock(f.id).stock)+')']);
   datalist('dl-tr-tissus', trTissuOptions());
 
+  if(type==='client'){
+    if(mode==='edit'){
+      const st = trClientStats(Object.assign({}, data, {nom:view.tricoModal.oldName||data.nom}));
+      m.appendChild(el('<div class="cl-kpis" style="margin:0 0 12px"><div class="cl-kpi"><span>Chiffre d\'affaires</span><b>'+fmtDA(st.ca)+'</b></div><div class="cl-kpi"><span>Payé</span><b>'+fmtDA(st.paye)+'</b></div><div class="cl-kpi"><span>Reste</span><b style="color:'+(st.reste>0?'#E0392D':'#1E7A34')+'">'+fmtDA(st.reste)+'</b></div></div>'));
+    }
+    frow([field('Nom du client *','nom',{ph:'ex : Atelier Amine'}), field('Téléphone','tel',{type:'tel', ph:'ex : 0555 12 34 56'})]);
+    frow([field('Adresse','adresse')]);
+    frow([select('Wilaya','wilaya',[['','— Choisir —']].concat((typeof WILAYA_LABELS!=='undefined'?WILAYA_LABELS:[]).map(l=>[l,l]))), field('Commune','commune')]);
+    frow([field('Note','note')]);
+    if(mode==='edit'){
+      const vs = TR().ventes.filter(v=>normName(v.client)===normName(view.tricoModal.oldName||data.nom)).slice().reverse();
+      m.appendChild(el('<div style="font-weight:700;margin:8px 0 6px;">Ventes ('+vs.length+')</div>'));
+      if(vs.length) m.appendChild(trTable(['Réf.','Date','Tissu','Qté','Total','Reste'], vs.map(v=>{ const tt=trNum(v.qte)*trNum(v.prixKg); return ['<b>'+esc(v.ref)+'</b>', fmtDate(v.date), esc(v.tissu)+(v.couleur?' '+esc(v.couleur):''), trKg(v.qte), fmtDA(tt), fmtDA(tt-trNum(v.paye))]; })));
+      else m.appendChild(el('<div style="font-size:13px;opacity:.7;">Aucune vente pour ce client.</div>'));
+    }
+  }
   if(type==='couts'){
     m.appendChild(el('<div style="font-size:13px;margin:-4px 0 10px;">Coûts par kg de tissu produit, ajoutés au prix du fil pour calculer le coût de revient. Le prix du fil vient des réceptions (prix moyen).</div>'));
     frow([field('Tricotage (DA / kg)','tricotageKg',{type:'number'}), field('Lavage (DA / kg)','lavageKg',{type:'number'})]);
@@ -6658,7 +6723,7 @@ function renderTricoModal(){
     m.querySelectorAll('input[type=number]').forEach(i=>i.removeAttribute('min'));
   }
   if(type==='vente'){
-    datalist('dl-tr-clients', (DATA.clients||[]).map(c=>c.nom));
+    datalist('dl-tr-clients', t.clients.map(c=>c.nom));
     const stockList = trFiniStock().filter(x=>x.stock>0);
     if(stockList.length) m.appendChild(el('<div style="font-size:12px;background:#BFD2FF;border:2px solid #001D51;border-radius:10px;padding:6px 10px;margin-bottom:10px;">Disponible : '+stockList.map(x=>esc(x.tissu)+(x.couleur?' '+esc(x.couleur):'')+' = <b>'+trKg(x.stock)+'</b>').join(' · ')+'</div>'));
     const totalBox = el('<div style="font-weight:800;margin:4px 0 10px;"></div>');
@@ -6675,13 +6740,14 @@ function renderTricoModal(){
 
   const actions = el('<div class="actions"></div>');
   const cancel = el('<button class="btn">Annuler</button>'); cancel.onclick = ()=>{ view.tricoModal=null; render(); };
-  const lists = {fil:'fils', mvt:'mvtFil', prod:'prods', ajust:'ajustFini', vente:'ventes'};
+  const lists = {fil:'fils', mvt:'mvtFil', prod:'prods', ajust:'ajustFini', vente:'ventes', client:'clients'};
   let del = null;
   if(mode==='edit' && type!=='stock' && type!=='couts'){
     del = el('<button class="btn" style="color:#A42834;border-color:#A42834;">Supprimer</button>');
     del.onclick = ()=>{
       if(type==='fil'){ const used = t.mvtFil.some(x=>x.filId===data.id) || t.prods.some(p=>(p.fils||[]).some(u=>u.filId===data.id)); if(used){ alert('Impossible : ce fil a déjà des mouvements ou des lots.'); return; } }
       if(type==='prod' && data.dateStock){ alert('Impossible : ce lot est déjà dans le stock tissu fini.'); return; }
+      if(type==='client' && trClientStats(Object.assign({}, data, {nom:view.tricoModal.oldName||data.nom})).n){ alert('Impossible : ce client a des ventes.'); return; }
       if(!confirm('Supprimer définitivement ?')) return;
       t[lists[type]] = t[lists[type]].filter(x=>x.id!==data.id);
       view.tricoModal=null; saveState('Supprimé');
@@ -6690,6 +6756,14 @@ function renderTricoModal(){
   const save = el('<button class="btn primary">Enregistrer</button>');
   save.onclick = ()=>{
     if(type==='couts'){ TR().couts = data; view.tricoModal=null; saveState('Coûts de production enregistrés'); return; }
+    if(type==='client'){
+      const nom = String(data.nom||'').trim();
+      if(!nom){ alert('Le nom du client est obligatoire.'); return; }
+      if(t.clients.some(c=>c.id!==data.id && normName(c.nom)===normName(nom))){ alert('Un client avec ce nom existe déjà.'); return; }
+      data.nom = nom; data.tel = String(data.tel||'').trim();
+      const oldName = view.tricoModal.oldName;
+      if(mode==='edit' && oldName && normName(oldName)!==normName(nom)) t.ventes.forEach(v=>{ if(normName(v.client)===normName(oldName)) v.client = nom; });
+    }
     if(type==='fil' && !String(data.nom||'').trim()){ alert('Le nom du fil est obligatoire.'); return; }
     if(type==='mvt' && !(trNum(data.qte)>0)){ alert('Indique une quantité.'); return; }
     if(type==='mvt' && data.type==='sortie' && trNum(data.qte) > trFilStock(data.filId).stock + (mode==='edit' ? trNum((t.mvtFil.find(x=>x.id===data.id)||{}).qte) : 0)){ if(!confirm('Attention : la sortie dépasse le stock disponible. Continuer ?')) return; }
@@ -6715,13 +6789,14 @@ function renderTricoModal(){
       data.tissu=String(data.tissu).trim().toUpperCase(); data.couleur=String(data.couleur||'').trim().toUpperCase();
       const dispo = (trFiniStock().find(x=>trFiniKey(x.tissu,x.couleur)===trFiniKey(data.tissu,data.couleur))||{stock:0}).stock + (mode==='edit' ? trNum((t.ventes.find(x=>x.id===data.id)||{}).qte) : 0);
       if(trNum(data.qte) > dispo && !confirm('Attention : stock disponible '+trKg(dispo)+' seulement pour '+data.tissu+(data.couleur?' '+data.couleur:'')+'. Continuer ?')) return;
+      data.client = String(data.client).trim(); trEnsureClient(data.client);
     }
     delete data._coutManuel;
     const arr = t[lists[type]];
     const i = arr.findIndex(x=>x.id===data.id);
     if(i>=0) arr[i] = data; else arr.push(data);
     view.tricoModal=null;
-    saveState({fil:'Fil enregistré', mvt:'Mouvement de fil enregistré', prod:'Lot '+data.ref+' enregistré', ajust:'Stock tissu fini ajusté', vente:'Vente '+data.ref+' enregistrée'}[type]);
+    saveState({client:'Client '+data.nom+' enregistré', fil:'Fil enregistré', mvt:'Mouvement de fil enregistré', prod:'Lot '+data.ref+' enregistré', ajust:'Stock tissu fini ajusté', vente:'Vente '+data.ref+' enregistrée'}[type]);
   };
   actions.appendChild(cancel); if(del) actions.appendChild(del); actions.appendChild(save);
   m.appendChild(actions);
