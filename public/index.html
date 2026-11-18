@@ -1748,7 +1748,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 58 · référence produit auto</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 59 · référence produit Créa</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -4136,6 +4136,7 @@ function catRefNum(r){ const m = String(r||'').trim().match(/^#0*(\d+)$/); retur
 function nextCatRef(extra){
   let max = 0; (DATA.catalogue||[]).forEach(p=>{ max = Math.max(max, catRefNum(p.refPatron)); });
   (extra||[]).forEach(r=>{ max = Math.max(max, catRefNum(r)); });
+  (((DATA.crea||{}).produits)||[]).forEach(x=>{ max = Math.max(max, catRefNum(x.refProduit)); });
   return '#'+String(max+1).padStart(5,'0');
 }
 function catNormRef(r){ return String(r||'').replace(/\s+/g,'').toLowerCase(); }
@@ -7762,7 +7763,7 @@ function crBlank(){
   const c = CR();
   return {id:'cr_'+Date.now(), ref:trNextRef('CR', c.produits, 3), nom:'', collection:'', saison:'', categorie:'T-shirt', cible:'Unisexe', responsable:view.personId||'', dateObjectif:'',
     description:'', images:[], tissus:[{tissu:'', couleur:'', conso:'', unite:'kg', prix:''}], couleurs:'', tailles:[], fournitures:[], persoTech:'', persoDetail:'', refPatron:'',
-    facon:'', coutPerso:'', prixVente:'', etape:0, etapesDates:{0:psNow()}, notes:'', catalogueId:'', creeLe:psNow(), creePar:view.personId||''};
+    facon:'', coutPerso:'', prixVente:'', etape:0, etapesDates:{0:psNow()}, notes:'', catalogueId:'', refProduit:nextCatRef(), creeLe:psNow(), creePar:view.personId||''};
 }
 function crSetEtape(x, i){ x.etape = i; x.etapesDates = x.etapesDates || {}; x.etapesDates[i] = psNow(); x.etapesPar = x.etapesPar || {}; x.etapesPar[i] = view.personId; saveState(x.ref+' : '+CR_STEPS[i]); }
 function crPersonName(id){ const p = (DATA.people||[]).find(z=>z.id===id); return p ? p.name : ''; }
@@ -7838,7 +7839,7 @@ function crPanelSuivi(panel){
       const late = i<5 && x.dateObjectif && x.dateObjectif<todayISO();
       const card = el('<button style="display:block;width:100%;text-align:left;border:2px solid #001D51;border-radius:10px;padding:6px 8px;margin-bottom:6px;background:'+(late?'#FFE1DE':'#fff')+';cursor:pointer;font-family:inherit;color:#001D51;box-shadow:2px 2px 0 #001D51;"></button>');
       card.innerHTML = (x.images&&x.images[0]?'<img src="'+x.images[0]+'" style="width:100%;height:90px;object-fit:cover;border-radius:6px;margin-bottom:4px;">':'')
-        +'<div style="display:flex;justify-content:space-between;gap:4px;"><b>'+esc(x.ref)+'</b><span style="font-size:10px;">'+esc(x.categorie||'')+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;gap:4px;"><b>'+esc(x.refProduit||x.ref)+'</b><span style="font-size:10px;">'+esc(x.categorie||'')+'</span></div>'
         +'<div style="font-size:12px;font-weight:700;">'+esc(x.nom||'')+'</div>'
         +(x.collection?'<div style="font-size:11px;">'+esc(x.collection)+(x.saison?' · '+esc(x.saison):'')+'</div>':'')
         +(x.dateObjectif?'<div style="font-size:11px;font-weight:700;color:'+(late?'#E0392D':'#001D51')+'">objectif '+fmtDate(x.dateObjectif)+(late?' ⚠':'')+'</div>':'')
@@ -7869,13 +7870,13 @@ function crPanelFiches(panel){
   function draw(){
     list.innerHTML='';
     const s = normName(view.crea.q);
-    const rows = c.produits.filter(x=>(!view.crea.col || x.collection===view.crea.col) && (!s || normName(x.nom).indexOf(s)>=0 || normName(x.ref).indexOf(s)>=0 || normName(x.collection).indexOf(s)>=0)).slice().reverse();
+    const rows = c.produits.filter(x=>(!view.crea.col || x.collection===view.crea.col) && (!s || normName(x.nom).indexOf(s)>=0 || normName(x.ref).indexOf(s)>=0 || normName(x.refProduit).indexOf(s)>=0 || normName(x.collection).indexOf(s)>=0)).slice().reverse();
     if(!c.produits.length){ trEmpty(list, 'Aucune fiche produit.'); return; }
     if(!rows.length){ trEmpty(list, 'Aucun produit ne correspond.'); return; }
-    list.appendChild(trTable(['','Réf.','Produit','Collection','Catégorie','Tissus','Tailles','Étape','Objectif',''].concat(crMoney()?[]:[]), rows.map(x=>{
+    list.appendChild(trTable(['','Réf. produit','Produit','Collection','Catégorie','Tissus','Tailles','Étape','Objectif',''], rows.map(x=>{
       const e = crEtape(x);
       return [x.images&&x.images[0]?'<img src="'+x.images[0]+'" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:2px solid #001D51;">':'—',
-        '<b>'+esc(x.ref)+'</b>', '<b>'+esc(x.nom||'—')+'</b><br><span style="font-size:11px">'+esc(x.cible||'')+'</span>', esc(x.collection||'—')+(x.saison?'<br><span style="font-size:11px">'+esc(x.saison)+'</span>':''),
+        '<b>'+esc(x.refProduit||'—')+'</b><br><span style="font-size:10px">fiche '+esc(x.ref)+'</span>', '<b>'+esc(x.nom||'—')+'</b><br><span style="font-size:11px">'+esc(x.cible||'')+'</span>', esc(x.collection||'—')+(x.saison?'<br><span style="font-size:11px">'+esc(x.saison)+'</span>':''),
         esc(x.categorie||'—'), (x.tissus||[]).filter(t=>t.tissu).map(t=>esc(t.tissu)+(t.couleur?' '+esc(t.couleur):'')).join('<br>')||'—', (x.tailles||[]).join(' ')||'—',
         '<span class="pill" style="background:'+CR_COLORS[e.i]+';color:#001D51;border:1px solid #001D51;">'+e.label+'</span>'+(x.catalogueId?'<br><span style="font-size:10px;color:#1E7A34;font-weight:800;">✓ catalogue</span>':''),
         x.dateObjectif ? fmtDate(x.dateObjectif) : '—',
@@ -7890,9 +7891,9 @@ function crPanelFiches(panel){
 function crPanelCouts(panel){
   const c = CR(); const body = trSection(panel, 'Coûts et prix des créations');
   if(!c.produits.length){ trEmpty(body, 'Aucun produit.'); return; }
-  body.appendChild(trTable(['Réf.','Produit','Matières','Fournitures','Façon','Personnalisation','Coût de revient','Prix de vente','Marge'], c.produits.slice().reverse().map(x=>{
+  body.appendChild(trTable(['Réf. produit','Produit','Matières','Fournitures','Façon','Personnalisation','Coût de revient','Prix de vente','Marge'], c.produits.slice().reverse().map(x=>{
     const k = crCout(x);
-    return ['<b>'+esc(x.ref)+'</b>', esc(x.nom||''), fmtDA(k.mat), fmtDA(k.fou), fmtDA(k.fac), fmtDA(k.perso), '<b>'+fmtDA(k.total)+'</b>', k.pv?fmtDA(k.pv):'—',
+    return ['<b>'+esc(x.refProduit||x.ref)+'</b>', esc(x.nom||''), fmtDA(k.mat), fmtDA(k.fou), fmtDA(k.fac), fmtDA(k.perso), '<b>'+fmtDA(k.total)+'</b>', k.pv?fmtDA(k.pv):'—',
       k.pv ? '<b style="color:'+(k.marge>=0?'#1E7A34':'#E0392D')+'">'+fmtDA(k.marge)+'</b><br><span style="font-size:11px">'+k.margePct.toFixed(1)+' %</span>' : '—'];
   })));
 }
@@ -7902,7 +7903,10 @@ function crToCatalogue(x){
   DATA.catalogue = DATA.catalogue || [];
   const t0 = (x.tissus||[]).find(t=>t.tissu) || {};
   const entry = {id:'prod_'+Date.now(), article:String(x.nom||'').trim().toUpperCase(), tissu:String(t0.tissu||'').trim().toUpperCase(), tailles:(x.tailles||[]).slice(), photo:(x.images||[])[0]||'', refPatron:'', consoMoyenne:t0.conso||'', consoUnite:t0.unite||'kg', creeLe:new Date().toISOString(), creaRef:x.ref, patron:x.refPatron||''};
-  { const ex = x.catalogueId ? (DATA.catalogue||[]).find(p=>p.id===x.catalogueId) : null; entry.refPatron = (ex && ex.refPatron) ? ex.refPatron : nextCatRef(); x.refProduit = entry.refPatron; }
+  { const ex = x.catalogueId ? (DATA.catalogue||[]).find(p=>p.id===x.catalogueId) : null;
+    const libre = r=>r && !(DATA.catalogue||[]).some(p=>p.id!==x.catalogueId && catNormRef(p.refPatron)===catNormRef(r));
+    entry.refPatron = (ex && ex.refPatron) ? ex.refPatron : (libre(x.refProduit) ? x.refProduit : (x.refProduit='', nextCatRef()));
+    x.refProduit = entry.refPatron; }
   if(x.catalogueId){ const i = DATA.catalogue.findIndex(p=>p.id===x.catalogueId); if(i>=0){ entry.id = x.catalogueId; DATA.catalogue[i] = Object.assign({}, DATA.catalogue[i], entry); } else DATA.catalogue.push(entry); }
   else DATA.catalogue.push(entry);
   // listes : article, tissu, couleurs
@@ -7922,7 +7926,7 @@ function crPrint(x){
   const logo = (DATA.settings && DATA.settings.logoUrl) || DEFAULT_LOGO; const k = crCout(x);
   const rows = (arr, cols)=>'<table><tr>'+cols.map(c=>'<th>'+c[0]+'</th>').join('')+'</tr>'+arr.map(r=>'<tr>'+cols.map(c=>'<td>'+esc(c[1](r))+'</td>').join('')+'</tr>').join('')+'</table>';
   w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(x.ref)+' '+esc(x.nom)+'</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#000}h1{margin:0 0 4px}table{border-collapse:collapse;width:100%;margin:6px 0 14px}th,td{border:1px solid #999;padding:5px 7px;font-size:13px;text-align:left}th{background:#eee}.imgs img{height:170px;margin:4px;border:1px solid #999;border-radius:6px}.g{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;font-size:14px;margin:10px 0}</style></head><body>'
-    +'<img src="'+logo+'" style="height:46px;float:right"><h1>Fiche produit '+esc(x.ref)+'</h1><div style="font-size:18px;font-weight:bold;">'+esc(x.nom)+'</div>'
+    +'<img src="'+logo+'" style="height:46px;float:right"><h1>Fiche produit '+esc(x.refProduit||x.ref)+'</h1><div style="font-size:12px;">Fiche Créa '+esc(x.ref)+'</div><div style="font-size:18px;font-weight:bold;">'+esc(x.nom)+'</div>'
     +'<div class="g"><div><b>Collection :</b> '+esc(x.collection||'—')+' '+esc(x.saison||'')+'</div><div><b>Catégorie :</b> '+esc(x.categorie||'—')+' · '+esc(x.cible||'')+'</div><div><b>Étape :</b> '+esc(crEtape(x).label)+'</div><div><b>Objectif :</b> '+(x.dateObjectif?fmtDate(x.dateObjectif):'—')+'</div><div><b>Patron :</b> '+esc(x.refPatron||'—')+'</div><div><b>Tailles :</b> '+esc((x.tailles||[]).join(' ')||'—')+'</div><div><b>Couleurs :</b> '+esc(x.couleurs||'—')+'</div><div><b>Personnalisation :</b> '+esc(x.persoTech?PS_TECH[x.persoTech].label+' '+(x.persoDetail||''):'aucune')+'</div></div>'
     +(x.description?'<p><b>Description :</b> '+esc(x.description)+'</p>':'')
     +'<div class="imgs">'+(x.images||[]).map(u=>'<img src="'+u+'">').join('')+'</div>'
@@ -7941,7 +7945,7 @@ function renderCrView(){
   if(!x){ m.appendChild(el('<h2>Produit introuvable</h2>')); }
   else{
     const e = crEtape(x);
-    m.appendChild(el('<h2>'+esc(x.ref)+' · '+esc(x.nom||'')+'</h2>'));
+    m.appendChild(el('<h2>'+esc(x.nom||'')+' <span style="border:2px solid #001D51;border-radius:999px;padding:2px 10px;background:#FFC933;font-size:14px;vertical-align:middle;">'+esc(x.refProduit||'—')+'</span> <span style="font-size:12px;font-weight:600;">fiche '+esc(x.ref)+'</span></h2>'));
     const fr = el('<div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px;"></div>');
     CR_STEPS.forEach((s,i)=>fr.appendChild(el('<div style="border:2px solid #001D51;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;background:'+(i===e.i?'#FFC933':(i<e.i?'#37D6A5':'#fff'))+';">'+(i+1)+'. '+esc(s)+((x.etapesDates||{})[i] && i<=e.i?' · '+fmtDT(x.etapesDates[i]):'')+'</div>')));
     m.appendChild(fr);
@@ -7982,7 +7986,8 @@ function renderCrModal(){
   const overlay = el('<div class="modal-overlay"></div>');
   const m = el('<div class="modal" style="max-width:820px;"></div>');
   m.appendChild(el('<h2>'+(mode==='create'?'Nouveau produit — fiche de création':'Modifier '+esc(data.ref))+'</h2>'));
-  m.appendChild(el('<div style="font-size:12px;margin:-6px 0 10px;">Référence : <b>'+esc(data.ref)+'</b> (automatique)</div>'));
+  if(!data.refProduit) data.refProduit = nextCatRef();
+  m.appendChild(el('<div style="display:flex;flex-wrap:wrap;gap:8px;margin:-4px 0 10px;"><span style="border:2px solid #001D51;border-radius:999px;padding:3px 12px;background:#FFC933;font-weight:800;">Référence produit : '+esc(data.refProduit)+'</span><span style="border:2px solid #001D51;border-radius:999px;padding:3px 12px;background:#fff;font-size:12px;">Fiche Créa : '+esc(data.ref)+'</span></div>'));
   const sec = t=>m.appendChild(el('<div style="font-weight:800;margin:12px 0 6px;border-bottom:2px solid #001D51;padding-bottom:2px;">'+t+'</div>'));
   function frow(fields){ const r = el('<div class="frow"></div>'); fields.forEach(f=>r.appendChild(f)); m.appendChild(r); }
   function field(label, key, opt){
@@ -8091,6 +8096,7 @@ function renderCrModal(){
   save.onclick = ()=>{
     if(!String(data.nom||'').trim()){ alert('Le nom du produit est obligatoire.'); return; }
     data.nom = String(data.nom).trim();
+    { const usedCat = (DATA.catalogue||[]).some(p=>p.id!==data.catalogueId && catNormRef(p.refPatron)===catNormRef(data.refProduit)); const usedCr = c.produits.some(x=>x.id!==data.id && catNormRef(x.refProduit)===catNormRef(data.refProduit)); if(!data.refProduit || usedCat || usedCr){ const keep = data.refProduit; data.refProduit = ''; data.refProduit = nextCatRef(); if(keep) showToast('Référence '+keep+' déjà prise : nouvelle référence '+data.refProduit); } }
     data.tissus = (data.tissus||[]).filter(t=>String(t.tissu||'').trim());
     data.fournitures = (data.fournitures||[]).filter(f=>String(f.nom||'').trim());
     data.etape = Number(data.etape)||0;
