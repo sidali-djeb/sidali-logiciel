@@ -471,6 +471,56 @@ input[type=checkbox]{width:18px!important;height:18px;padding:0!important;border
 .tr-calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:8px}
 .tr-calc label{display:block;font-size:11px;font-weight:700;color:var(--pop-navy,#001D51);margin-bottom:3px}
 .tr-calc input,.tr-calc select{width:100%;box-sizing:border-box;padding:7px 8px;border:2px solid var(--pop-navy,#001D51);border-radius:10px;background:var(--pop-cream,#FFF6E6);font-weight:600;font-size:13px;font-family:inherit}
+/* ---------- gestion des tâches (style To Do) ---------- */
+.td-overlay{align-items:stretch;padding:2vh 2vw}
+.td-app{display:grid;grid-template-columns:250px 1fr;width:100%;max-width:1300px;height:94vh;margin:auto;background:#FFF6E6;border:3px solid #001D51;border-radius:18px;box-shadow:6px 6px 0 #001D51;overflow:hidden;color:#001D51}
+.td-app.has-sel{grid-template-columns:250px 1fr 340px}
+.td-side{background:#fff;border-right:3px solid #001D51;display:flex;flex-direction:column;overflow:auto}
+.td-side-head{display:flex;justify-content:space-between;align-items:center;padding:14px;border-bottom:2px solid #001D51}
+.td-nav{padding:8px;display:flex;flex-direction:column;gap:2px}
+.td-nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border:none;background:none;border-radius:10px;cursor:pointer;font:inherit;color:#001D51;text-align:left}
+.td-nav-item:hover{background:#FFF6E6}.td-nav-item.on{background:#FFC933;font-weight:800}
+.td-ic svg{width:20px;height:20px;display:block}
+.td-lbl{flex:1}
+.td-cnt{font-size:12px;font-weight:800;background:#001D51;color:#fff;border-radius:999px;padding:1px 8px}
+.td-nav-item.alert .td-cnt{background:#FF5A4D}
+.td-sep{font-size:11px;font-weight:800;text-transform:uppercase;opacity:.6;margin:12px 10px 4px}
+.td-av{width:24px;height:24px;border-radius:50%;background:#BFD2FF;border:2px solid #001D51;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex:0 0 auto}
+.td-av.sm{width:18px;height:18px;font-size:8px;margin-right:4px;vertical-align:middle}
+.td-main{display:flex;flex-direction:column;overflow:hidden;padding:18px 20px;min-width:0}
+.td-title{font-size:26px;font-weight:800;margin-bottom:12px}
+.td-date{font-size:13px;font-weight:600;opacity:.75;text-transform:capitalize}
+.td-list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:2px 6px 10px 2px}
+.td-row{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid #001D51;border-radius:12px;padding:10px 12px;cursor:pointer;box-shadow:2px 2px 0 #001D51}
+.td-row.sel{background:#FFF0C2}.td-row.done .td-t{text-decoration:line-through;opacity:.6}
+.td-circle{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:2px solid #001D51;background:#fff;cursor:pointer;font-size:12px;line-height:18px;padding:0;color:#001D51}
+.td-circle:hover{background:#D7F7EC}
+.td-circle.ok{background:#37D6A5}.td-circle.wait{background:#FFC933;font-size:10px}
+.td-info{flex:1;min-width:0}.td-t{font-weight:700}
+.td-meta{font-size:12px;opacity:.85;margin-top:2px}
+.td-pts{font-size:12px;font-weight:800;background:#FFF6E6;border:2px solid #001D51;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.td-star{border:none;background:none;cursor:pointer;color:#001D51;padding:2px;flex:0 0 auto}.td-star svg{width:20px;height:20px;display:block}
+.td-star.on{color:#FF5A4D}.td-star.on svg path{fill:#FF5A4D}
+.td-add{display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:#fff;border:2px solid #001D51;border-radius:12px;padding:8px;margin-top:8px}
+.td-add-in{flex:1 1 160px;border:none;font:inherit;font-weight:600;padding:6px;background:transparent;outline:none;color:#001D51}
+.td-add-sel{padding:5px;border:2px solid #001D51;border-radius:8px;background:#FFF6E6;font:inherit;font-size:13px;color:#001D51}
+.td-detail{background:#fff;border-left:3px solid #001D51;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.td-d-top{display:flex;justify-content:flex-end}
+.td-card{background:#FFF6E6;border:2px solid #001D51;border-radius:12px;padding:10px;color:#001D51}
+.td-line{display:flex;align-items:center;gap:8px;font:inherit;color:#001D51;margin:4px 0;width:100%;text-align:left}
+button.td-line{cursor:pointer}
+.td-line svg{width:18px;height:18px;flex:0 0 auto}
+.td-line select,.td-line input{padding:5px;border:2px solid #001D51;border-radius:8px;background:#fff;font:inherit;font-size:13px}
+.td-title-in{flex:1;font:inherit;font-weight:800;font-size:17px;border:none;background:transparent;resize:vertical;color:#001D51;outline:none}
+.td-steps{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.td-step{display:flex;align-items:center;gap:8px;font-size:14px}
+.td-step-in{padding:6px 8px;border:2px dashed #001D51;border-radius:8px;background:#fff;font:inherit;font-size:13px}
+.td-x{border:none;background:none;cursor:pointer;color:#A42834}
+.td-note{width:100%;box-sizing:border-box;border:none;background:transparent;font:inherit;resize:vertical;outline:none;color:#001D51}
+.td-hist{font-size:12px;line-height:1.6;opacity:.85;padding:0 4px}
+.td-actions{display:flex;flex-direction:column;gap:6px}
+.td-empty{padding:30px;text-align:center;opacity:.7}
+@media(max-width:900px){.td-overlay{padding:1vh 1vw}.td-app,.td-app.has-sel{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:97vh}.td-side{border-right:none;border-bottom:3px solid #001D51}.td-nav{flex-direction:row;overflow-x:auto;flex-wrap:nowrap}.td-nav-item{flex:0 0 auto;padding:6px 10px}.td-sep{display:none}.td-detail{position:fixed;inset:2vh 3vw;z-index:1001;border:3px solid #001D51;border-radius:16px}.td-main{padding:12px}.td-title{font-size:20px}.td-side-head{padding:8px 12px}.td-pts{display:none}}
 /* ---------- page d'accueil ---------- */
 .pop-home{min-height:100vh;display:flex;flex-direction:column}
 .pop-mq{background:var(--pop-navy);color:var(--pop-sun);font:800 14px Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:10px 0;overflow:hidden;white-space:nowrap}
@@ -1666,6 +1716,7 @@ function render(){
   if(view.evalDetail) app.appendChild(renderEvalDetailModal());
   if(view.payModal) app.appendChild(renderPayModal());
   if(view.importModal) app.appendChild(renderImportModal());
+  if(view.todoOpen && view.personId) app.appendChild(renderTodo());
   if(view.discussionOpen) app.appendChild(renderDiscussion());
 }
 
@@ -1753,7 +1804,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 62 · titre Djebs Pilot</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 63 · gestion des tâches</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -1840,12 +1891,13 @@ function topbar(title, badgeCount){
   const scanTop = el('<button class="link">Scanner QR</button>');
   scanTop.onclick = ()=>{ view.scanModal = true; render(); };
   if(view.role!=='crea') bar.appendChild(scanTop);
+  if(person){ const nb = tdBadge(); const tdb = el('<button class="link">Tâches'+(nb?' <span class="badge">'+nb+'</span>':'')+'</button>'); tdb.onclick = ()=>{ view.todoOpen = true; view.td = view.td || {list: view.role==='admin' && TD().items.some(t=>t.statut==='soumise') ? 'avalider' : 'jour', sel:null}; render(); }; bar.appendChild(tdb); }
   const chat = el('<button class="link" id="chatBtn"></button>');
   chat.innerHTML = chatBtnHtml();
   chat.onclick = ()=>{ view.discussionOpen=true; render(); pollMessages(); };
   bar.appendChild(chat);
   const out = el('<button class="link">Se déconnecter</button>');
-  out.onclick = ()=>{ stopScanner(); view.scanModal=false; clearSession(); view.screen='login'; view.role=null; view.personId=null; view.discussionOpen=false; render(); };
+  out.onclick = ()=>{ stopScanner(); view.scanModal=false; clearSession(); view.screen='login'; view.role=null; view.personId=null; view.discussionOpen=false; view.todoOpen=false; view.td=null; render(); };
   bar.appendChild(out);
   return bar;
 }
@@ -3658,6 +3710,17 @@ function renderAdminScreen(extra){
       t5.appendChild(tx5);
       t5.onclick = ()=>{ view.adminDept='crea'; view.adminOpen={}; try{ localStorage.setItem('dj_dept','crea'); }catch(e){} render(); };
       grid.appendChild(t5);
+    }
+    {
+      const it = TD().items; const av = it.filter(t=>t.statut==='soumise').length, ouv = it.filter(t=>t.statut==='ouverte').length, ret = it.filter(t=>t.statut==='ouverte' && tdLate(t)).length;
+      const t6 = el('<button class="dept-tile" style="background:#FFF6E6;"></button>');
+      t6.appendChild(el('<div class="dept-ic">'+TD_IC.avalider+'</div>'));
+      const tx6 = el('<div></div>');
+      tx6.appendChild(el('<div class="dept-name">Gestion des tâches</div>'));
+      tx6.appendChild(el('<div class="dept-sub">Tâches et points de l\'équipe<br>'+ouv+' en cours'+(ret?' · <b>'+ret+' en retard</b>':'')+(av?' · <b>'+av+' à valider</b>':'')+'</div>'));
+      t6.appendChild(tx6);
+      t6.onclick = ()=>{ view.todoOpen = true; view.td = {list: av ? 'avalider' : 'toutes', sel:null}; render(); };
+      grid.appendChild(t6);
     }
     deptList().filter(d=>d.id!=='confection' && d.id!=='tricotage' && d.id!=='personnalisation' && d.id!=='crea').forEach(d=>{
       const n = (DATA.people||[]).filter(p=>deptOf(p)===d.id && p.active!==false).length;
@@ -8132,6 +8195,312 @@ function renderCrModal(){
   return overlay;
 }
 
+// =====================================================================
+// ----- GESTION DES TÂCHES (style « To Do ») avec système de points -----
+// =====================================================================
+const TD_IC = {
+  jour:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg>',
+  important:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9L12 3.5Z"/></svg>',
+  planifiees:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  toutes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>',
+  avalider:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M8 12.3l2.7 2.7L16.2 9.5"/></svg>',
+  terminees:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>',
+  points:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 3.4M17 6h2.5a2.5 2.5 0 0 1-2.6 3.4M12 13v4M8.5 20.5h7M10 17h4"/></svg>',
+  personne:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.5-3.8 3.4-6 7-6s6.5 2.2 7 6"/></svg>'
+};
+function TD(){ DATA.taches = DATA.taches || {}; if(!Array.isArray(DATA.taches.items)) DATA.taches.items = []; DATA.taches.cfg = DATA.taches.cfg || {}; return DATA.taches; }
+function tdRetardPct(){ const v = TD().cfg.retardPct; return (v===undefined || v==='' || v===null) ? 50 : Math.max(0, Math.min(100, trNum(v))); }
+function tdIsAdmin(){ return view.role==='admin'; }
+function tdVisible(){ const all = TD().items; return tdIsAdmin() ? all : all.filter(t=>t.assigneA===view.personId); }
+function tdName(id){ const p = (DATA.people||[]).find(x=>x.id===id); return p ? p.name : '—'; }
+function tdInitials(id){ const n = tdName(id); return n==='—' ? '?' : n.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+function tdDeadline(t){ if(!t.echeance) return null; return new Date(t.echeance+'T'+(t.heure||'23:59')+':00'); }
+function tdLate(t){ const d = tdDeadline(t); if(!d) return false; const ref = (t.statut==='ouverte') ? new Date() : new Date(t.termineLe||Date.now()); return ref > d; }
+function tdDueTxt(t){
+  if(!t.echeance) return '';
+  const r = psDays(todayISO(), t.echeance);
+  const lbl = r===0 ? 'Aujourd\'hui' : (r===1 ? 'Demain' : (r===-1 ? 'Hier' : fmtDate(t.echeance)));
+  return lbl+(t.heure?' '+t.heure:'');
+}
+function tdEarned(t){ return t.statut==='validee' ? trNum(t.pointsGagnes) : 0; }
+function tdNew(assignee){ return {id:'td_'+Date.now()+Math.floor(Math.random()*1000), titre:'', note:'', assigneA:assignee||'', creePar:view.personId, creeLe:psNow(), echeance:'', heure:'', points:10, important:false, maJournee:'', etapes:[], statut:'ouverte', termineLe:'', valideLe:'', pointsGagnes:0}; }
+function tdComplete(t){
+  t.termineLe = psNow(); t.terminePar = view.personId;
+  if(tdIsAdmin() || t.assigneA===t.creePar){ tdValidate(t, true); return; }
+  t.statut = 'soumise'; t.refus = '';
+  saveState('Tâche terminée : '+t.titre+' (en attente de validation)');
+}
+function tdValidate(t, silent){
+  const late = tdLate(t);
+  t.statut = 'validee'; t.valideLe = psNow(); t.validePar = view.personId; t.enRetard = late;
+  t.pointsGagnes = late ? Math.round(trNum(t.points)*tdRetardPct()/100) : trNum(t.points);
+  saveState('Tâche validée : '+t.titre+' · +'+t.pointsGagnes+' pts'+(late?' (en retard)':''));
+}
+function tdReopen(t, motif){ t.statut = 'ouverte'; t.termineLe = ''; t.valideLe = ''; t.pointsGagnes = 0; t.enRetard = false; if(motif!==undefined) t.refus = motif; saveState('Tâche rouverte : '+t.titre); }
+function tdCounts(){
+  const v = tdVisible(), today = todayISO();
+  return {
+    jour: v.filter(t=>t.statut==='ouverte' && (t.maJournee===today || t.echeance===today || (t.echeance && t.echeance<today))).length,
+    important: v.filter(t=>t.statut==='ouverte' && t.important).length,
+    planifiees: v.filter(t=>t.statut==='ouverte' && t.echeance).length,
+    toutes: v.filter(t=>t.statut==='ouverte').length,
+    mes: v.filter(t=>t.statut==='ouverte').length,
+    avalider: TD().items.filter(t=>t.statut==='soumise').length,
+    terminees: v.filter(t=>t.statut!=='ouverte').length
+  };
+}
+function tdBadge(){ if(tdIsAdmin()) return TD().items.filter(t=>t.statut==='soumise').length; return TD().items.filter(t=>t.assigneA===view.personId && t.statut==='ouverte').length; }
+function tdFilter(list){
+  const v = tdVisible(), today = todayISO();
+  if(list==='jour') return v.filter(t=>t.statut==='ouverte' && (t.maJournee===today || t.echeance===today || (t.echeance && t.echeance<today)));
+  if(list==='important') return v.filter(t=>t.statut==='ouverte' && t.important);
+  if(list==='planifiees') return v.filter(t=>t.statut==='ouverte' && t.echeance);
+  if(list==='toutes' || list==='mes') return v.filter(t=>t.statut==='ouverte' || t.statut==='soumise');
+  if(list==='avalider') return TD().items.filter(t=>t.statut==='soumise');
+  if(list==='terminees') return v.filter(t=>t.statut!=='ouverte');
+  if(list.indexOf('p:')===0){ const id = list.slice(2); return TD().items.filter(t=>t.assigneA===id && t.statut!=='validee'); }
+  return v;
+}
+function tdSort(a,b){
+  const so = s=>s==='ouverte'?0:(s==='soumise'?1:2);
+  return so(a.statut)-so(b.statut) || (b.important?1:0)-(a.important?1:0) || String(a.echeance||'9999')+String(a.heure||'99').localeCompare(String(b.echeance||'9999')+String(b.heure||'99')) || String(b.creeLe).localeCompare(String(a.creeLe));
+}
+function tdListTitle(list){
+  const T = {jour:'Ma journée', important:'Importantes', planifiees:'Planifiées', toutes:'Toutes les tâches', mes:'Mes tâches', avalider:'À valider', terminees:'Terminées', points: tdIsAdmin()?'Classement des points':'Mes points'};
+  if(list.indexOf('p:')===0) return 'Tâches de '+tdName(list.slice(2));
+  return T[list]||'Tâches';
+}
+function tdPointsOf(id, month){
+  return TD().items.filter(t=>t.assigneA===id && t.statut==='validee' && (!month || String(t.valideLe||'').slice(0,7)===month)).reduce((a,t)=>a+tdEarned(t),0);
+}
+
+function renderTodo(){
+  const admin = tdIsAdmin();
+  view.td = view.td || {list:'jour', sel:null};
+  const st = view.td;
+  const overlay = el('<div class="modal-overlay td-overlay"></div>');
+  const box = el('<div class="td-app'+(st.sel?' has-sel':'')+'"></div>');
+  overlay.appendChild(box);
+  const close = ()=>{ view.todoOpen = false; view.td.sel = null; render(); };
+  overlay.onclick = e=>{ if(e.target===overlay) close(); };
+
+  // ----- barre latérale -----
+  const side = el('<div class="td-side"></div>');
+  const head = el('<div class="td-side-head"><div><b>Tâches</b><div style="font-size:12px;opacity:.8;">'+esc((currentPerson()||{}).name||'')+'</div></div></div>');
+  const x = el('<button class="btn small td-close">✕</button>'); x.onclick = close; head.appendChild(x);
+  side.appendChild(head);
+  const cnt = tdCounts();
+  const lists = admin ? [['jour','Ma journée'],['important','Importantes'],['planifiees','Planifiées'],['toutes','Toutes les tâches'],['avalider','À valider'],['terminees','Terminées'],['points','Classement des points']]
+                      : [['jour','Ma journée'],['important','Importantes'],['planifiees','Planifiées'],['mes','Mes tâches'],['terminees','Terminées'],['points','Mes points']];
+  const nav = el('<div class="td-nav"></div>');
+  lists.forEach(([k,l])=>{
+    const n = cnt[k];
+    const b = el('<button class="td-nav-item'+(st.list===k?' on':'')+(k==='avalider'&&n?' alert':'')+'"><span class="td-ic">'+(TD_IC[k]||TD_IC.toutes)+'</span><span class="td-lbl">'+l+'</span>'+(n?'<span class="td-cnt">'+n+'</span>':'')+'</button>');
+    b.onclick = ()=>{ st.list = k; st.sel = null; render(); };
+    nav.appendChild(b);
+  });
+  if(admin){
+    nav.appendChild(el('<div class="td-sep">Par personne</div>'));
+    (DATA.people||[]).filter(p=>p.active!==false).forEach(p=>{
+      const n = TD().items.filter(t=>t.assigneA===p.id && t.statut==='ouverte').length;
+      const b = el('<button class="td-nav-item'+(st.list==='p:'+p.id?' on':'')+'"><span class="td-av">'+esc(tdInitials(p.id))+'</span><span class="td-lbl">'+esc(p.name)+'</span>'+(n?'<span class="td-cnt">'+n+'</span>':'')+'</button>');
+      b.onclick = ()=>{ st.list = 'p:'+p.id; st.sel = null; render(); };
+      nav.appendChild(b);
+    });
+  }
+  side.appendChild(nav);
+  box.appendChild(side);
+
+  // ----- liste principale -----
+  const main = el('<div class="td-main"></div>');
+  const now = new Date();
+  main.appendChild(el('<div class="td-title"><div>'+esc(tdListTitle(st.list))+'</div><div class="td-date">'+now.toLocaleDateString('fr-FR',{weekday:'long', day:'numeric', month:'long'})+'</div></div>'));
+  if(st.list==='points'){ tdPointsView(main); box.appendChild(main); return overlay; }
+  const items = tdFilter(st.list).slice().sort(tdSort);
+  const ul = el('<div class="td-list"></div>');
+  if(!items.length) ul.appendChild(el('<div class="td-empty">'+(admin ? 'Aucune tâche ici. Ajoute une tâche en bas et choisis la personne.' : 'Aucune tâche ici. Bravo !')+'</div>'));
+  items.forEach(t=>{
+    const row = el('<div class="td-row'+(st.sel===t.id?' sel':'')+(t.statut!=='ouverte'?' done':'')+'"></div>');
+    const circ = el('<button class="td-circle'+(t.statut==='validee'?' ok':(t.statut==='soumise'?' wait':''))+'" title="'+(t.statut==='ouverte'?'Marquer comme terminée':(t.statut==='soumise'?'En attente de validation':'Validée'))+'"></button>');
+    circ.innerHTML = t.statut==='validee' ? '✓' : (t.statut==='soumise' ? '⏳' : '');
+    circ.onclick = e=>{ e.stopPropagation(); if(t.statut==='ouverte' && (admin || t.assigneA===view.personId)) tdComplete(t); else if(t.statut==='soumise' && admin) tdValidate(t); };
+    row.appendChild(circ);
+    const late = t.statut==='ouverte' && tdLate(t);
+    const info = el('<div class="td-info"></div>');
+    info.appendChild(el('<div class="td-t">'+esc(t.titre||'(sans titre)')+'</div>'));
+    const meta = [];
+    if(admin) meta.push('<span class="td-av sm">'+esc(tdInitials(t.assigneA))+'</span>'+esc(tdName(t.assigneA)));
+    if(t.maJournee===todayISO()) meta.push('☀ Ma journée');
+    if(t.echeance) meta.push('<span style="'+(late?'color:#E0392D;font-weight:800':'')+'">📅 '+esc(tdDueTxt(t))+(late?' · en retard':'')+'</span>');
+    if((t.etapes||[]).length) meta.push((t.etapes.filter(s=>s.fait).length)+' / '+t.etapes.length+' étapes');
+    if(t.note) meta.push('🗒 note');
+    if(t.statut==='soumise') meta.push('<b style="color:#B8860B">à valider</b>');
+    if(t.statut==='validee') meta.push('<b style="color:#1E7A34">+'+tdEarned(t)+' pts'+(t.enRetard?' (retard)':'')+'</b>');
+    if(t.refus && t.statut==='ouverte') meta.push('<b style="color:#E0392D">refusée : '+esc(t.refus)+'</b>');
+    if(meta.length) info.appendChild(el('<div class="td-meta">'+meta.join(' · ')+'</div>'));
+    row.appendChild(info);
+    row.appendChild(el('<div class="td-pts">'+esc(t.points||0)+' pts</div>'));
+    const star = el('<button class="td-star'+(t.important?' on':'')+'" title="Importante">'+TD_IC.important+'</button>');
+    star.onclick = e=>{ e.stopPropagation(); t.important = !t.important; saveState(t.important?'Marquée importante':'Retirée des importantes'); };
+    row.appendChild(star);
+    row.onclick = ()=>{ st.sel = t.id; render(); };
+    ul.appendChild(row);
+  });
+  main.appendChild(ul);
+  // ajout rapide (admin)
+  if(admin && st.list!=='terminees' && st.list!=='avalider'){
+    const add = el('<div class="td-add"></div>');
+    const inp = document.createElement('input'); inp.placeholder = '+ Ajouter une tâche'; inp.className='td-add-in';
+    const who = document.createElement('select'); who.className='td-add-sel';
+    const def = st.list.indexOf('p:')===0 ? st.list.slice(2) : (st.lastWho||'');
+    [['','— Pour qui ? —']].concat((DATA.people||[]).filter(p=>p.active!==false).map(p=>[p.id,p.name])).forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; if(v===def) o.selected=true; who.appendChild(o); });
+    const due = document.createElement('input'); due.type='date'; due.className='td-add-sel'; if(st.list==='jour') due.value = todayISO();
+    const pts = document.createElement('input'); pts.type='number'; pts.min='0'; pts.value = st.lastPts || 10; pts.className='td-add-sel'; pts.style.width='80px'; pts.title='Points';
+    const go = el('<button class="btn small primary">Ajouter</button>');
+    const doAdd = ()=>{
+      const titre = inp.value.trim(); if(!titre){ inp.focus(); return; }
+      if(!who.value){ alert('Choisis la personne qui doit faire la tâche.'); return; }
+      const t = tdNew(who.value); t.titre = titre; t.echeance = due.value; t.points = trNum(pts.value);
+      if(st.list==='important') t.important = true;
+      if(st.list==='jour') t.maJournee = todayISO();
+      st.lastWho = who.value; st.lastPts = pts.value;
+      TD().items.push(t); st.sel = t.id;
+      saveState('Tâche ajoutée pour '+tdName(t.assigneA));
+    };
+    go.onclick = doAdd; inp.onkeydown = e=>{ if(e.key==='Enter') doAdd(); };
+    add.appendChild(inp); add.appendChild(who); add.appendChild(due); add.appendChild(pts); add.appendChild(el('<span style="font-size:12px;">pts</span>')); add.appendChild(go);
+    main.appendChild(add);
+  }
+  box.appendChild(main);
+
+  // ----- panneau de détail -----
+  const t = TD().items.find(z=>z.id===st.sel);
+  if(t && (admin || t.assigneA===view.personId)) box.appendChild(tdDetail(t));
+  setTimeout(()=>{ const on = document.querySelector('.td-nav-item.on'); if(on && window.innerWidth<900) on.scrollIntoView({inline:'center', block:'nearest'}); }, 0);
+  return overlay;
+}
+
+function tdDetail(t){
+  const admin = tdIsAdmin(), mine = t.assigneA===view.personId;
+  const d = el('<div class="td-detail"></div>');
+  const top = el('<div class="td-d-top"></div>');
+  const back = el('<button class="btn small">✕</button>'); back.onclick = ()=>{ view.td.sel = null; render(); };
+  top.appendChild(back); d.appendChild(top);
+  const card = el('<div class="td-card"></div>');
+  const titleRow = el('<div style="display:flex;gap:8px;align-items:flex-start;"></div>');
+  const circ = el('<button class="td-circle'+(t.statut==='validee'?' ok':(t.statut==='soumise'?' wait':''))+'"></button>'); circ.innerHTML = t.statut==='validee'?'✓':(t.statut==='soumise'?'⏳':'');
+  circ.onclick = ()=>{ if(t.statut==='ouverte' && (admin||mine)) tdComplete(t); else if(t.statut==='soumise' && admin) tdValidate(t); };
+  titleRow.appendChild(circ);
+  if(admin){ const ti = document.createElement('textarea'); ti.className='td-title-in'; ti.rows=2; ti.value = t.titre; ti.onchange = ()=>{ t.titre = ti.value.trim()||t.titre; saveState('Tâche modifiée'); }; titleRow.appendChild(ti); }
+  else titleRow.appendChild(el('<div style="font-weight:800;font-size:17px;flex:1;">'+esc(t.titre)+'</div>'));
+  const star = el('<button class="td-star'+(t.important?' on':'')+'">'+TD_IC.important+'</button>'); star.onclick = ()=>{ t.important = !t.important; saveState('Tâche modifiée'); };
+  titleRow.appendChild(star);
+  card.appendChild(titleRow);
+  // étapes
+  const steps = el('<div class="td-steps"></div>');
+  (t.etapes||[]).forEach((s,i)=>{
+    const r = el('<div class="td-step"></div>');
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = !!s.fait; cb.disabled = !(admin||mine) || t.statut==='validee';
+    cb.onchange = ()=>{ s.fait = cb.checked; saveState('Étape '+(s.fait?'faite':'à refaire')); };
+    r.appendChild(cb); r.appendChild(el('<span style="flex:1;'+(s.fait?'text-decoration:line-through;opacity:.6;':'')+'">'+esc(s.txt)+'</span>'));
+    if(admin){ const rm = el('<button class="td-x">✕</button>'); rm.onclick = ()=>{ t.etapes.splice(i,1); saveState('Étape supprimée'); }; r.appendChild(rm); }
+    steps.appendChild(r);
+  });
+  if((admin||mine) && t.statut!=='validee'){ const si = document.createElement('input'); si.placeholder='+ Ajouter une étape'; si.className='td-step-in'; si.onkeydown = e=>{ if(e.key==='Enter' && si.value.trim()){ t.etapes = t.etapes||[]; t.etapes.push({id:'st_'+Date.now(), txt:si.value.trim(), fait:false}); saveState('Étape ajoutée'); } }; steps.appendChild(si); }
+  card.appendChild(steps);
+  d.appendChild(card);
+  // ma journée
+  const myday = el('<button class="td-card td-line">'+TD_IC.jour+'<span>'+(t.maJournee===todayISO()?'Retirer de Ma journée':'Ajouter à Ma journée')+'</span></button>');
+  myday.onclick = ()=>{ t.maJournee = t.maJournee===todayISO() ? '' : todayISO(); saveState('Ma journée mise à jour'); };
+  d.appendChild(myday);
+  // attribution, échéance, points
+  const c2 = el('<div class="td-card"></div>');
+  const line = (ic, lab, node)=>{ const r = el('<div class="td-line">'+ic+'<span style="min-width:90px;">'+lab+'</span></div>'); r.appendChild(node); c2.appendChild(r); };
+  if(admin){
+    const s = document.createElement('select'); (DATA.people||[]).filter(p=>p.active!==false || p.id===t.assigneA).forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.name; if(p.id===t.assigneA) o.selected=true; s.appendChild(o); });
+    s.onchange = ()=>{ t.assigneA = s.value; saveState('Tâche attribuée à '+tdName(s.value)); }; line(TD_IC.personne,'Pour', s);
+    const dd = el('<div style="display:flex;gap:6px;flex-wrap:wrap;"></div>');
+    const di = document.createElement('input'); di.type='date'; di.value=t.echeance||''; di.onchange = ()=>{ t.echeance = di.value; saveState('Échéance modifiée'); };
+    const hi = document.createElement('input'); hi.type='time'; hi.value=t.heure||''; hi.onchange = ()=>{ t.heure = hi.value; saveState('Heure modifiée'); };
+    dd.appendChild(di); dd.appendChild(hi); line(TD_IC.planifiees,'Échéance', dd);
+    const pi = document.createElement('input'); pi.type='number'; pi.min='0'; pi.value=t.points||0; pi.style.width='100px'; pi.onchange = ()=>{ t.points = trNum(pi.value); saveState('Points modifiés'); };
+    line(TD_IC.points,'Points', pi);
+  } else {
+    line(TD_IC.personne,'Donnée par', el('<span>'+esc(tdName(t.creePar))+'</span>'));
+    line(TD_IC.planifiees,'Échéance', el('<span style="'+(t.statut==='ouverte'&&tdLate(t)?'color:#E0392D;font-weight:800':'')+'">'+(t.echeance?esc(tdDueTxt(t)):'—')+'</span>'));
+    line(TD_IC.points,'Points', el('<b>'+esc(t.points||0)+' pts</b>'));
+  }
+  c2.appendChild(el('<div style="font-size:11px;opacity:.75;margin-top:4px;">Rendue après l\'échéance : '+tdRetardPct()+' % des points seulement.</div>'));
+  d.appendChild(c2);
+  // note
+  const c3 = el('<div class="td-card"></div>');
+  const ta = document.createElement('textarea'); ta.className='td-note'; ta.rows=4; ta.placeholder='Ajouter une note'; ta.value = t.note||''; ta.disabled = !(admin||mine);
+  ta.onchange = ()=>{ t.note = ta.value; saveState('Note enregistrée'); };
+  c3.appendChild(ta); d.appendChild(c3);
+  // historique
+  const h = [];
+  h.push('Créée par '+esc(tdName(t.creePar))+' le '+fmtDT(t.creeLe));
+  if(t.termineLe) h.push('Terminée le '+fmtDT(t.termineLe)+(tdDeadline(t)?(tdLate(t)?' · <b style="color:#E0392D">en retard</b>':' · <b style="color:#1E7A34">à temps</b>'):''));
+  if(t.valideLe) h.push('Validée le '+fmtDT(t.valideLe)+' · <b>+'+tdEarned(t)+' pts</b>');
+  if(t.refus && t.statut==='ouverte') h.push('<b style="color:#E0392D">Refusée : '+esc(t.refus)+'</b>');
+  d.appendChild(el('<div class="td-hist">'+h.join('<br>')+'</div>'));
+  // actions
+  const act = el('<div class="td-actions"></div>');
+  if(t.statut==='ouverte' && (admin||mine)){ const b = el('<button class="btn primary">Marquer comme terminée</button>'); b.onclick = ()=>tdComplete(t); act.appendChild(b); }
+  if(t.statut==='soumise' && mine && !admin){ const b = el('<button class="btn">Annuler (pas encore finie)</button>'); b.onclick = ()=>tdReopen(t); act.appendChild(b); act.appendChild(el('<div style="font-size:12px;">En attente de validation par l\'admin.</div>')); }
+  if(t.statut==='soumise' && admin){
+    const pts = tdLate(t) ? Math.round(trNum(t.points)*tdRetardPct()/100) : trNum(t.points);
+    const v = el('<button class="btn primary" style="background:#37D6A5;">Valider (+'+pts+' pts)</button>'); v.onclick = ()=>tdValidate(t); act.appendChild(v);
+    const mo = document.createElement('input'); mo.placeholder='Motif du refus'; mo.className='td-step-in';
+    const r = el('<button class="btn" style="color:#A42834;border-color:#A42834;">Refuser</button>'); r.onclick = ()=>tdReopen(t, mo.value.trim()||'à refaire');
+    act.appendChild(mo); act.appendChild(r);
+  }
+  if(t.statut==='validee' && admin){ const b = el('<button class="btn">Rouvrir la tâche</button>'); b.onclick = ()=>{ if(confirm('Rouvrir la tâche ? Les points gagnés seront retirés.')) tdReopen(t); }; act.appendChild(b); }
+  if(admin){ const del = el('<button class="btn" style="color:#A42834;border-color:#A42834;">Supprimer</button>'); del.onclick = ()=>{ if(!confirm('Supprimer la tâche « '+t.titre+' » ?')) return; TD().items = TD().items.filter(z=>z.id!==t.id); view.td.sel = null; saveState('Tâche supprimée'); }; act.appendChild(del); }
+  d.appendChild(act);
+  return d;
+}
+
+function tdPointsView(main){
+  const admin = tdIsAdmin();
+  const month = todayISO().slice(0,7);
+  view.td.per = view.td.per || 'mois';
+  const row = el('<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px;"></div>');
+  [['mois','Ce mois-ci'],['tout','Depuis le début']].forEach(([v,l])=>row.appendChild(trBtn(l, ()=>{ view.td.per = v; render(); }, view.td.per===v)));
+  main.appendChild(row);
+  const m = view.td.per==='mois' ? month : '';
+  const stats = id=>{
+    const mine = TD().items.filter(t=>t.assigneA===id);
+    const val = mine.filter(t=>t.statut==='validee' && (!m || String(t.valideLe||'').slice(0,7)===m));
+    const ontime = val.filter(t=>!t.enRetard).length;
+    return {pts: val.reduce((a,t)=>a+tdEarned(t),0), val: val.length, ontime: ontime, pct: val.length ? Math.round(100*ontime/val.length) : null,
+      ouvertes: mine.filter(t=>t.statut==='ouverte').length, retard: mine.filter(t=>t.statut==='ouverte' && tdLate(t)).length, total: tdPointsOf(id,'')};
+  };
+  if(admin){
+    const ppl = (DATA.people||[]).filter(p=>p.active!==false).map(p=>Object.assign({p:p}, stats(p.id))).filter(x=>x.val||x.ouvertes||x.total).sort((a,b)=>b.pts-a.pts || b.val-a.val);
+    if(!ppl.length){ main.appendChild(el('<div class="td-empty">Pas encore de points. Donne des tâches à ton équipe !</div>')); }
+    else {
+      const medal = i=>i===0?'🥇':(i===1?'🥈':(i===2?'🥉':(i+1)));
+      main.appendChild(trTable(['Rang','Personne','Points','Tâches validées','À temps','En cours','En retard'], ppl.map((x,i)=>['<b style="font-size:16px;">'+medal(i)+'</b>', '<b>'+esc(x.p.name)+'</b><br><span style="font-size:11px">'+esc(ROLE_LABEL[x.p.role]||x.p.role)+'</span>', '<b style="font-size:16px;">'+x.pts+'</b>', x.val, x.pct===null?'—':x.pct+' %', x.ouvertes, x.retard?'<b style="color:#E0392D">'+x.retard+'</b>':'0'])));
+    }
+    const cfg = el('<div class="td-card" style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span>Tâche rendue après l\'échéance :</span></div>');
+    const ri = document.createElement('input'); ri.type='number'; ri.min='0'; ri.max='100'; ri.value = tdRetardPct(); ri.style.width='80px';
+    const sv = el('<button class="btn small primary">Enregistrer</button>'); sv.onclick = ()=>{ TD().cfg.retardPct = trNum(ri.value); saveState('Règle des points enregistrée'); };
+    cfg.appendChild(ri); cfg.appendChild(el('<span>% des points</span>')); cfg.appendChild(sv);
+    main.appendChild(cfg);
+  } else {
+    const x = stats(view.personId);
+    const k = el('<div class="kpi-row"></div>');
+    k.appendChild(el('<div class="kpi" style="background:#FFC933;"><div class="num">'+x.pts+'</div><div class="label">Points '+(m?'ce mois-ci':'au total')+'</div></div>'));
+    k.appendChild(el('<div class="kpi"><div class="num">'+x.val+'</div><div class="label">Tâches validées</div></div>'));
+    k.appendChild(el('<div class="kpi"><div class="num">'+(x.pct===null?'—':x.pct+' %')+'</div><div class="label">Rendues à temps</div></div>'));
+    k.appendChild(el('<div class="kpi'+(x.retard?' alert':'')+'"><div class="num">'+x.ouvertes+'</div><div class="label">À faire'+(x.retard?' · '+x.retard+' en retard':'')+'</div></div>'));
+    main.appendChild(k);
+    const hist = TD().items.filter(t=>t.assigneA===view.personId && t.statut==='validee' && (!m || String(t.valideLe||'').slice(0,7)===m)).sort((a,b)=>String(b.valideLe).localeCompare(String(a.valideLe)));
+    if(hist.length) main.appendChild(trTable(['Tâche','Validée le','Points'], hist.map(t=>[esc(t.titre), fmtDT(t.valideLe), '<b style="color:#1E7A34">+'+tdEarned(t)+'</b>'+(t.enRetard?' <span style="font-size:11px;color:#E0392D">(retard)</span>':'')])));
+  }
+}
+
 // ---------- Synchronisation sécurisée (plusieurs personnes en même temps) ----------
 // Chaque enregistrement porte un numéro de version (_rev). Si quelqu'un d'autre a enregistré
 // entre-temps (onglet resté ouvert, autre téléphone...), on FUSIONNE au lieu d'écraser.
@@ -8301,7 +8670,7 @@ async function saveState(toastMsg){
 // Rafraîchissement automatique : si quelqu'un d'autre a modifié les données, on les récupère.
 let refreshBusy = false;
 function userIsEditing(){
-  if(view.modal||view.tricoModal||view.psModal||view.crModal||view.personModal||view.catalogueModal||view.clientModal||view.payModal||view.settingsModal||view.importModal||view.scanModal) return true;
+  if(view.modal||view.tricoModal||view.psModal||view.crModal||(view.todoOpen && view.td && view.td.sel)||view.personModal||view.catalogueModal||view.clientModal||view.payModal||view.settingsModal||view.importModal||view.scanModal) return true;
   const a = document.activeElement;
   return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
 }
