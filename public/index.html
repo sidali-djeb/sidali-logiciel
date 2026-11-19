@@ -521,6 +521,42 @@ button.td-line{cursor:pointer}
 .td-actions{display:flex;flex-direction:column;gap:6px}
 .td-empty{padding:30px;text-align:center;opacity:.7}
 @media(max-width:900px){.td-overlay{padding:1vh 1vw}.td-app,.td-app.has-sel{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:97vh}.td-side{border-right:none;border-bottom:3px solid #001D51}.td-nav{flex-direction:row;overflow-x:auto;flex-wrap:nowrap}.td-nav-item{flex:0 0 auto;padding:6px 10px}.td-sep{display:none}.td-detail{position:fixed;inset:2vh 3vw;z-index:1001;border:3px solid #001D51;border-radius:16px}.td-main{padding:12px}.td-title{font-size:20px}.td-side-head{padding:8px 12px}.td-pts{display:none}}
+/* ---------- matières premières ---------- */
+.mat-alert{border:3px solid #001D51;background:#FFE1DE;border-radius:14px;padding:10px 14px;margin-bottom:12px;box-shadow:3px 3px 0 #001D51}
+.mat-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.mat-tab{position:relative;border:3px solid #001D51;border-radius:999px;background:#fff;padding:8px 16px;font:inherit;font-weight:800;color:#001D51;cursor:pointer;box-shadow:3px 3px 0 #001D51}
+.mat-tab span{background:#001D51;color:#fff;border-radius:999px;padding:0 8px;font-size:12px;margin-left:4px}
+.mat-tab.on{background:#FFC933}
+.mat-dot{position:absolute;top:-4px;right:-4px;width:12px;height:12px;border-radius:50%;background:#FF5A4D;border:2px solid #001D51}
+.mat-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.mat-in{flex:1 1 200px;padding:9px 12px;border:2px solid #001D51;border-radius:12px;background:#FFF6E6;font:inherit;font-weight:600;color:#001D51;min-width:0}
+.mat-in.sm{flex:1 1 100px;padding:6px 10px}
+.mat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.mat-card{background:#fff;border:3px solid #001D51;border-radius:16px;padding:12px;box-shadow:4px 4px 0 #001D51;display:flex;flex-direction:column;gap:8px;color:#001D51}
+.mat-card-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.mat-name{font-weight:800;font-size:16px}
+.mat-sub{font-size:12px;opacity:.8}
+.mat-del{border:2px solid #001D51;background:#fff;border-radius:50%;width:26px;height:26px;cursor:pointer;color:#A42834;font-weight:800;flex:0 0 auto}
+.mat-swatches{display:flex;flex-wrap:wrap;gap:6px}
+.mat-chip{display:inline-flex;align-items:center;gap:6px;border:2px solid #001D51;border-radius:999px;padding:3px 4px 3px 4px;font-size:12px;font-weight:700;background:#FFF6E6}
+.mat-chip i{width:18px;height:18px;border-radius:50%;border:2px solid #001D51;display:inline-block}
+.mat-x{border:none;background:none;cursor:pointer;color:#001D51;opacity:.55;font-size:12px;padding:0 3px}
+.mat-x:hover{opacity:1;color:#A42834}
+.mat-swatches.big{gap:10px}
+.mat-size{display:inline-flex;align-items:center;gap:4px;border:3px solid #001D51;border-radius:12px;padding:8px 8px;font-weight:800;font-size:16px;background:#FFF6E6;min-width:60px;justify-content:center;box-shadow:2px 2px 0 #001D51}
+.mat-addrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.mat-badge{border:2px solid #001D51;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:800;white-space:nowrap}
+.mat-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center}
+.mat-nums div{background:#FFF6E6;border:2px solid #001D51;border-radius:10px;padding:6px 4px}
+.mat-nums b{display:block;font-size:18px}
+.mat-nums span{font-size:10px;opacity:.8}
+.mat-gauge{height:10px;border:2px solid #001D51;border-radius:999px;background:#fff;overflow:hidden}
+.mat-gauge i{display:block;height:100%}
+.mat-dotc{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid #001D51;margin:0 3px -1px 0}
+.fo-line{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+.fo-check{border:2px solid #001D51;border-radius:12px;padding:8px 12px;margin:8px 0;font-size:13px}
+.fo-sec{border:2px solid #001D51;border-radius:12px;padding:8px 10px;margin:8px 0;background:#FFF6E6}
+.fo-sec-title{font-weight:800;font-size:14px;margin-bottom:6px}.fo-sec-title span{font-size:11px;font-weight:600;opacity:.7}
 /* ---------- page d'accueil ---------- */
 .pop-home{min-height:100vh;display:flex;flex-direction:column}
 .pop-mq{background:var(--pop-navy);color:var(--pop-sun);font:800 14px Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:10px 0;overflow:hidden;white-space:nowrap}
@@ -560,6 +596,7 @@ button.td-line{cursor:pointer}
 </head>
 <body>
 <div id="app" class="app"><div style="padding:60px 20px;text-align:center;color:#6B6560;font-family:Arial,sans-serif;font-size:13px;">Chargement…</div></div>
+<script>window.addEventListener("error",function(e){var a=document.getElementById("app");if(a&&/Chargement/.test(a.textContent)&&a.children.length<=1){a.innerHTML='<div style="padding:40px 20px;text-align:center;font-family:Arial,sans-serif;color:#A42834;font-size:14px;"><b>Erreur au démarrage</b><br>'+String(e.message||e).replace(/</g,"&lt;")+'<br><br>Recharge la page (Ctrl+Shift+R). Si le fichier a été ouvert depuis le PC, il est peut-être incomplet : télécharge-le à nouveau.</div>';}});</script>
 <script id="seed-data" type="application/json">{"companyTitle": "Suivi de production", "people": [{"id": "p_admin", "name": "Sidali", "email": "sidalidjebari@gmail.com", "role": "admin", "code": "9999", "active": true}, {"id": "p_commercial", "name": "Responsable Commercial", "email": "commercial@example.com", "role": "commercial", "code": "5005", "active": true}, {"id": "p_decoupe", "name": "Responsable Découpe", "email": "decoupe@example.com", "role": "decoupe", "code": "1001", "active": true}, {"id": "p_confection", "name": "Responsable Confection", "email": "confection@example.com", "role": "confection", "code": "2002", "active": true}, {"id": "p_emballage", "name": "Responsable Emballage", "email": "emballage@example.com", "role": "emballage", "code": "3003", "active": true}, {"id": "p_stock", "name": "Responsable Stock", "email": "stock@example.com", "role": "stock", "code": "4004", "active": true}], "lists": {"tailles": ["S", "M", "L", "XL", "XXL"], "tissus": {"ELIXIR": ["NOIR", "BLANC", "GRIS CHINÉ"]}}, "catalogue": [{"id": "prod_1", "article": "T-SHIRT OVERSIZE", "tissu": "ELIXIR", "tailles": ["S", "M", "L", "XL"], "photo": ""}], "commandes": [{"id": "cmd_1", "catalogueId": "prod_1", "reference": "JB00300", "client": "DJEBS STOCK", "article": "T-SHIRT OVERSIZE", "tissu": "ELIXIR", "tailles": {"S": 50, "M": 50, "L": 50, "XL": 50}, "couleur": "NOIR", "quantite": 200, "dateCommande": "2026-09-01", "dateLivraisonPrevue": "", "urgent": false, "decoupe": {"statut": "Prête", "prevueLe": "2026-09-03", "faiteLe": "2026-09-03"}, "confection": {"statut": "En cours", "atelier": "Chaîne 1", "debut": "2026-09-04", "fin": ""}, "emballage": {"statut": "En attente", "debut": "", "fin": ""}, "tissuInfo": {"poidsMatelas": 120.5, "poidsPiece": 0.24, "consoTissu": 118.2}, "notes": "Exemple — remplacez par vos commandes", "stock": {"quantiteRecue": "", "dateReception": ""}, "ecartGere": false, "ecartNotes": []}], "messages": []}</script>
 <script>
 /* QR encoder — QRCode for JavaScript, Copyright (c) 2009 Kazuhiko Arase, MIT license (http://www.opensource.org/licenses/mit-license.php). QR Code is a registered trademark of DENSO WAVE INCORPORATED. */
@@ -1716,6 +1753,7 @@ function render(){
   if(view.evalDetail) app.appendChild(renderEvalDetailModal());
   if(view.payModal) app.appendChild(renderPayModal());
   if(view.importModal) app.appendChild(renderImportModal());
+  if(view.matModal) app.appendChild(renderMatModal());
   if(view.todoOpen && view.personId) app.appendChild(renderTodo());
   if(view.discussionOpen) app.appendChild(renderDiscussion());
 }
@@ -1737,6 +1775,7 @@ function findPersonForLogin(idVal, codeVal){
 function renderLogin(){
   const MQ = ['★ Priorité 1 en premier','★ Évaluation automatique','★ Écarts de stock suivis','★ Tout en direct'];
   const w = el('<div class="pop-home"></div>');
+  if(LOAD_FAILED){ const ban = el('<div style="background:#FF5A4D;color:#fff;border-bottom:3px solid #001D51;padding:10px 14px;font-family:Arial,sans-serif;font-size:14px;text-align:center;"><b>Impossible de charger les données.</b> Vérifie internet puis recharge la page. '+(location.protocol==='file:'?'Tu as ouvert le fichier depuis le PC : utilise plutôt le site en ligne ou un lien d\'aperçu Vercel.':'')+'</div>'); const rb = el('<button class="btn small" style="margin-left:8px;">Recharger</button>'); rb.onclick = ()=>location.reload(); ban.appendChild(rb); w.appendChild(ban); }
   const mqHtml = [0,1,2,3].map(()=>MQ.map(t=>'<span>'+t+'</span>').join('')).join('');
   w.appendChild(el('<div class="pop-mq"><div>'+mqHtml+'</div></div>'));
   const wrap = el('<div class="pop-wrap"><div class="pop-blob1"></div><div class="pop-blob2"></div></div>');
@@ -1804,7 +1843,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 63 · gestion des tâches</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 66 · accessoires et fournitures produit</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -3601,7 +3640,7 @@ function renderStaffDept(dep){
   return w;
 }
 const ROLE_TILES = {crea:['conso','catalogue','listes'], superviseur:['commandes']};
-const TILE_CHOICES = [['commandes','Commandes (lecture seule)'],['stats','Statistiques'],['delai','Calculateur de délai'],['conso','Consommation tissu'],['recherche','Recherche par référence'],['clients','Clients (lecture seule)'],['paiements','Paiements (lecture seule)'],['catalogue','Catalogue produits'],['listes','Tailles / Tissus / Couleurs']];
+const TILE_CHOICES = [['commandes','Commandes (lecture seule)'],['stats','Statistiques'],['delai','Calculateur de délai'],['conso','Consommation tissu'],['recherche','Recherche par référence'],['clients','Clients (lecture seule)'],['paiements','Paiements (lecture seule)'],['catalogue','Catalogue produits'],['listes','Matières premières']];
 function allowedTiles(p){
   const def = ROLE_TILES[p && p.role] || [];
   if(p && Array.isArray(p.tiles) && p.tiles.length) return p.tiles.filter(k=>TILE_CHOICES.some(t=>t[0]===k));
@@ -3633,6 +3672,7 @@ function renderAdminScreen(extra){
   kpi.appendChild(el('<div class="kpi'+(alertes>0?' alert':'')+'"><div class="num">'+alertes+'</div><div class="label">Alertes poids/pièce</div></div>'));
   const nbConso = consoAlertCount();
   kpi.appendChild(el('<div class="kpi'+(nbConso>0?' alert':'')+'"><div class="num">'+nbConso+'</div><div class="label">Alertes conso tissu</div></div>'));
+  { const nf = matAlertes().length; if(nf) kpi.appendChild(el('<div class="kpi alert"><div class="num">'+nf+'</div><div class="label">Alertes fournitures</div></div>')); }
   // ---- Accueil admin : les départements ----
   const isAdminHub = !extra && !isCrea;
   if(isAdminHub && view.adminDept===undefined){ try{ view.adminDept = localStorage.getItem('dj_dept') || null; }catch(e){ view.adminDept = null; } }
@@ -3767,7 +3807,7 @@ function renderAdminScreen(extra){
     {key:'paiements', label:'Paiements', badge: nbNonSoldes()},
     {key:'clients', label:'Clients', badge: (DATA.clients||[]).length},
     {key:'catalogue', label:'Catalogue produits', badge: (DATA.catalogue||[]).length},
-    {key:'listes', label:'Tailles / Tissus / Couleurs', badge: null},
+    {key:'listes', label:'Matières premières', badge: matAlertes().length || null},
     {key:'parametres', label:'Paramètres & Thème', badge: null},
     {key:'acces', label:'Gérer les accès', badge: (DATA.people||[]).length}
   ];
@@ -3845,10 +3885,10 @@ function renderAdminScreen(extra){
     if(view.clientsDirty){ view.clientsDirty=false; setTimeout(()=>saveState('Clients synchronisés'),0); }
   }
   if(view.adminOpen.listes){
-    panel.appendChild(el('<div class="section-title">Gérer les listes (tailles, tissus & couleurs)</div>'));
+    panel.appendChild(el('<div class="section-title">Matières premières — tissus, tailles, accessoires & fournitures</div>'));
     const listsBody = el('<div class="section-body"></div>');
     listsBody.appendChild(ioBar([{label:'Exporter (Excel / CSV)', fn:exportListesCSV}], [{label:'Importer (CSV)', onFile:importListesFile}]));
-    listsBody.appendChild(renderListsManager());
+    listsBody.appendChild(renderMatieres());
     panel.appendChild(listsBody);
   }
   if(view.adminOpen.parametres){
@@ -4318,7 +4358,9 @@ function renderCatalogueTable(){
       photoTd.style.cursor='pointer'; photoTd.title='Afficher la fiche'; photoTd.onclick = ()=>{ view.catView = p.id; render(); };
       tr.appendChild(photoTd);
       function td(text){ const cell=document.createElement('td'); cell.textContent=text; tr.appendChild(cell); return cell; }
-      { const c = td(p.article||'—'); c.style.fontWeight='bold'; c.style.cursor='pointer'; c.title='Afficher la fiche'; c.onclick = ()=>{ view.catView = p.id; render(); }; }
+      { const c = td(p.article||'—'); c.style.fontWeight='bold'; c.style.cursor='pointer'; c.title='Afficher la fiche'; c.onclick = ()=>{ view.catView = p.id; render(); };
+        const bad = (p.fournitures||[]).map(x=>matF(x.fid)).filter(Boolean).filter(f=>{ const k = matEtat(f).key; return k!=='ok'; });
+        if(bad.length) c.appendChild(el('<div style="font-size:10px;color:#E0392D;font-weight:800;">⚠ '+bad.map(f=>esc(f.nom)).join(', ')+'</div>')); }
       td(p.refPatron||'—');
       td(p.tissu||'—');
       td((p.consoMoyenne!==''&&p.consoMoyenne!=null) ? p.consoMoyenne+' '+(p.consoUnite||'kg')+' / pièce' : '—');
@@ -4372,6 +4414,9 @@ function renderCatalogueView(){
     grid.appendChild(el('<div class="cat-view-item"><span>'+k+'</span><b>'+v+'</b></div>'));
   });
   m.appendChild(grid);
+  { const fl = (p.fournitures||[]).map(x=>({x:x, f:matF(x.fid)})).filter(z=>z.f);
+    if(fl.length){ const grp = (title, cats)=>{ const l = fl.filter(z=>cats.indexOf(z.f.categorie||'Accessoire')>=0); if(!l.length) return; m.appendChild(el('<div style="font-weight:700;font-size:13px;margin:12px 0 6px;">'+title+' (par pièce)</div>')); const box = el('<div style="display:flex;flex-wrap:wrap;gap:6px;"></div>'); l.forEach(z=>{ const e = matEtat(z.f); box.appendChild(el('<span class="mat-badge" style="background:'+e.color+';">'+esc(z.f.nom)+' ×'+esc(z.x.qte)+' · '+e.label+'</span>')); }); m.appendChild(box); };
+      grp('Accessoires', ['Accessoire']); grp('Fournitures', ['Fourniture','Étiquette','Emballage']); } }
   if(cmds.length){
     m.appendChild(el('<div style="font-weight:700;font-size:13px;margin:12px 0 6px;">Dernières commandes de ce produit</div>'));
     const box = el('<div class="cat-view-cmds"></div>');
@@ -4443,6 +4488,47 @@ function renderCatalogueModal(){
   cRow.appendChild(cInp); cRow.appendChild(cUnit);
   cWrap.appendChild(cRow);
   frow([patWrap, cWrap]);
+  // accessoires et fournitures nécessaires par pièce (deux parties)
+  data.fournitures = Array.isArray(data.fournitures) ? data.fournitures : [];
+  function foSection(title, cats, defCat, ph){
+    const fw = el('<div class="fo-sec"></div>'); m.appendChild(fw);
+    const draw = ()=>{
+      fw.innerHTML = '';
+      fw.appendChild(el('<div class="fo-sec-title">'+title+' <span>par pièce</span></div>'));
+      const lst = MAT().fournitures.filter(f=>cats.indexOf(f.categorie||'Accessoire')>=0);
+      const lines = data.fournitures.filter(x=>{ const f = matF(x.fid); return f ? cats.indexOf(f.categorie||'Accessoire')>=0 : (x._cat===defCat); });
+      lines.forEach(x=>{
+        const r = el('<div class="fo-line"></div>');
+        const sel = document.createElement('select'); sel.style.flex='2 1 180px';
+        if(!lst.length){ const o=document.createElement('option'); o.textContent='— crée d\'abord un article —'; sel.appendChild(o); }
+        lst.forEach(f=>{ const o=document.createElement('option'); o.value=f.id; o.textContent=f.nom+(f.couleur?' '+f.couleur:'')+' ('+f.unite+')'; if(f.id===x.fid) o.selected=true; sel.appendChild(o); });
+        if(!x.fid && lst[0]) x.fid = lst[0].id;
+        sel.onchange = ()=>{ x.fid = sel.value; draw(); };
+        const q = document.createElement('input'); q.type='number'; q.step='any'; q.min='0'; q.placeholder='qté / pièce'; q.value = x.qte||''; q.style.flex='0 1 100px'; q.oninput = ()=>x.qte = q.value;
+        r.appendChild(sel); r.appendChild(q);
+        const f = matF(x.fid);
+        if(f){ const e = matEtat(f); r.appendChild(el('<span class="mat-badge" style="background:'+e.color+';">'+e.label+' · dispo '+fmtQ(e.dispo)+'</span>')); }
+        const rm = el('<button class="btn small">✕</button>'); rm.onclick = ()=>{ data.fournitures.splice(data.fournitures.indexOf(x),1); draw(); };
+        r.appendChild(rm); fw.appendChild(r);
+      });
+      if(!lines.length) fw.appendChild(el('<div style="font-size:12px;opacity:.7;margin-bottom:6px;">Aucun(e) pour ce produit.</div>'));
+      const row = el('<div class="fo-line"></div>');
+      const add = el('<button class="btn small">+ Ajouter</button>');
+      add.onclick = ()=>{ if(!lst.length){ alert('Aucun article dans cette liste : crée-le avec « + Nouveau » à côté.'); return; } data.fournitures.push({fid:lst[0].id, qte:1}); draw(); };
+      const ni = document.createElement('input'); ni.placeholder = ph; ni.style.flex='1 1 180px';
+      const nb = el('<button class="btn small">+ Nouveau</button>');
+      nb.onclick = ()=>{
+        const nom = ni.value.trim(); if(!nom){ ni.focus(); return; }
+        const M = MAT(); let f = M.fournitures.find(z=>normName(z.nom)===normName(nom));
+        if(!f){ f = {id:'fo_'+Date.now(), ref:trNextRef('FO', M.fournitures, 3), nom:nom, categorie:defCat, unite:'pièce', couleur:'', seuil:'', prix:''}; M.fournitures.push(f); }
+        data.fournitures.push({fid:f.id, qte:1}); draw();
+      };
+      row.appendChild(add); row.appendChild(ni); row.appendChild(nb); fw.appendChild(row);
+    };
+    draw();
+  }
+  foSection('Accessoires', ['Accessoire'], 'Accessoire', 'Nouvel accessoire (ex : zip 20 cm, boutons, cordon)');
+  foSection('Fournitures', ['Fourniture','Étiquette','Emballage'], 'Fourniture', 'Nouvelle fourniture (ex : étiquette, sachet, fil)');
 
   m.appendChild(el('<label style="display:block;font-size:11px;color:var(--text-soft);margin:2px 0 6px;">Tailles disponibles pour ce produit</label>'));
   const sizeWrap = el('<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>');
@@ -6397,12 +6483,28 @@ function renderModal(){
     field('Date réception', data.stock.dateReception, v=>data.stock.dateReception=v, 'date')
   ]);
 
+  const foBox = el('<div></div>'); m.appendChild(foBox);
+  const foCheck = ()=>{
+    foBox.innerHTML = '';
+    if(!data.catalogueId) return [];
+    try{ syncLignes(); }catch(e){}
+    const chk = matCheckCmd(data);
+    if(!chk.length) return [];
+    const manques = chk.filter(x=>x.manque>0);
+    const b = el('<div class="fo-check" style="background:'+(manques.length?'#FFE1DE':'#D7F7EC')+';"></div>');
+    b.innerHTML = '<b>'+(manques.length?'⚠ Accessoires / fournitures insuffisants':'✓ Accessoires et fournitures disponibles')+'</b><br>'+chk.map(x=>esc(x.f.nom)+' : besoin <b>'+fmtQ(x.besoin)+'</b> '+esc(x.f.unite)+' · disponible '+fmtQ(x.dispo)+(x.manque>0?' · <b style="color:#E0392D">manque '+fmtQ(x.manque)+'</b>':'')).join('<br>');
+    const rb = el('<button class="btn small" style="margin-top:6px;">Recalculer</button>'); rb.onclick = foCheck; b.appendChild(el('<br>')); b.appendChild(rb);
+    foBox.appendChild(b);
+    return manques;
+  };
+  foCheck();
   const actions = el('<div class="actions"></div>');
   const cancel = el('<button class="btn">Annuler</button>');
   cancel.onclick = ()=>{ view.modal=null; render(); };
   const save = el('<button class="btn primary">Enregistrer</button>');
   save.onclick = ()=>{
     if(!data.reference || !data.reference.trim()){ alert('La référence est obligatoire.'); return; }
+    { const mq = foCheck(); if(mq.length && !confirm('Attention : il manque '+mq.map(x=>fmtQ(x.manque)+' '+x.f.unite+' de '+x.f.nom).join(', ')+'.\nEnregistrer quand même la commande ?')) return; }
     if(mode==='create' && !data.commercialId){ alert('Choisis le commercial responsable de cette commande.'); return; }
     data.client = String(data.client||'').trim(); data.article = String(data.article||'').trim();
     data.lignes = data.lignes.filter((l,i)=>l.couleur || Object.keys(l.tailles||{}).length || data.lignes.length===1);
@@ -8501,6 +8603,227 @@ function tdPointsView(main){
   }
 }
 
+// =====================================================================
+// ----- MATIÈRES PREMIÈRES : tissus & couleurs, tailles, accessoires & fournitures -----
+// =====================================================================
+const MAT_CATS = ['Accessoire','Fourniture','Étiquette','Emballage'];
+const MAT_UNITES = ['pièce','m','cône','rouleau','kg','paquet','boîte'];
+function MAT(){ DATA.matieres = DATA.matieres || {}; const M = DATA.matieres; if(!Array.isArray(M.fournitures)) M.fournitures = []; if(!Array.isArray(M.mvt)) M.mvt = []; return M; }
+function matF(id){ return MAT().fournitures.find(f=>f.id===id); }
+function matStock(id){ let s=0; MAT().mvt.forEach(m=>{ if(m.fid===id) s += (m.type==='entree'?1:-1)*trNum(m.qte); }); return s; }
+// commandes encore à produire (confection pas terminée)
+function matCmdActives(){ return (DATA.commandes||[]).filter(c=>c.confection && c.confection.statut!=='Prête' && c.confection.statut!=='Annulée' && !c.fournSortie); }
+function matBesoinsCmd(c){
+  const p = c.catalogueId ? catalogueById(c.catalogueId) : null; const q = trNum(c.quantite);
+  if(!p || !Array.isArray(p.fournitures) || !q) return [];
+  return p.fournitures.filter(x=>x.fid && trNum(x.qte)>0).map(x=>({fid:x.fid, qte:trNum(x.qte)*q}));
+}
+function matReserve(id){ let r=0; matCmdActives().forEach(c=>matBesoinsCmd(c).forEach(b=>{ if(b.fid===id) r+=b.qte; })); return r; }
+function matEtat(f){
+  const st = matStock(f.id), res = matReserve(f.id), dispo = st-res, seuil = trNum(f.seuil);
+  if(st<=0 && res>0) return {st, res, dispo, key:'manque', label:'Manque', color:'#FF5A4D'};
+  if(dispo<0) return {st, res, dispo, key:'insuffisant', label:'Insuffisant', color:'#FF5A4D'};
+  if(st<=0) return {st, res, dispo, key:'vide', label:'Épuisé', color:'#FFC933'};
+  if(seuil && dispo<seuil) return {st, res, dispo, key:'bas', label:'Stock bas', color:'#FFC933'};
+  return {st, res, dispo, key:'ok', label:'OK', color:'#37D6A5'};
+}
+function matAlertes(){ return MAT().fournitures.map(f=>Object.assign({f:f}, matEtat(f))).filter(x=>x.key!=='ok'); }
+function matCheckCmd(c){
+  // manques pour une commande donnée (en tenant compte des autres commandes déjà prévues)
+  const others = matCmdActives().filter(x=>x.id!==c.id);
+  return matBesoinsCmd(c).map(b=>{ const f = matF(b.fid); if(!f) return null; const st = matStock(f.id); let autres = 0; others.forEach(o=>matBesoinsCmd(o).forEach(z=>{ if(z.fid===f.id) autres += z.qte; })); const dispo = st - autres; return {f:f, besoin:b.qte, dispo:dispo, manque: Math.max(0, b.qte-dispo)}; }).filter(Boolean);
+}
+// sortie automatique quand la confection d'une commande est terminée
+function matSync(){
+  const M = MAT();
+  if(!M.initDone){ (DATA.commandes||[]).forEach(c=>{ if(c.confection && c.confection.statut==='Prête') c.fournSortie = true; }); M.initDone = true; return; }
+  (DATA.commandes||[]).forEach(c=>{
+    if(c.confection && c.confection.statut==='Prête' && !c.fournSortie){
+      matBesoinsCmd(c).forEach(b=>M.mvt.push({id:'mm_'+Date.now()+Math.floor(Math.random()*10000), fid:b.fid, type:'sortie', qte:b.qte, date:todayISO(), note:'Commande '+(c.reference||''), auto:true}));
+      c.fournSortie = true;
+    }
+  });
+}
+// couleur d'aperçu à partir du nom
+const MAT_SW = {NOIR:'#111',BLANC:'#fff',GRIS:'#9aa0a6','GRIS SOURIS':'#8a8f94','GRIS MED':'#a7abb0','GRIS CHINÉ':'#b8bcc0',ROUGE:'#d62828',BORDEAUX:'#6d1a2a','BLEU ROI':'#1f4bd1',BLEU:'#2f6fdb','BLEU MARINE':'#14213d',MARINE:'#14213d',CIEL:'#8ecae6',VERT:'#2a9d5b','VERT BOUTEIL':'#1b4d3e',KAKI:'#6b6b3a',OLIVE:'#708238',BEIGE:'#e8d5b5',CAMEL:'#c19a6b',MARRON:'#6f4e37',CHOCOLAT:'#4b2e20',JAUNE:'#f5c518',MOUTARDE:'#d4a017',ORANGE:'#f77f00',ROSE:'#f4a6c1',FUCHSIA:'#d6247e',VIOLET:'#6a4c93',MAUVE:'#b892c9',ECRU:'#f3ead7','ÉCRU':'#f3ead7',CREME:'#f7efd9',CRÈME:'#f7efd9',TRANSPARENT:'repeating-conic-gradient(#ddd 0 25%,#fff 0 50%) 0 0/8px 8px'};
+function matSwatch(name){
+  const n = String(name||'').trim().toUpperCase(); if(MAT_SW[n]) return MAT_SW[n];
+  const k = Object.keys(MAT_SW).find(x=>n.indexOf(x)>=0); if(k) return MAT_SW[k];
+  let h=0; for(const ch of n) h=(h*31+ch.charCodeAt(0))%360; return 'hsl('+h+',55%,55%)';
+}
+function matUsage(tissu){ return (DATA.catalogue||[]).filter(p=>String(p.tissu||'').toUpperCase()===String(tissu).toUpperCase()).length; }
+
+function renderMatieres(){
+  const wrap = el('<div class="mat-wrap"></div>');
+  DATA.lists = DATA.lists || {}; DATA.lists.tailles = DATA.lists.tailles || []; DATA.lists.tissus = DATA.lists.tissus || {};
+  view.mat = view.mat || {tab:'tissus', q:''};
+  const al = matAlertes();
+  if(al.length){
+    const ban = el('<div class="mat-alert"><b>⚠ '+al.length+' alerte(s) fournitures</b></div>');
+    ban.appendChild(el('<div style="font-size:13px;margin-top:4px;">'+al.slice(0,6).map(x=>esc(x.f.nom)+' : <b>'+x.label.toLowerCase()+'</b> (stock '+fmtQ(x.st)+', besoin commandes '+fmtQ(x.res)+')').join(' · ')+(al.length>6?' …':'')+'</div>'));
+    const go = el('<button class="btn small" style="margin-top:6px;">Voir</button>'); go.onclick = ()=>{ view.mat.tab='fourn'; render(); };
+    ban.appendChild(go); wrap.appendChild(ban);
+  }
+  const tabs = el('<div class="mat-tabs"></div>');
+  [['tissus','Tissus & couleurs', Object.keys(DATA.lists.tissus).length],['tailles','Tailles', DATA.lists.tailles.length],['fourn','Accessoires & fournitures', MAT().fournitures.length]].forEach(([k,l,n])=>{
+    const b = el('<button class="mat-tab'+(view.mat.tab===k?' on':'')+'">'+l+' <span>'+n+'</span>'+(k==='fourn'&&al.length?' <i class="mat-dot"></i>':'')+'</button>');
+    b.onclick = ()=>{ view.mat.tab = k; view.mat.q=''; render(); }; tabs.appendChild(b);
+  });
+  wrap.appendChild(tabs);
+  if(view.mat.tab==='tissus') matTissus(wrap);
+  if(view.mat.tab==='tailles') matTailles(wrap);
+  if(view.mat.tab==='fourn') matFourn(wrap);
+  return wrap;
+}
+function fmtQ(n){ return (Number(n)||0).toLocaleString('fr-FR',{maximumFractionDigits:2}); }
+function matTissus(wrap){
+  const bar = el('<div class="mat-bar"></div>');
+  const q = document.createElement('input'); q.placeholder='Rechercher un tissu ou une couleur'; q.className='mat-in'; q.value = view.mat.q||'';
+  const add = document.createElement('input'); add.placeholder='Nouveau tissu (ex : MOLLETON 350G)'; add.className='mat-in';
+  const ab = el('<button class="btn primary small">+ Ajouter le tissu</button>');
+  const doAdd = ()=>{ const v = add.value.trim().toUpperCase(); if(!v) return; if(DATA.lists.tissus[v]){ alert('Ce tissu existe déjà.'); return; } DATA.lists.tissus[v] = []; saveState('Tissu ajouté : '+v); };
+  ab.onclick = doAdd; add.onkeydown = e=>{ if(e.key==='Enter') doAdd(); };
+  bar.appendChild(q); bar.appendChild(add); bar.appendChild(ab); wrap.appendChild(bar);
+  const grid = el('<div class="mat-grid"></div>'); wrap.appendChild(grid);
+  function draw(){
+    grid.innerHTML='';
+    const s = String(view.mat.q||'').trim().toUpperCase();
+    const names = Object.keys(DATA.lists.tissus).sort().filter(t=>!s || t.indexOf(s)>=0 || (DATA.lists.tissus[t]||[]).some(c=>c.indexOf(s)>=0));
+    if(!names.length){ grid.appendChild(el('<div class="empty-msg">Aucun tissu.</div>')); return; }
+    names.forEach(t=>{
+      const cols = DATA.lists.tissus[t]||[]; const u = matUsage(t);
+      const card = el('<div class="mat-card"></div>');
+      const head = el('<div class="mat-card-head"></div>');
+      head.appendChild(el('<div><div class="mat-name">'+esc(t)+'</div><div class="mat-sub">'+cols.length+' couleur(s)'+(u?' · '+u+' produit(s)':'')+'</div></div>'));
+      const del = el('<button class="mat-del" title="Supprimer le tissu">✕</button>');
+      del.onclick = ()=>{ if(u && !confirm(u+' produit(s) du catalogue utilisent ce tissu. Supprimer quand même « '+t+' » ?')) return; if(!u && !confirm('Supprimer le tissu « '+t+' » et ses couleurs ?')) return; delete DATA.lists.tissus[t]; saveState('Tissu supprimé : '+t); };
+      head.appendChild(del); card.appendChild(head);
+      const sw = el('<div class="mat-swatches"></div>');
+      cols.forEach(c=>{
+        const chipEl = el('<span class="mat-chip"><i style="background:'+matSwatch(c)+'"></i>'+esc(c)+'</span>');
+        const x = el('<button class="mat-x">✕</button>'); x.onclick = ()=>{ DATA.lists.tissus[t] = cols.filter(z=>z!==c); saveState('Couleur supprimée de '+t+' : '+c); };
+        chipEl.appendChild(x); sw.appendChild(chipEl);
+      });
+      if(!cols.length) sw.appendChild(el('<span style="font-size:12px;opacity:.6;">Aucune couleur</span>'));
+      card.appendChild(sw);
+      const row = el('<div class="mat-addrow"></div>');
+      const ci = document.createElement('input'); ci.placeholder='+ couleur'; ci.className='mat-in sm';
+      const cb = el('<button class="btn small">Ajouter</button>');
+      const doC = ()=>{ const v = ci.value.trim().toUpperCase(); if(!v) return; DATA.lists.tissus[t] = DATA.lists.tissus[t]||[]; if(DATA.lists.tissus[t].indexOf(v)<0){ DATA.lists.tissus[t].push(v); saveState('Couleur ajoutée à '+t+' : '+v); } };
+      cb.onclick = doC; ci.onkeydown = e=>{ if(e.key==='Enter') doC(); };
+      row.appendChild(ci); row.appendChild(cb); card.appendChild(row);
+      grid.appendChild(card);
+    });
+  }
+  q.oninput = ()=>{ view.mat.q = q.value; draw(); };
+  draw();
+}
+function matTailles(wrap){
+  const card = el('<div class="mat-card" style="max-width:none;"></div>');
+  card.appendChild(el('<div class="mat-name" style="margin-bottom:8px;">Tailles disponibles</div>'));
+  const sw = el('<div class="mat-swatches big"></div>');
+  DATA.lists.tailles.forEach((sz,i)=>{
+    const c = el('<span class="mat-size">'+esc(sz)+'</span>');
+    const l = el('<button class="mat-x" title="Avancer">‹</button>'); l.onclick = ()=>{ if(i>0){ const a = DATA.lists.tailles; [a[i-1],a[i]]=[a[i],a[i-1]]; saveState('Ordre des tailles modifié'); } };
+    const x = el('<button class="mat-x">✕</button>'); x.onclick = ()=>{ DATA.lists.tailles = DATA.lists.tailles.filter(z=>z!==sz); saveState('Taille supprimée : '+sz); };
+    c.insertBefore(l, c.firstChild); c.appendChild(x); sw.appendChild(c);
+  });
+  card.appendChild(sw);
+  const row = el('<div class="mat-addrow"></div>');
+  const ti = document.createElement('input'); ti.placeholder='Nouvelle taille (ex : 3XL, 10 ans)'; ti.className='mat-in';
+  const tb = el('<button class="btn primary small">+ Ajouter</button>');
+  const doT = ()=>{ const v = ti.value.trim(); if(!v) return; if(DATA.lists.tailles.indexOf(v)<0){ DATA.lists.tailles.push(v); saveState('Taille ajoutée : '+v); } };
+  tb.onclick = doT; ti.onkeydown = e=>{ if(e.key==='Enter') doT(); };
+  row.appendChild(ti); row.appendChild(tb); card.appendChild(row);
+  wrap.appendChild(card);
+}
+function matFourn(wrap){
+  const M = MAT();
+  const bar = el('<div class="mat-bar"></div>');
+  const q = document.createElement('input'); q.placeholder='Rechercher un accessoire ou une fourniture'; q.className='mat-in'; q.value = view.mat.q||'';
+  const nb = el('<button class="btn primary small">+ Nouvel article</button>'); nb.onclick = ()=>{ view.matModal = {type:'f', mode:'create', data:{id:'fo_'+Date.now(), ref:trNextRef('FO', M.fournitures, 3), nom:'', categorie:'Accessoire', unite:'pièce', couleur:'', seuil:'', prix:''}}; render(); };
+  bar.appendChild(q); bar.appendChild(nb);
+  if(M.fournitures.length){
+    const eb = el('<button class="btn small">+ Entrée</button>'); eb.onclick = ()=>{ view.matModal = {type:'m', mode:'create', data:{id:'mm_'+Date.now(), fid:M.fournitures[0].id, type:'entree', qte:'', date:todayISO(), note:''}}; render(); };
+    const sb = el('<button class="btn small">Sortie</button>'); sb.onclick = ()=>{ view.matModal = {type:'m', mode:'create', data:{id:'mm_'+Date.now(), fid:M.fournitures[0].id, type:'sortie', qte:'', date:todayISO(), note:''}}; render(); };
+    bar.appendChild(eb); bar.appendChild(sb);
+  }
+  wrap.appendChild(bar);
+  wrap.appendChild(el('<div style="font-size:12px;opacity:.8;margin:-4px 0 10px;">« Besoin commandes » = quantité nécessaire pour les commandes pas encore terminées en confection (d\'après le catalogue). Quand la confection d\'une commande est terminée, ses fournitures sortent du stock automatiquement.</div>'));
+  const grid = el('<div class="mat-grid"></div>'); wrap.appendChild(grid);
+  function draw(){
+    grid.innerHTML='';
+    const s = normName(view.mat.q);
+    const list = M.fournitures.filter(f=>!s || normName(f.nom).indexOf(s)>=0 || normName(f.ref).indexOf(s)>=0 || normName(f.couleur).indexOf(s)>=0)
+      .map(f=>Object.assign({f:f}, matEtat(f))).sort((a,b)=>(a.key==='ok')-(b.key==='ok') || String(a.f.nom).localeCompare(String(b.f.nom)));
+    if(!M.fournitures.length){ grid.appendChild(el('<div class="empty-msg">Aucun article. Exemples : fermeture éclair 20 cm, boutons, étiquettes tissées, cordon de capuche, élastique, fil à coudre, sachets.</div>')); return; }
+    list.forEach(x=>{
+      const f = x.f; const pct = x.st>0 ? Math.max(0, Math.min(100, 100*x.dispo/Math.max(x.st, trNum(f.seuil)||x.st))) : 0;
+      const card = el('<div class="mat-card"></div>');
+      card.appendChild(el('<div class="mat-card-head"><div><div class="mat-name">'+esc(f.nom)+'</div><div class="mat-sub">'+esc(f.ref)+' · '+esc(f.categorie||'')+(f.couleur?' · <i class="mat-dotc" style="background:'+matSwatch(f.couleur)+'"></i>'+esc(f.couleur):'')+'</div></div><span class="mat-badge" style="background:'+x.color+';">'+x.label+'</span></div>'));
+      card.appendChild(el('<div class="mat-nums"><div><b>'+fmtQ(x.st)+'</b><span>en stock</span></div><div><b>'+fmtQ(x.res)+'</b><span>besoin commandes</span></div><div><b style="color:'+(x.dispo<0?'#E0392D':'#001D51')+'">'+fmtQ(x.dispo)+'</b><span>disponible ('+esc(f.unite)+')</span></div></div>'));
+      card.appendChild(el('<div class="mat-gauge"><i style="width:'+pct+'%;background:'+x.color+';"></i></div>'));
+      if(trNum(f.seuil)) card.appendChild(el('<div class="mat-sub">Seuil d\'alerte : '+fmtQ(f.seuil)+' '+esc(f.unite)+'</div>'));
+      const used = (DATA.catalogue||[]).filter(p=>(p.fournitures||[]).some(z=>z.fid===f.id));
+      if(used.length) card.appendChild(el('<div class="mat-sub">Utilisé par : '+used.slice(0,4).map(p=>esc(p.article)).join(', ')+(used.length>4?'…':'')+'</div>'));
+      const act = el('<div class="mat-addrow"></div>');
+      const e1 = el('<button class="btn small primary">+ Entrée</button>'); e1.onclick = ()=>{ view.matModal = {type:'m', mode:'create', data:{id:'mm_'+Date.now(), fid:f.id, type:'entree', qte:'', date:todayISO(), note:''}}; render(); };
+      const e2 = el('<button class="btn small">Sortie</button>'); e2.onclick = ()=>{ view.matModal = {type:'m', mode:'create', data:{id:'mm_'+Date.now(), fid:f.id, type:'sortie', qte:'', date:todayISO(), note:''}}; render(); };
+      const e3 = el('<button class="btn small">Modifier</button>'); e3.onclick = ()=>{ view.matModal = {type:'f', mode:'edit', data:JSON.parse(JSON.stringify(f))}; render(); };
+      act.appendChild(e1); act.appendChild(e2); act.appendChild(e3); card.appendChild(act);
+      grid.appendChild(card);
+    });
+  }
+  q.oninput = ()=>{ view.mat.q = q.value; draw(); };
+  draw();
+  const mv = M.mvt.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,12);
+  if(mv.length){
+    wrap.appendChild(el('<div style="font-weight:800;margin:16px 0 6px;">Derniers mouvements</div>'));
+    wrap.appendChild(trTable(['Date','Article','Type','Quantité','Note'], mv.map(m=>{ const f = matF(m.fid)||{}; return [fmtDate(m.date), esc(f.nom||'—'), m.type==='entree'?'<span style="color:#1E7A34;font-weight:700">Entrée</span>':'<span style="color:#A42834;font-weight:700">Sortie'+(m.auto?' (auto)':'')+'</span>', fmtQ(m.qte)+' '+esc(f.unite||''), esc(m.note||'')]; })));
+  }
+}
+function renderMatModal(){
+  const {type, mode, data} = view.matModal; const M = MAT();
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal"></div>');
+  m.appendChild(el('<h2>'+(type==='f' ? (mode==='create'?'Nouvel accessoire / fourniture':'Modifier '+esc(data.nom)) : (data.type==='entree'?'Entrée en stock':'Sortie de stock'))+'</h2>'));
+  function frow(fields){ const r = el('<div class="frow"></div>'); fields.forEach(f=>r.appendChild(f)); m.appendChild(r); }
+  function field(label, key, opt){ opt=opt||{}; const w = el('<div></div>'); w.appendChild(el('<label>'+label+'</label>')); const i = document.createElement('input'); i.type = opt.type||'text'; if(opt.ph) i.placeholder = opt.ph; if(opt.type==='number'){ i.step='any'; i.min='0'; } i.value = data[key]==null?'':data[key]; i.oninput = ()=>data[key]=i.value; w.appendChild(i); return w; }
+  function select(label, key, opts){ const w = el('<div></div>'); w.appendChild(el('<label>'+label+'</label>')); const s = document.createElement('select'); opts.forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; if(String(v)===String(data[key])) o.selected=true; s.appendChild(o); }); s.onchange = ()=>data[key]=s.value; w.appendChild(s); return w; }
+  if(type==='f'){
+    frow([field('Nom *','nom',{ph:'ex : Fermeture éclair 20 cm'}), select('Catégorie','categorie', MAT_CATS.map(c=>[c,c]))]);
+    frow([select('Unité','unite', MAT_UNITES.map(u=>[u,u])), field('Couleur','couleur',{ph:'ex : NOIR'})]);
+    frow([field('Seuil d\'alerte','seuil',{type:'number', ph:'ex : 200'}), field('Prix unitaire (DA)','prix',{type:'number'})]);
+  } else {
+    frow([select('Article','fid', M.fournitures.map(f=>[f.id, f.nom+(f.couleur?' '+f.couleur:'')+' (stock '+fmtQ(matStock(f.id))+' '+f.unite+')'])), select('Type','type',[['entree','Entrée (achat / réception)'],['sortie','Sortie (utilisation / perte)']])]);
+    frow([field('Quantité *','qte',{type:'number'}), field('Date','date',{type:'date'})]);
+    frow([field('Note','note',{ph:'ex : fournisseur, bon n°…'})]);
+  }
+  const actions = el('<div class="actions"></div>');
+  const cancel = el('<button class="btn">Annuler</button>'); cancel.onclick = ()=>{ view.matModal=null; render(); };
+  actions.appendChild(cancel);
+  if(type==='f' && mode==='edit'){
+    const del = el('<button class="btn" style="color:#A42834;border-color:#A42834;">Supprimer</button>');
+    del.onclick = ()=>{ if((DATA.catalogue||[]).some(p=>(p.fournitures||[]).some(z=>z.fid===data.id))){ alert('Impossible : un produit du catalogue utilise cet article.'); return; } if(!confirm('Supprimer « '+data.nom+' » et son historique ?')) return; M.fournitures = M.fournitures.filter(f=>f.id!==data.id); M.mvt = M.mvt.filter(x=>x.fid!==data.id); view.matModal=null; saveState('Article supprimé'); };
+    actions.appendChild(del);
+  }
+  const save = el('<button class="btn primary">Enregistrer</button>');
+  save.onclick = ()=>{
+    if(type==='f'){
+      if(!String(data.nom||'').trim()){ alert('Le nom est obligatoire.'); return; }
+      data.nom = String(data.nom).trim(); data.couleur = String(data.couleur||'').trim().toUpperCase();
+      const i = M.fournitures.findIndex(f=>f.id===data.id); if(i>=0) M.fournitures[i]=data; else M.fournitures.push(data);
+      view.matModal=null; saveState('Article enregistré : '+data.nom); return;
+    }
+    if(!(trNum(data.qte)>0)){ alert('Indique une quantité.'); return; }
+    data.par = view.personId; M.mvt.push(data); view.matModal=null;
+    saveState((data.type==='entree'?'Entrée':'Sortie')+' enregistrée');
+  };
+  actions.appendChild(save); m.appendChild(actions);
+  overlay.appendChild(m); overlay.onclick = e=>{ if(e.target===overlay){ view.matModal=null; render(); } };
+  return overlay;
+}
+
 // ---------- Synchronisation sécurisée (plusieurs personnes en même temps) ----------
 // Chaque enregistrement porte un numéro de version (_rev). Si quelqu'un d'autre a enregistré
 // entre-temps (onglet resté ouvert, autre téléphone...), on FUSIONNE au lieu d'écraser.
@@ -8587,13 +8910,18 @@ async function fetchRemoteDoc(){
 
 // Lecture : la clé publishable s'envoie uniquement dans l'en-tête apikey.
 // Pas d'en-tête Authorization : la clé sb_publishable_ n'est pas un JWT.
+let LOAD_FAILED = false;
 async function loadDataFromSupabase(){
+  const ctl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+  const timer = setTimeout(()=>{ try{ ctl && ctl.abort(); }catch(e){} }, 15000);
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main`, {
-      headers: { 'apikey': SUPABASE_KEY }, cache:'no-store'
+      headers: { 'apikey': SUPABASE_KEY }, cache:'no-store', signal: ctl ? ctl.signal : undefined
     });
+    clearTimeout(timer);
     if(!res.ok){
       console.log('Chargement Supabase échoué:', res.status, await res.text());
+      if(BASE===null) LOAD_FAILED = true;
       return;
     }
     const txt = await res.text();
@@ -8603,9 +8931,12 @@ async function loadDataFromSupabase(){
       DATA = Object.assign({}, DATA, rows[0].data);
       BASE = JSON.parse(txt)[0].data;
       REMOTE_REV = Number(rows[0].data._rev||0);
-    }
+      LOAD_FAILED = false;
+    } else if(BASE===null) LOAD_FAILED = true;
   } catch(e){
+    clearTimeout(timer);
     console.log('Supabase non disponible:', e.message);
+    if(BASE===null) LOAD_FAILED = true;
   }
 }
 
@@ -8628,6 +8959,7 @@ function saveToSupabase(){
   return saveChain;
 }
 async function doSave(){
+  if(LOAD_FAILED || BASE===null){ showToast('⚠ Données non chargées : rien n\'a été enregistré. Recharge la page.'); return false; }
   try{
     let merged = false;
     for(let attempt=0; attempt<4; attempt++){
@@ -8658,6 +8990,7 @@ async function doSave(){
 }
 
 async function saveState(toastMsg){
+  try{ matSync(); }catch(e){ console.log('matSync', e); }
   render();
   const ok = await saveToSupabase();
   if(!ok){
@@ -8670,7 +9003,7 @@ async function saveState(toastMsg){
 // Rafraîchissement automatique : si quelqu'un d'autre a modifié les données, on les récupère.
 let refreshBusy = false;
 function userIsEditing(){
-  if(view.modal||view.tricoModal||view.psModal||view.crModal||(view.todoOpen && view.td && view.td.sel)||view.personModal||view.catalogueModal||view.clientModal||view.payModal||view.settingsModal||view.importModal||view.scanModal) return true;
+  if(view.modal||view.matModal||view.tricoModal||view.psModal||view.crModal||(view.todoOpen && view.td && view.td.sel)||view.personModal||view.catalogueModal||view.clientModal||view.payModal||view.settingsModal||view.importModal||view.scanModal) return true;
   const a = document.activeElement;
   return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
 }
