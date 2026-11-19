@@ -541,6 +541,12 @@ button.td-line{cursor:pointer}
 .mat-chip{display:inline-flex;align-items:center;gap:6px;border:2px solid #001D51;border-radius:999px;padding:3px 4px 3px 4px;font-size:12px;font-weight:700;background:#FFF6E6}
 .mat-chip i{width:18px;height:18px;border-radius:50%;border:2px solid #001D51;display:inline-block}
 .mat-x{border:none;background:none;cursor:pointer;color:#001D51;opacity:.55;font-size:12px;padding:0 3px}
+.mat-click{cursor:pointer;font:inherit;color:#001D51}
+button.mat-chip{padding:3px 10px 3px 4px}
+button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
+.mat-namebtn{border:none;background:none;padding:0 4px;border-radius:8px;text-align:left;font-weight:800;font-size:16px}
+.mat-sizebtn{border:none;background:none;font-weight:800;font-size:16px;padding:0 4px;border-radius:8px}
+.mat-pen{font-size:11px;opacity:.5;margin-left:2px}
 .mat-x:hover{opacity:1;color:#A42834}
 .mat-swatches.big{gap:10px}
 .mat-size{display:inline-flex;align-items:center;gap:4px;border:3px solid #001D51;border-radius:12px;padding:8px 8px;font-weight:800;font-size:16px;background:#FFF6E6;min-width:60px;justify-content:center;box-shadow:2px 2px 0 #001D51}
@@ -1754,6 +1760,7 @@ function render(){
   if(view.payModal) app.appendChild(renderPayModal());
   if(view.importModal) app.appendChild(renderImportModal());
   if(view.matModal) app.appendChild(renderMatModal());
+  if(view.matEdit) app.appendChild(renderMatEdit());
   if(view.todoOpen && view.personId) app.appendChild(renderTodo());
   if(view.discussionOpen) app.appendChild(renderDiscussion());
 }
@@ -1843,7 +1850,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 66 · accessoires et fournitures produit</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 68 · modifier tissus et couleurs</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -4289,7 +4296,7 @@ function renderCatalogueTable(){
   const bar = el('<div class="cat-bar"></div>');
   const q = document.createElement('input'); q.type='search'; q.placeholder='Rechercher un produit (nom, tissu, patron)…'; q.value = view.catSearch||'';
   const sortSel = document.createElement('select');
-  [['recent','Les plus récents d\'abord'],['ancien','Les plus anciens d\'abord'],['az','Ordre alphabétique (A → Z)']].forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; if((view.catSort||'recent')===v) o.selected=true; sortSel.appendChild(o); });
+  [['ref','Référence : du premier au dernier'],['refdesc','Référence : du dernier au premier'],['recent','Les plus récents d\'abord'],['ancien','Les plus anciens d\'abord'],['az','Ordre alphabétique (A → Z)']].forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; if((view.catSort||'ref')===v) o.selected=true; sortSel.appendChild(o); });
   bar.appendChild(q); bar.appendChild(sortSel);
   box.appendChild(bar);
   const bulk = el('<div class="cat-bulk"></div>');
@@ -4315,9 +4322,14 @@ function renderCatalogueTable(){
     const term = (view.catSearch||'').trim().toLowerCase();
     let list = (DATA.catalogue||[]).slice();
     if(term) list = list.filter(p=>[p.article,p.tissu,p.refPatron].join(' ').toLowerCase().indexOf(term)>=0);
-    const sm = view.catSort||'recent';
+    const sm = view.catSort||'ref';
     const dt = p=>(p.modifieLe||p.creeLe||'');
-    if(sm==='az') list.sort((a,b)=>String(a.article||'').localeCompare(String(b.article||''),'fr'));
+    // ordre des références : #00001, #00002… puis les autres séries (#cl…), puis sans référence
+    const rk = p=>{ const r = String(p.refPatron||'').trim(); const main = r.match(/^#0*(\d+)$/); if(main) return [0, Number(main[1]), r]; const any = r.match(/(\d+)/); if(r) return [1, any?Number(any[1]):0, r]; return [2, 0, String(p.article||'')]; };
+    const cmpRef = (a,b)=>{ const x = rk(a), y = rk(b); return x[0]-y[0] || x[1]-y[1] || String(x[2]).localeCompare(String(y[2]),'fr'); };
+    if(sm==='ref') list.sort(cmpRef);
+    else if(sm==='refdesc') list.sort((a,b)=>cmpRef(b,a));
+    else if(sm==='az') list.sort((a,b)=>String(a.article||'').localeCompare(String(b.article||''),'fr'));
     else if(sm==='ancien') list.sort((a,b)=>dt(a).localeCompare(dt(b)));
     else list.sort((a,b)=>dt(b).localeCompare(dt(a)));
     return list;
@@ -8694,15 +8706,15 @@ function matTissus(wrap){
       const cols = DATA.lists.tissus[t]||[]; const u = matUsage(t);
       const card = el('<div class="mat-card"></div>');
       const head = el('<div class="mat-card-head"></div>');
-      head.appendChild(el('<div><div class="mat-name">'+esc(t)+'</div><div class="mat-sub">'+cols.length+' couleur(s)'+(u?' · '+u+' produit(s)':'')+'</div></div>'));
-      const del = el('<button class="mat-del" title="Supprimer le tissu">✕</button>');
-      del.onclick = ()=>{ if(u && !confirm(u+' produit(s) du catalogue utilisent ce tissu. Supprimer quand même « '+t+' » ?')) return; if(!u && !confirm('Supprimer le tissu « '+t+' » et ses couleurs ?')) return; delete DATA.lists.tissus[t]; saveState('Tissu supprimé : '+t); };
-      head.appendChild(del); card.appendChild(head);
+      const nm = el('<div><button class="mat-name mat-click mat-namebtn" title="Cliquer pour modifier">'+esc(t)+' <span class="mat-pen">✎</span></button><div class="mat-sub">'+cols.length+' couleur(s)'+(u?' · '+u+' produit(s)':'')+'</div></div>');
+      nm.querySelector('button').onclick = ()=>{ view.matEdit = {kind:'tissu', old:t, value:t}; render(); };
+      head.appendChild(nm);
+      card.appendChild(head);
       const sw = el('<div class="mat-swatches"></div>');
       cols.forEach(c=>{
-        const chipEl = el('<span class="mat-chip"><i style="background:'+matSwatch(c)+'"></i>'+esc(c)+'</span>');
-        const x = el('<button class="mat-x">✕</button>'); x.onclick = ()=>{ DATA.lists.tissus[t] = cols.filter(z=>z!==c); saveState('Couleur supprimée de '+t+' : '+c); };
-        chipEl.appendChild(x); sw.appendChild(chipEl);
+        const chipEl = el('<button class="mat-chip mat-click" title="Cliquer pour modifier"><i style="background:'+matSwatch(c)+'"></i>'+esc(c)+'<span class="mat-pen">✎</span></button>');
+        chipEl.onclick = ()=>{ view.matEdit = {kind:'couleur', tissu:t, old:c, value:c}; render(); };
+        sw.appendChild(chipEl);
       });
       if(!cols.length) sw.appendChild(el('<span style="font-size:12px;opacity:.6;">Aucune couleur</span>'));
       card.appendChild(sw);
@@ -8723,10 +8735,10 @@ function matTailles(wrap){
   card.appendChild(el('<div class="mat-name" style="margin-bottom:8px;">Tailles disponibles</div>'));
   const sw = el('<div class="mat-swatches big"></div>');
   DATA.lists.tailles.forEach((sz,i)=>{
-    const c = el('<span class="mat-size">'+esc(sz)+'</span>');
+    const c = el('<span class="mat-size"></span>');
     const l = el('<button class="mat-x" title="Avancer">‹</button>'); l.onclick = ()=>{ if(i>0){ const a = DATA.lists.tailles; [a[i-1],a[i]]=[a[i],a[i-1]]; saveState('Ordre des tailles modifié'); } };
-    const x = el('<button class="mat-x">✕</button>'); x.onclick = ()=>{ DATA.lists.tailles = DATA.lists.tailles.filter(z=>z!==sz); saveState('Taille supprimée : '+sz); };
-    c.insertBefore(l, c.firstChild); c.appendChild(x); sw.appendChild(c);
+    const nmb = el('<button class="mat-click mat-sizebtn" title="Cliquer pour modifier">'+esc(sz)+' <span class="mat-pen">✎</span></button>'); nmb.onclick = ()=>{ view.matEdit = {kind:'taille', old:sz, value:sz}; render(); };
+    c.appendChild(l); c.appendChild(nmb); sw.appendChild(c);
   });
   card.appendChild(sw);
   const row = el('<div class="mat-addrow"></div>');
@@ -8781,6 +8793,41 @@ function matFourn(wrap){
     wrap.appendChild(el('<div style="font-weight:800;margin:16px 0 6px;">Derniers mouvements</div>'));
     wrap.appendChild(trTable(['Date','Article','Type','Quantité','Note'], mv.map(m=>{ const f = matF(m.fid)||{}; return [fmtDate(m.date), esc(f.nom||'—'), m.type==='entree'?'<span style="color:#1E7A34;font-weight:700">Entrée</span>':'<span style="color:#A42834;font-weight:700">Sortie'+(m.auto?' (auto)':'')+'</span>', fmtQ(m.qte)+' '+esc(f.unite||''), esc(m.note||'')]; })));
   }
+}
+function renderMatEdit(){
+  const e = view.matEdit;
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal" style="max-width:420px;"></div>');
+  const titles = {couleur:'Modifier la couleur', tissu:'Modifier le tissu', taille:'Modifier la taille'};
+  m.appendChild(el('<h2>'+titles[e.kind]+'</h2>'));
+  if(e.kind==='couleur') m.appendChild(el('<div style="font-size:13px;margin:-6px 0 10px;">Tissu : <b>'+esc(e.tissu)+'</b></div>'));
+  const w = el('<div></div>'); w.appendChild(el('<label>Nom</label>'));
+  const inp = document.createElement('input'); inp.value = e.value; w.appendChild(inp); m.appendChild(w);
+  if(e.kind==='couleur'){ const prev = el('<div style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:13px;"><i style="width:26px;height:26px;border-radius:50%;border:2px solid #001D51;display:inline-block;background:'+matSwatch(e.value)+'"></i><span>Aperçu</span></div>'); m.appendChild(prev); inp.oninput = ()=>{ prev.querySelector('i').style.background = matSwatch(inp.value); }; }
+  if(e.kind==='tissu'){ const u = matUsage(e.old); if(u) m.appendChild(el('<div style="font-size:12px;margin-top:8px;opacity:.8;">'+u+' produit(s) du catalogue utilisent ce tissu : ils seront mis à jour avec le nouveau nom.</div>')); }
+  const close = ()=>{ view.matEdit = null; render(); };
+  const actions = el('<div class="actions"></div>');
+  const cancel = el('<button class="btn">Annuler</button>'); cancel.onclick = close;
+  const del = el('<button class="btn" style="color:#A42834;border-color:#A42834;">Supprimer</button>');
+  del.onclick = ()=>{
+    if(e.kind==='couleur'){ if(!confirm('Supprimer la couleur « '+e.old+' » du tissu '+e.tissu+' ?')) return; DATA.lists.tissus[e.tissu] = (DATA.lists.tissus[e.tissu]||[]).filter(z=>z!==e.old); view.matEdit=null; saveState('Couleur supprimée de '+e.tissu+' : '+e.old); }
+    if(e.kind==='tissu'){ const u = matUsage(e.old); if(!confirm((u?u+' produit(s) utilisent ce tissu. ':'')+'Supprimer le tissu « '+e.old+' » et toutes ses couleurs ?')) return; delete DATA.lists.tissus[e.old]; view.matEdit=null; saveState('Tissu supprimé : '+e.old); }
+    if(e.kind==='taille'){ if(!confirm('Supprimer la taille « '+e.old+' » ?')) return; DATA.lists.tailles = DATA.lists.tailles.filter(z=>z!==e.old); view.matEdit=null; saveState('Taille supprimée : '+e.old); }
+  };
+  const save = el('<button class="btn primary">Enregistrer</button>');
+  save.onclick = ()=>{
+    let v = inp.value.trim(); if(!v){ alert('Le nom ne peut pas être vide.'); return; }
+    if(e.kind!=='taille') v = v.toUpperCase();
+    if(v===e.old){ close(); return; }
+    if(e.kind==='couleur'){ const l = DATA.lists.tissus[e.tissu]||[]; if(l.indexOf(v)>=0){ alert('Cette couleur existe déjà pour ce tissu.'); return; } DATA.lists.tissus[e.tissu] = l.map(z=>z===e.old?v:z); view.matEdit=null; saveState('Couleur modifiée : '+e.old+' → '+v); }
+    if(e.kind==='tissu'){ if(DATA.lists.tissus[v]){ alert('Ce tissu existe déjà.'); return; } const nt = {}; Object.keys(DATA.lists.tissus).forEach(k=>{ nt[k===e.old?v:k] = DATA.lists.tissus[k]; }); DATA.lists.tissus = nt; (DATA.catalogue||[]).forEach(p=>{ if(String(p.tissu||'').toUpperCase()===String(e.old).toUpperCase()){ p.tissu = v; p.modifieLe = new Date().toISOString(); } }); view.matEdit=null; saveState('Tissu renommé : '+e.old+' → '+v); }
+    if(e.kind==='taille'){ if(DATA.lists.tailles.indexOf(v)>=0){ alert('Cette taille existe déjà.'); return; } DATA.lists.tailles = DATA.lists.tailles.map(z=>z===e.old?v:z); (DATA.catalogue||[]).forEach(p=>{ if(Array.isArray(p.tailles)) p.tailles = p.tailles.map(z=>z===e.old?v:z); }); view.matEdit=null; saveState('Taille modifiée : '+e.old+' → '+v); }
+  };
+  inp.onkeydown = ev=>{ if(ev.key==='Enter') save.onclick(); };
+  actions.appendChild(del); actions.appendChild(cancel); actions.appendChild(save); m.appendChild(actions);
+  overlay.appendChild(m); overlay.onclick = ev=>{ if(ev.target===overlay) close(); };
+  setTimeout(()=>{ try{ inp.focus(); inp.select(); }catch(_){} }, 30);
+  return overlay;
 }
 function renderMatModal(){
   const {type, mode, data} = view.matModal; const M = MAT();
@@ -9003,7 +9050,7 @@ async function saveState(toastMsg){
 // Rafraîchissement automatique : si quelqu'un d'autre a modifié les données, on les récupère.
 let refreshBusy = false;
 function userIsEditing(){
-  if(view.modal||view.matModal||view.tricoModal||view.psModal||view.crModal||(view.todoOpen && view.td && view.td.sel)||view.personModal||view.catalogueModal||view.clientModal||view.payModal||view.settingsModal||view.importModal||view.scanModal) return true;
+  if(view.modal||view.matModal||view.matEdit||view.tricoModal||view.psModal||view.crModal||(view.todoOpen && view.td && view.td.sel)||view.personModal||view.catalogueModal||view.clientModal||view.payModal||view.settingsModal||view.importModal||view.scanModal) return true;
   const a = document.activeElement;
   return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
 }
