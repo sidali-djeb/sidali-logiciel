@@ -1748,7 +1748,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 59 · référence produit Créa</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 60 · prix par unité consommables</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -7215,6 +7215,9 @@ function psRetard(j){ if(psDone(j)) return false; const d = j.finPrevue || j.dat
 function psTotal(j){ return trNum(j.quantite)*trNum(j.prixUnitaire) + trNum(j.fraisFixes); }
 function psJob(id){ return PS().jobs.find(j=>j.id===id); }
 function psUrl(j){ return siteBase()+'/?perso='+encodeURIComponent(j.id); }
+function psMvtUnit(m){ if(m.prixUnit!=null && m.prixUnit!=='') return trNum(m.prixUnit); return (trNum(m.prix) && trNum(m.qte)) ? trNum(m.prix)/trNum(m.qte) : 0; }
+function psConsoPrixMoyen(id){ let q=0, v=0; PS().mvtConso.forEach(m=>{ if(m.consoId===id && m.type==='entree' && psMvtUnit(m)>0){ q+=trNum(m.qte); v+=trNum(m.qte)*psMvtUnit(m); } }); return q ? v/q : 0; }
+function psConsoDernierPrix(id){ const l = PS().mvtConso.filter(m=>m.consoId===id && m.type==='entree' && psMvtUnit(m)>0).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))); return l.length ? psMvtUnit(l[0]) : 0; }
 function psConsoStock(id){ let s=0; PS().mvtConso.forEach(m=>{ if(m.consoId===id) s += (m.type==='entree'?1:-1)*trNum(m.qte); }); return s; }
 function psClientStats(c){
   const k = normName(c.nom); let n=0, ca=0, paye=0, pcs=0;
@@ -7411,25 +7414,27 @@ function psPanelConso(panel){
   const row = el('<div class="add-row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;"></div>');
   row.appendChild(trBtn('+ Nouvel article', ()=>{ view.psModal = {type:'conso', mode:'create', data:{id:'cs_'+Date.now(), ref:trNextRef('CS', p.conso, 3), nom:'', technique:'dtf', unite:'m', couleur:'', seuil:''}}; render(); }, true));
   if(p.conso.length){
-    row.appendChild(trBtn('+ Entrée', ()=>{ view.psModal = {type:'mvt', mode:'create', data:{id:'pm_'+Date.now(), consoId:p.conso[0].id, type:'entree', date:todayISO(), qte:'', prix:'', note:''}}; render(); }, true));
+    row.appendChild(trBtn('+ Entrée', ()=>{ view.psModal = {type:'mvt', mode:'create', data:{id:'pm_'+Date.now(), consoId:p.conso[0].id, type:'entree', date:todayISO(), qte:'', prix:'', prixUnit:'', note:''}}; render(); }, true));
     row.appendChild(trBtn('Sortie / utilisation', ()=>{ view.psModal = {type:'mvt', mode:'create', data:{id:'pm_'+Date.now(), consoId:p.conso[0].id, type:'sortie', date:todayISO(), qte:'', prix:'', note:''}}; render(); }));
   }
   body.appendChild(row);
   if(!p.conso.length){ trEmpty(body, 'Aucun article. Exemples : film DTF (m), encre DTF (L), poudre (kg), fil à broder (cône), stabilisateur (m), encre sérigraphie (kg), écrans (pièce).'); return; }
   const tl = t=>t==='commun'?'Commun':PS_TECH[t].label;
-  body.appendChild(trTable(['Réf.','Article','Technique','Couleur','Stock','Seuil',''], p.conso.map(c=>{
-    const s = psConsoStock(c.id), low = trNum(c.seuil)>0 && s<trNum(c.seuil);
+  const money = psMoney();
+  body.appendChild(trTable(['Réf.','Article','Technique','Couleur','Stock','Seuil'].concat(money?['Prix moyen','Valeur du stock']:[]).concat(['']), p.conso.map(c=>{
+    const s = psConsoStock(c.id), low = trNum(c.seuil)>0 && s<trNum(c.seuil); const pm = psConsoPrixMoyen(c.id);
     return ['<b>'+esc(c.ref)+'</b>', esc(c.nom), tl(c.technique), esc(c.couleur||'—'),
       '<b style="color:'+(low||s<0?'#E0392D':'#1E7A34')+'">'+s.toLocaleString('fr-FR',{maximumFractionDigits:2})+' '+esc(c.unite)+'</b>'+(low?' <span class="pill" style="background:#FF5A4D;color:#fff;padding:1px 6px;border-radius:8px;font-size:11px;">à commander</span>':''),
-      c.seuil ? esc(c.seuil)+' '+esc(c.unite) : '—',
-      trActions([trBtn('Modifier', ()=>{ view.psModal = {type:'conso', mode:'edit', data:JSON.parse(JSON.stringify(c))}; render(); })])];
+      c.seuil ? esc(c.seuil)+' '+esc(c.unite) : '—'].concat(money ? [pm ? fmtDA(Math.round(pm*100)/100)+' / '+esc(c.unite) : '—', pm ? '<b>'+fmtDA(Math.round(Math.max(0,s)*pm))+'</b>' : '—'] : []).concat([
+      trActions([trBtn('Modifier', ()=>{ view.psModal = {type:'conso', mode:'edit', data:JSON.parse(JSON.stringify(c))}; render(); })])]);
   })));
+  if(money){ const tot = p.conso.reduce((a,c)=>a+Math.max(0,psConsoStock(c.id))*psConsoPrixMoyen(c.id),0); if(tot) body.appendChild(el('<div style="font-weight:800;margin:6px 0 0;text-align:right;">Valeur totale du stock : '+fmtDA(Math.round(tot))+'</div>')); }
   const mv = p.mvtConso.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,15);
   if(mv.length){
     body.appendChild(el('<div style="font-weight:700;margin:14px 0 6px;">Derniers mouvements</div>'));
-    body.appendChild(trTable(['Date','Article','Type','Quantité','Prix','Note',''], mv.map(m=>{ const c = p.conso.find(x=>x.id===m.consoId)||{}; return [
-      fmtDate(m.date), esc(c.nom||'—'), m.type==='entree'?'Entrée':'Sortie', esc(m.qte)+' '+esc(c.unite||''), m.prix?fmtDA(m.prix):'—', esc(m.note||''),
-      trActions([trBtn('Modifier', ()=>{ view.psModal = {type:'mvt', mode:'edit', data:JSON.parse(JSON.stringify(m))}; render(); })])]; })));
+    body.appendChild(trTable(['Date','Article','Type','Quantité'].concat(money?['Prix / unité','Total']:[]).concat(['Note','']), mv.map(m=>{ const c = p.conso.find(x=>x.id===m.consoId)||{}; const u = psMvtUnit(m); return [
+      fmtDate(m.date), esc(c.nom||'—'), m.type==='entree'?'Entrée':'Sortie', esc(m.qte)+' '+esc(c.unite||'')].concat(money ? [u ? fmtDA(Math.round(u*100)/100)+' / '+esc(c.unite||'') : '—', u ? '<b>'+fmtDA(Math.round(u*trNum(m.qte)))+'</b>' : '—'] : []).concat([esc(m.note||''),
+      trActions([trBtn('Modifier', ()=>{ view.psModal = {type:'mvt', mode:'edit', data:JSON.parse(JSON.stringify(m))}; render(); })])]); })));
   }
 }
 
@@ -7655,12 +7660,19 @@ function renderPsModal(){
   if(type==='conso'){
     frow([field('Article *','nom',{ph:'ex : Film DTF 60 cm, Fil à broder'}), select('Technique','technique',[['dtf','DTF'],['broderie','Broderie'],['serigraphie','Sérigraphie'],['commun','Commun']])]);
     frow([select('Unité','unite', PS_UNITES.map(u=>[u,u])), field('Couleur','couleur')]);
-    frow([field('Seuil d\'alerte','seuil',{type:'number'})]);
+    frow([field('Seuil d\'alerte','seuil',{type:'number'}), field('Prix habituel par unité (DA)','prixRef',{type:'number', ph:'ex : 150 par m, 2600 par kg'})]);
   }
   if(type==='mvt'){
     frow([select('Article','consoId', p.conso.map(c=>[c.id, c.ref+' · '+c.nom+(c.couleur?' '+c.couleur:'')+' ('+psConsoStock(c.id).toLocaleString('fr-FR',{maximumFractionDigits:2})+' '+c.unite+')'])), select('Type','type',[['entree','Entrée (achat)'],['sortie','Sortie / utilisation']])]);
-    frow([field('Date','date',{type:'date'}), field('Quantité *','qte',{type:'number'})]);
-    frow([field('Prix total (DA)','prix',{type:'number'}), field('Note','note',{ph:'ex : commande PS0003'})]);
+    const art = ()=>p.conso.find(c=>c.id===data.consoId)||{};
+    if(data.prixUnit==null || data.prixUnit===''){ const u0 = psMvtUnit(data); data.prixUnit = u0 ? Math.round(u0*100)/100 : (mode==='create' && data.type==='entree' ? (trNum(art().prixRef) || Math.round(psConsoDernierPrix(data.consoId)*100)/100 || '') : ''); }
+    const totBox = el('<div style="font-weight:800;margin:4px 0 10px;"></div>');
+    const updT = ()=>{ const a = art(); const lb = m.querySelector('label[data-pu]'); if(lb) lb.textContent = 'Prix par '+(a.unite||'unité')+' (DA)'; totBox.innerHTML = (psMoney() && trNum(data.prixUnit)) ? 'Total : '+esc(data.qte||0)+' '+esc(a.unite||'')+' × '+fmtDA(data.prixUnit)+' = '+fmtDA(Math.round(trNum(data.qte)*trNum(data.prixUnit))) : ''; };
+    const selA = m.querySelector('select'); if(selA) selA.addEventListener('change', ()=>{ if(mode==='create' && data.type==='entree'){ const a = art(); data.prixUnit = trNum(a.prixRef) || Math.round(psConsoDernierPrix(a.id)*100)/100 || ''; const pi = m.querySelector('input[data-k=prixUnit]'); if(pi) pi.value = data.prixUnit; } updT(); });
+    frow([field('Date','date',{type:'date'}), field('Quantité *','qte',{type:'number', onchange:updT})]);
+    if(psMoney()){ const pf = field('Prix par unité (DA)','prixUnit',{type:'number', onchange:updT}); pf.querySelector('label').setAttribute('data-pu','1'); frow([pf, field('Note','note',{ph:'ex : commande PS0003'})]); }
+    else frow([field('Note','note',{ph:'ex : commande PS0003'})]);
+    m.appendChild(totBox); updT();
   }
   if(type==='tarifs'){
     m.appendChild(el('<div style="font-weight:800;margin:4px 0;">DTF</div>'));
@@ -7716,6 +7728,7 @@ function renderPsModal(){
     }
     if(type==='conso' && !String(data.nom||'').trim()){ alert('Le nom de l\'article est obligatoire.'); return; }
     if(type==='mvt' && !(trNum(data.qte)>0)){ alert('Indique une quantité.'); return; }
+    if(type==='mvt'){ data.prix = trNum(data.prixUnit) ? Math.round(trNum(data.qte)*trNum(data.prixUnit)*100)/100 : ''; }
     if(type==='client'){
       const nom = String(data.nom||'').trim();
       if(!nom){ alert('Le nom du client est obligatoire.'); return; }
