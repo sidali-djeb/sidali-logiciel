@@ -566,6 +566,14 @@ button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
 .cr-step.done{background:#D7F7EC}.cr-step.cur{background:#FFC933;font-weight:800}.cr-step.todo{opacity:.55}
 .cr-dot{width:24px;height:24px;border-radius:50%;border:2px solid #001D51;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:0 0 auto}
 .cr-lbl{flex:1}.cr-date{font-size:11px;opacity:.8}
+.cc-box{margin:4px 0 6px}
+.cc-table{width:100%;border-collapse:collapse;font-size:13px}
+.cc-table th{text-align:left;font-size:11px;text-transform:uppercase;padding:5px 6px;border-bottom:2px solid #001D51}
+.cc-table td{padding:5px 6px;border-bottom:1px dashed #ccd}
+.cc-table tr.cc-first td{border-top:2px solid #001D51}
+.cc-table input{padding:4px 6px;border:2px solid #001D51;border-radius:8px;background:#FFF6E6;font-weight:700}
+@media (max-width:640px){ .cc-table{font-size:12px} .cc-table th:nth-child(4),.cc-table td:nth-child(4){display:none} .cc-table td,.cc-table th{padding:4px 3px} .cc-table input{width:58px!important} .cc-kg{display:none} }
+.cc-tot{font-size:13px;margin-top:6px;background:#FFF6E6;border:2px solid #001D51;border-radius:10px;padding:6px 10px}
 .fo-sec{border:2px solid #001D51;border-radius:12px;padding:8px 10px;margin:8px 0;background:#FFF6E6}
 .fo-sec-title{font-weight:800;font-size:14px;margin-bottom:6px}.fo-sec-title span{font-size:11px;font-weight:600;opacity:.7}
 /* ---------- page d'accueil ---------- */
@@ -1855,7 +1863,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 69 · suivi des créations</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 70 · plusieurs tissus et conso par couleur</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -2399,6 +2407,65 @@ function consoSeuil(){
   return isNaN(v) || v<0 ? 5 : v;
 }
 // Compare la conso moyenne du catalogue (kg / pièce) à la conso globale réelle saisie par la Découpe
+// ---- plusieurs tissus par produit + consommation par couleur ----
+function catTissus(p){
+  if(!p) return [];
+  if(Array.isArray(p.tissus) && p.tissus.filter(t=>t && t.tissu).length) return p.tissus.filter(t=>t && t.tissu);
+  return p.tissu ? [{tissu:p.tissu, conso:p.consoMoyenne, unite:p.consoUnite||'kg'}] : [];
+}
+function cmdLignesQ(c){
+  const ls = (Array.isArray(c.lignes) ? c.lignes : []).map(l=>({couleur:String(l.couleur||'').trim()||'—', qte:Object.values(l.tailles||{}).reduce((a,v)=>a+(Number(v)||0),0)})).filter(l=>l.qte>0);
+  if(ls.length) return ls;
+  return Number(c.quantite)>0 ? [{couleur:String(c.couleur||'').trim()||'—', qte:Number(c.quantite)}] : [];
+}
+function consoPrevueCmd(c){
+  const p = c.catalogueId ? catalogueById(c.catalogueId) : null; const ts = catTissus(p);
+  const rows = [];
+  cmdLignesQ(c).forEach(l=>ts.forEach(t=>{ const cp = Number(String(t.conso).replace(',','.'))||0; rows.push({couleur:l.couleur, tissu:t.tissu, pieces:l.qte, conso:cp, unite:t.unite||'kg', total:Math.round(cp*l.qte*1000)/1000, key:l.couleur+'|'+t.tissu}); }));
+  return rows;
+}
+function consoParCouleurCompare(c){
+  const rows = consoPrevueCmd(c).filter(r=>r.unite==='kg' && r.conso>0);
+  const re = c.consoReelle || {};
+  const done = rows.filter(r=>re[r.key]!==undefined && re[r.key]!=='' && !isNaN(Number(re[r.key])));
+  if(!done.length) return null;
+  const attendu = done.reduce((a,r)=>a+r.total,0), total = done.reduce((a,r)=>a+Number(re[r.key]),0);
+  if(!(attendu>0)) return null;
+  const nb = cmdLignesQ(c).filter(l=>done.some(r=>r.couleur===l.couleur)).reduce((a,l)=>a+l.qte,0) || 1;
+  const ecart = total-attendu, pct = ecart/attendu*100, seuil = consoSeuil();
+  return {moy:attendu/nb, parPiece:total/nb, nb:nb, attendu:attendu, total:total, ecart:ecart, pct:pct, seuil:seuil, parCouleur:true, status: Math.abs(pct)<=seuil ? 'ok' : (pct>0 ? 'sur' : 'sous')};
+}
+// tableau « par couleur » : prévu (et réel si editable)
+function consoCouleurBlock(c, editable){
+  const rows = consoPrevueCmd(c);
+  const box = el('<div class="cc-box"></div>');
+  if(!rows.length){ box.appendChild(el('<div style="font-size:12px;opacity:.75;">Choisis un produit du catalogue (avec ses tissus et leur consommation) et les quantités par couleur pour voir la consommation par couleur.</div>')); return {node:box, read:()=>null}; }
+  c.consoReelle = c.consoReelle || {};
+  const inputs = {};
+  const t = document.createElement('table'); t.className='cc-table';
+  t.innerHTML = '<thead><tr><th>Couleur</th><th>Tissu</th><th>Pièces</th><th>Conso / pièce</th><th>Prévu</th>'+(editable?'<th>Réel</th><th>Écart</th>':'')+'</tr></thead>';
+  const tb = document.createElement('tbody');
+  let last = null;
+  rows.forEach(r=>{
+    const tr = document.createElement('tr'); if(r.couleur!==last){ tr.className='cc-first'; last = r.couleur; }
+    tr.innerHTML = '<td><b>'+esc(r.couleur)+'</b></td><td>'+esc(r.tissu)+'</td><td>'+r.pieces+'</td><td>'+fmtKg(r.conso)+' '+esc(r.unite)+'</td><td><b>'+fmtKg(r.total)+' '+esc(r.unite)+'</b></td>';
+    if(editable){
+      const td = document.createElement('td'); const inp = document.createElement('input'); inp.type='number'; inp.step='any'; inp.min='0'; inp.inputMode='decimal'; inp.placeholder=r.unite; inp.style.width='80px';
+      inp.value = (c.consoReelle[r.key]!==undefined && c.consoReelle[r.key]!=='') ? c.consoReelle[r.key] : '';
+      td.appendChild(inp); tr.appendChild(td);
+      const ec = document.createElement('td'); tr.appendChild(ec);
+      const upd = ()=>{ const v = inp.value===''?null:Number(inp.value); if(v===null || !(r.total>0)){ ec.innerHTML='—'; return; } const pct = (v-r.total)/r.total*100; const ok = Math.abs(pct)<=consoSeuil(); ec.innerHTML = '<span style="font-weight:800;color:'+(ok?'#1E7A34':(pct>0?'#A42834':'#B26A00'))+'">'+fmtSigned(pct,1)+' %<span class="cc-kg"> ('+fmtSigned(v-r.total,2)+' '+esc(r.unite)+')</span></span>'; };
+      inp.oninput = upd; upd(); inputs[r.key] = inp;
+    }
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+  const tw = el('<div class="table-wrap"></div>'); tw.appendChild(t); box.appendChild(tw);
+  // totaux par tissu
+  const parT = {}; rows.forEach(r=>{ const k = r.tissu+' ('+r.unite+')'; parT[k] = (parT[k]||0)+r.total; });
+  box.appendChild(el('<div class="cc-tot">Total à prévoir : '+Object.keys(parT).map(k=>'<b>'+esc(k.split(' (')[0])+'</b> '+fmtKg(parT[k])+' '+esc(k.split('(')[1].replace(')',''))).join(' · ')+'</div>'));
+  return {node:box, read:()=>{ const o = {}; Object.keys(inputs).forEach(k=>{ if(inputs[k].value!=='') o[k] = Number(inputs[k].value); }); return o; }};
+}
 function consoCore(moy, ti, quantite){
   const g = consoGlobale(ti, quantite);
   if(!(g.parPiece>0)) return null;
@@ -2410,6 +2477,7 @@ function consoCore(moy, ti, quantite){
 }
 function consoCompare(c){
   const prod = c.catalogueId ? catalogueById(c.catalogueId) : null;
+  { const pc = prod ? consoParCouleurCompare(c) : null; if(pc){ pc.prod = prod; return pc; } }
   if(!prod || !matHas(prod.consoMoyenne)) return null;
   if((prod.consoUnite||'kg')!=='kg') return null;     // comparaison seulement en kg
   const r = consoCore(prod.consoMoyenne, c.tissuInfo, c.quantite);
@@ -2538,6 +2606,7 @@ function renderDeptDetails(c, dept){
     item('Tissu', c.tissu);
     item('Couleur', c.couleur);
     item('Quantité à couper', has(c.quantite)?c.quantite+' pièces':'');
+    { const rows = consoPrevueCmd(c); if(rows.length){ const by = {}; rows.forEach(r=>{ (by[r.couleur] = by[r.couleur]||[]).push(esc(r.tissu)+' '+fmtKg(r.total)+' '+esc(r.unite)); }); const d = el('<div class="full"><div class="k">Tissu à couper par couleur</div></div>'); const v = document.createElement('div'); v.innerHTML = Object.keys(by).map(k=>'<b>'+esc(k)+'</b> : '+by[k].join(' · ')).join('<br>'); d.appendChild(v); box.appendChild(d); } }
     if(prod && has(prod.consoMoyenne)){
       const u = prod.consoUnite||'kg';
       item('Conso moyenne', prod.consoMoyenne+' '+u+' / pièce');
@@ -2667,7 +2736,7 @@ function renderDeptCard(c, dept){
   card.appendChild(row2);
 
   // Découpe : remplit Tissu / Matière (poids, côte, accessoires, nombre réel → consommation globale)
-  let matBlock = null;
+  let matBlock = null, ccDec = null;
   if(dept==='decoupe'){
     c.tissuInfo = c.tissuInfo || {};
     card.appendChild(el('<div style="background:#4A6C6F;color:#fff;font-weight:bold;font-size:13px;padding:6px 10px;border-radius:6px;margin:10px 0 8px;">Tissu / Matière</div>'));
@@ -2675,6 +2744,7 @@ function renderDeptCard(c, dept){
     const _moy = (_prod && matHas(_prod.consoMoyenne) && (_prod.consoUnite||'kg')==='kg') ? _prod.consoMoyenne : null;
     matBlock = matiereBlock(c.tissuInfo, c.quantite, null, _moy);
     card.appendChild(matBlock.node);
+    if(consoPrevueCmd(c).length){ card.appendChild(el('<div style="background:#4A6C6F;color:#fff;font-weight:bold;font-size:13px;padding:6px 10px;border-radius:6px;margin:10px 0 8px;">Consommation par couleur (prévu → réel)</div>')); ccDec = consoCouleurBlock(c, true); card.appendChild(ccDec.node); }
   }
 
   let extraRow=null, i4=null;
@@ -2693,6 +2763,7 @@ function renderDeptCard(c, dept){
     dateInputs.forEach(([key,inp])=>{ d[key]=inp.value; });
     if(dept==='confection' && i4) d.fin = i4.value;
     if(matBlock){ Object.assign(c.tissuInfo, matBlock.read()); c.tissuInfo.consoGlobale = consoGlobale(c.tissuInfo, c.quantite).total; }
+    if(ccDec){ const rv = ccDec.read(); if(rv) c.consoReelle = rv; }
     const alerted = matBlock ? maybeSendConsoAlert(c) : false;
     saveState('Mis à jour : '+c.reference+(alerted?' — alerte envoyée à l\'admin':''));
   };
@@ -4383,7 +4454,7 @@ function renderCatalogueTable(){
         const bad = (p.fournitures||[]).map(x=>matF(x.fid)).filter(Boolean).filter(f=>{ const k = matEtat(f).key; return k!=='ok'; });
         if(bad.length) c.appendChild(el('<div style="font-size:10px;color:#E0392D;font-weight:800;">⚠ '+bad.map(f=>esc(f.nom)).join(', ')+'</div>')); }
       td(p.refPatron||'—');
-      td(p.tissu||'—');
+      td(catTissus(p).map(t=>t.tissu).join(' + ')||'—');
       td((p.consoMoyenne!==''&&p.consoMoyenne!=null) ? p.consoMoyenne+' '+(p.consoUnite||'kg')+' / pièce' : '—');
       td((p.tailles||[]).join(' / ')||'—');
       { const c1 = td(catDate(p.creeLe)); c1.style.whiteSpace='normal'; c1.style.maxWidth='92px'; const c2 = td(catDate(p.modifieLe)); c2.style.whiteSpace='normal'; c2.style.maxWidth='92px'; }
@@ -4431,7 +4502,7 @@ function renderCatalogueView(){
   const cmds = (DATA.commandes||[]).filter(c=>c.catalogueId===p.id);
   const totalPcs = cmds.reduce((a,c)=>a+(Number(c.quantite)||0),0);
   const grid = el('<div class="cat-view-grid"></div>');
-  [['Article',esc(p.article||'—')],['Référence',esc(p.refPatron||'—')],['Tissu',esc(p.tissu||'—')],['Conso moyenne',conso],['Tailles disponibles',tailles],['Ajouté le',catDate(p.creeLe)],['Modifié le',catDate(p.modifieLe)],['Commandes lancées',cmds.length+(cmds.length?' · '+totalPcs+' pièces':'')]].forEach(([k,v])=>{
+  [['Article',esc(p.article||'—')],['Référence',esc(p.refPatron||'—')],['Tissu'+(catTissus(p).length>1?'s':''),catTissus(p).length?catTissus(p).map(t=>esc(t.tissu)+(t.conso!==''&&t.conso!=null?' · '+esc(t.conso)+' '+esc(t.unite||'kg'):'')).join('<br>'):'—'],['Conso moyenne',conso],['Tailles disponibles',tailles],['Ajouté le',catDate(p.creeLe)],['Modifié le',catDate(p.modifieLe)],['Commandes lancées',cmds.length+(cmds.length?' · '+totalPcs+' pièces':'')]].forEach(([k,v])=>{
     grid.appendChild(el('<div class="cat-view-item"><span>'+k+'</span><b>'+v+'</b></div>'));
   });
   m.appendChild(grid);
@@ -4489,7 +4560,7 @@ function renderCatalogueModal(){
   tissuSel.onchange = ()=>data.tissu=tissuSel.value;
   tissuWrap.appendChild(tissuSel);
 
-  frow([articleWrap, tissuWrap]);
+  frow([articleWrap]);
 
   // Référence du patron + consommation moyenne de tissu par pièce
   const patWrap = el('<div></div>');
@@ -4508,7 +4579,29 @@ function renderCatalogueModal(){
   cUnit.onchange = ()=>{ data.consoUnite = cUnit.value; };
   cRow.appendChild(cInp); cRow.appendChild(cUnit);
   cWrap.appendChild(cRow);
-  frow([patWrap, cWrap]);
+  frow([patWrap]);
+  // tissus du produit (un produit peut avoir 2 tissus ou plus : corps, côte, doublure…)
+  { const tw = el('<div class="fo-sec"></div>'); m.appendChild(tw);
+    data.tissus = catTissus(data).map(t=>({tissu:t.tissu, conso:t.conso, unite:t.unite||'kg'}));
+    const drawT = ()=>{
+      tw.innerHTML = ''; tw.appendChild(el('<div class="fo-sec-title">Tissus du produit <span>consommation par pièce</span></div>'));
+      if(!data.tissus.length) data.tissus.push({tissu:'', conso:'', unite:'kg'});
+      data.tissus.forEach((t,i)=>{
+        const r = el('<div class="fo-line"></div>');
+        const sel = document.createElement('select'); sel.style.flex='2 1 180px';
+        const o0 = document.createElement('option'); o0.value=''; o0.textContent = i===0 ? '— Tissu principal —' : '— Tissu '+(i+1)+' —'; sel.appendChild(o0);
+        Object.keys(DATA.lists.tissus||{}).sort().forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; if(n===t.tissu) o.selected=true; sel.appendChild(o); });
+        sel.onchange = ()=>{ t.tissu = sel.value; };
+        const q = document.createElement('input'); q.type='number'; q.step='any'; q.min='0'; q.inputMode='decimal'; q.placeholder='conso / pièce'; q.value = (t.conso===undefined||t.conso===null)?'':t.conso; q.style.flex='0 1 110px'; q.oninput = ()=>{ t.conso = q.value===''?'':Number(q.value); };
+        const u = document.createElement('select'); u.style.flex='0 0 70px'; ['kg','m'].forEach(x=>{ const o=document.createElement('option'); o.value=x; o.textContent=x; if((t.unite||'kg')===x) o.selected=true; u.appendChild(o); }); u.onchange = ()=>{ t.unite = u.value; };
+        r.appendChild(sel); r.appendChild(q); r.appendChild(u);
+        if(i>0){ const rm = el('<button class="btn small">✕</button>'); rm.onclick = ()=>{ data.tissus.splice(i,1); drawT(); }; r.appendChild(rm); } else r.appendChild(el('<span style="font-size:11px;font-weight:800;">principal</span>'));
+        tw.appendChild(r);
+      });
+      const add = el('<button class="btn small">+ Ajouter un tissu (côte, doublure…)</button>'); add.onclick = ()=>{ data.tissus.push({tissu:'', conso:'', unite:'kg'}); drawT(); };
+      tw.appendChild(add);
+    };
+    drawT(); }
   // accessoires et fournitures nécessaires par pièce (deux parties)
   data.fournitures = Array.isArray(data.fournitures) ? data.fournitures : [];
   function foSection(title, cats, defCat, ph){
@@ -4600,6 +4693,7 @@ function renderCatalogueModal(){
   const save = el('<button class="btn primary">Enregistrer</button>');
   save.onclick = ()=>{
     if(!data.article || !data.article.trim()){ alert('Le nom du produit est obligatoire.'); return; }
+    if(Array.isArray(data.tissus)){ data.tissus = data.tissus.filter(t=>t.tissu); if(data.tissus.length){ data.tissu = data.tissus[0].tissu; const allKg = data.tissus.every(t=>(t.unite||'kg')==='kg'); const hasC = data.tissus.some(t=>t.conso!==''&&t.conso!=null); data.consoMoyenne = !hasC ? '' : (allKg ? Math.round(data.tissus.reduce((a,t)=>a+(Number(t.conso)||0),0)*1000)/1000 : data.tissus[0].conso); data.consoUnite = allKg ? 'kg' : (data.tissus[0].unite||'kg'); } else { data.tissu = ''; } }
     if(!String(data.refPatron||'').trim()) data.refPatron = nextCatRef();
     const dupRef = (DATA.catalogue||[]).find(x=>x.id!==data.id && catNormRef(x.refPatron)===catNormRef(data.refPatron));
     if(dupRef){ alert('La référence '+data.refPatron+' est déjà utilisée par « '+dupRef.article+' ». Prochaine référence libre : '+nextCatRef()); return; }
@@ -6524,6 +6618,10 @@ function renderModal(){
     field('Date réception', data.stock.dateReception, v=>data.stock.dateReception=v, 'date')
   ]);
 
+  const ccWrap = el('<div></div>'); m.appendChild(ccWrap);
+  let ccBlock = null;
+  const ccDraw = ()=>{ ccWrap.innerHTML=''; if(!data.catalogueId) return; try{ syncLignes(); }catch(e){} ccWrap.appendChild(el('<div class="grp-head" style="background:#4A6C6F">Consommation de tissu par couleur</div>')); ccBlock = consoCouleurBlock(data, mode==='edit'); ccWrap.appendChild(ccBlock.node); const rb = el('<button class="btn small" style="margin:4px 0 10px;">Recalculer</button>'); rb.onclick = ccDraw; ccWrap.appendChild(rb); };
+  ccDraw();
   const foBox = el('<div></div>'); m.appendChild(foBox);
   const foCheck = ()=>{
     foBox.innerHTML = '';
@@ -6545,6 +6643,8 @@ function renderModal(){
   const save = el('<button class="btn primary">Enregistrer</button>');
   save.onclick = ()=>{
     if(!data.reference || !data.reference.trim()){ alert('La référence est obligatoire.'); return; }
+    if(ccBlock && mode==='edit'){ const rv = ccBlock.read(); if(rv) data.consoReelle = rv; }
+    try{ data.consoPrevue = consoPrevueCmd(data).map(r=>({couleur:r.couleur, tissu:r.tissu, pieces:r.pieces, total:r.total, unite:r.unite})); }catch(e){}
     { const mq = foCheck(); if(mq.length && !confirm('Attention : il manque '+mq.map(x=>fmtQ(x.manque)+' '+x.f.unite+' de '+x.f.nom).join(', ')+'.\nEnregistrer quand même la commande ?')) return; }
     if(mode==='create' && !data.commercialId){ alert('Choisis le commercial responsable de cette commande.'); return; }
     data.client = String(data.client||'').trim(); data.article = String(data.article||'').trim();
