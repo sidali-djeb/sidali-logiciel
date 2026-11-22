@@ -567,6 +567,14 @@ button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
 .cr-dot{width:24px;height:24px;border-radius:50%;border:2px solid #001D51;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:0 0 auto}
 .cr-lbl{flex:1}.cr-date{font-size:11px;opacity:.8}
 .cc-box{margin:4px 0 6px}
+.cr-proto-card{border:3px solid #001D51;border-radius:16px;background:#FFF6E6;padding:12px;margin-bottom:12px;box-shadow:4px 4px 0 #001D51}
+.cr-pill{border:2px solid #001D51;border-radius:999px;padding:1px 9px;background:#FFC933;font-size:13px}
+.cr-dec{border:2px dashed #001D51;border-radius:12px;padding:10px;background:#fff;margin-top:8px}
+.cr-dec textarea{width:100%;box-sizing:border-box;border:2px solid #001D51;border-radius:10px;padding:8px;font-family:inherit;background:#FFF6E6}
+.cr-proto-st{border:2px solid #001D51;border-radius:12px;padding:8px 10px;margin-top:10px;background:#fff;font-size:14px;line-height:1.6}
+.cr-st{font-weight:800}.cr-st.wait{color:#C2410C}.cr-st.ok{color:#1E7A34}.cr-st.ko{color:#A42834}
+.cr-ph{margin-top:6px}.cr-ph-row{border-left:4px solid #A42834;padding:3px 8px;margin:4px 0;font-size:13px;background:#FFF6E6;border-radius:0 8px 8px 0}.cr-ph-row.ok{border-left-color:#1E7A34}
+.cr-ph-txt{white-space:pre-wrap;font-weight:600;margin-top:2px}
 .cc-table{width:100%;border-collapse:collapse;font-size:13px}
 .cc-table th{text-align:left;font-size:11px;text-transform:uppercase;padding:5px 6px;border-bottom:2px solid #001D51}
 .cc-table td{padding:5px 6px;border-bottom:1px dashed #ccd}
@@ -1863,7 +1871,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 70 · plusieurs tissus et conso par couleur</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 71 · validation prototype par commercial</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -2779,6 +2787,7 @@ function renderCommercialScreen(){
   w.appendChild(topbar('Espace Commercial', ecarts.length));
   const wrap = el('<div class="wrap"></div>');
   myEvalSection(wrap);
+  crProtoBlock(wrap);
   if(allowedTiles(currentPerson()).length) wrap.appendChild(renderAdminScreen(true));
   psReceptionBlock(wrap, 'commercial');
   psRateBlock(wrap);
@@ -8089,7 +8098,85 @@ function crBlank(){
     description:'', images:[], tissus:[{tissu:'', couleur:'', conso:'', unite:'kg', prix:''}], couleurs:'', tailles:[], fournitures:[], persoTech:'', persoDetail:'', refPatron:'',
     facon:'', coutPerso:'', prixVente:'', etape:0, etapesDates:{0:psNow()}, notes:'', catalogueId:'', refProduit:nextCatRef(), creeLe:psNow(), creePar:view.personId||''};
 }
-function crSetEtape(x, i){ x.etape = i; x.etapesDates = x.etapesDates || {}; x.etapesDates[i] = psNow(); x.etapesPar = x.etapesPar || {}; x.etapesPar[i] = view.personId; saveState(x.ref+' : '+CR_STEPS[i]); }
+function crSetEtape(x, i){ x.etape = i; x.etapesDates = x.etapesDates || {}; x.etapesDates[i] = psNow(); x.etapesPar = x.etapesPar || {}; x.etapesPar[i] = view.personId; if(i===3) crSendProto(x); saveState(x.ref+' : '+CR_STEPS[i]+(i===3?' · commercial prévenu':'')); }
+// ---- validation du prototype par le commercial ----
+function crCanEdit(){ return view.role==='admin' || view.role==='crea' || view.role==='superviseur' || allowedCr(currentPerson()).length>0; }
+function crCommerciaux(x){
+  const all = (DATA.people||[]).filter(p=>p.role==='commercial' && p.active!==false);
+  if(x && x.commercialId){ const one = all.find(p=>p.id===x.commercialId); if(one) return [one]; }
+  return all;
+}
+function crNotify(ids, text, x){
+  const me = currentPerson(); DATA.messages = DATA.messages || [];
+  Array.from(new Set(ids.filter(Boolean))).forEach((id,k)=>{
+    DATA.messages.push({id:'msg_'+Date.now()+'_'+k+'_'+Math.random().toString(36).slice(2,6), author:(me?me.name:'Créa'), role:view.role, personId:view.personId||'system', to:id, crId:x.id, text:text, ts:new Date().toISOString()});
+  });
+  if(DATA.messages.length>200) DATA.messages = DATA.messages.slice(-200);
+}
+function crSendProto(x){
+  const tour = ((x.proto&&x.proto.tour)||0)+1;
+  x.proto = {statut:'attente', depuis:psNow(), par:view.personId||'', tour:tour};
+  const to = crCommerciaux(x).map(p=>p.id);
+  crNotify(to, '🧵 Prototype prêt à valider : '+(x.nom||'')+' ('+(x.refProduit||x.ref)+')'+(tour>1?' — version '+tour+' après retouches':'')+(x.client?' · client '+x.client:'')+'. Ouvre ton espace Commercial → « Prototypes à valider » : Valider s’il n’y a pas de retouche, sinon écris les retouches.', x);
+  return to.length;
+}
+function crCreaPeople(x){
+  let ids = [x.responsable, x.creePar, x.proto && x.proto.par].filter(id=>id && id!==view.personId && (DATA.people||[]).some(p=>p.id===id));
+  if(!ids.length) ids = (DATA.people||[]).filter(p=>p.role==='admin' && p.id!==view.personId).map(p=>p.id);
+  return ids;
+}
+function crProtoDecision(x, ok, texte){
+  const me = currentPerson(); const who = me ? me.name : (ROLE_LABEL[view.role]||'');
+  x.proto = x.proto || {tour:1};
+  x.protoHist = x.protoHist || [];
+  x.protoHist.push({tour:x.proto.tour||1, statut: ok?'valide':'retouches', texte: ok?'':texte, le:psNow(), par:view.personId||''});
+  x.proto.statut = ok ? 'valide' : 'retouches'; x.proto.texte = ok ? '' : texte; x.proto.decideLe = psNow(); x.proto.decidePar = view.personId||'';
+  const i = ok ? 5 : 4;
+  x.etape = i; x.etapesDates = x.etapesDates || {}; x.etapesDates[i] = psNow(); x.etapesPar = x.etapesPar || {}; x.etapesPar[i] = view.personId;
+  crNotify(crCreaPeople(x), ok ? '✅ Prototype VALIDÉ par '+who+' : '+(x.nom||'')+' ('+(x.refProduit||x.ref)+'). Aucune retouche.' : '✎ Retouches demandées par '+who+' pour '+(x.nom||'')+' ('+(x.refProduit||x.ref)+') : '+texte, x);
+  saveState(ok ? 'Prototype validé : '+(x.nom||'') : 'Retouches envoyées à la Créa');
+}
+function crProtoHistHtml(x, skipLast){
+  let h = x.protoHist || []; if(skipLast) h = h.slice(0,-1); if(!h.length) return '';
+  return '<div class="cr-ph">'+h.map(r=>'<div class="cr-ph-row '+(r.statut==='valide'?'ok':'ko')+'"><b>Version '+r.tour+' · '+(r.statut==='valide'?'✓ Validé':'✎ Retouches')+'</b> — '+esc(crPersonName(r.par)||'')+' · '+fmtDT(r.le)+(r.texte?'<div class="cr-ph-txt">'+esc(r.texte)+'</div>':'')+'</div>').join('')+'</div>';
+}
+function crProtoDecisionBox(x){
+  const box = el('<div class="cr-dec"></div>');
+  box.appendChild(el('<div style="font-weight:800;margin-bottom:6px;">Ta décision sur le prototype'+(x.proto&&x.proto.tour>1?' (version '+x.proto.tour+')':'')+'</div>'));
+  const ta = document.createElement('textarea'); ta.rows = 3; ta.placeholder = 'Retouches à faire (ex : allonger les manches de 2 cm, col plus serré, changer la couleur du logo…)'; box.appendChild(ta);
+  const row = el('<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>');
+  const ok = el('<button class="btn primary" style="background:#37D6A5;">✓ Valider — aucune retouche</button>');
+  ok.onclick = ()=>{ if(ta.value.trim() && !confirm('Tu as écrit des retouches. Valider quand même sans retouche ?')) return; crProtoDecision(x, true, ''); };
+  const ko = el('<button class="btn" style="background:#FFE1DE;">✎ Envoyer les retouches</button>');
+  ko.onclick = ()=>{ const t = ta.value.trim(); if(!t){ alert('Écris d’abord les retouches à faire.'); ta.focus(); return; } crProtoDecision(x, false, t); };
+  row.appendChild(ok); row.appendChild(ko); box.appendChild(row);
+  return box;
+}
+function crProtosPourMoi(){
+  return ((DATA.crea||{}).produits||[]).filter(x=>crEtape(x).i===3 && x.proto && x.proto.statut==='attente' && (view.role==='admin' || !x.commercialId || x.commercialId===view.personId || !crCommerciaux(x).some(p=>p.id===x.commercialId)));
+}
+function crProtoBlock(wrap){
+  const items = crProtosPourMoi(); if(!items.length) return;
+  wrap.appendChild(el('<div class="section-title" style="background:#C2410C;">Prototypes à valider ('+items.length+')</div>'));
+  const body = el('<div class="section-body"></div>');
+  items.forEach(x=>{
+    const card = el('<div class="cr-proto-card"></div>');
+    const top = el('<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;"></div>');
+    if((x.images||[])[0]) top.appendChild(el('<img src="'+x.images[0]+'" style="width:120px;height:120px;object-fit:cover;border:2px solid #001D51;border-radius:12px;background:#fff;">'));
+    const inf = el('<div style="flex:1 1 220px;font-size:14px;line-height:1.6;"></div>');
+    inf.innerHTML = '<div style="font-size:17px;font-weight:800;">'+esc(x.nom||'')+' <span class="cr-pill">'+esc(x.refProduit||x.ref)+'</span></div>'
+      +(x.client?'<b>Client :</b> '+esc(x.client)+'<br>':'')+(x.collection?'<b>Collection :</b> '+esc(x.collection)+'<br>':'')
+      +'<b>Envoyé le :</b> '+fmtDT(x.proto.depuis)+(x.proto.par?' par '+esc(crPersonName(x.proto.par)):'')+(x.proto.tour>1?' · <b>version '+x.proto.tour+'</b> (après retouches)':'')
+      +(x.description?'<br><b>Description :</b> '+esc(x.description):'');
+    top.appendChild(inf); card.appendChild(top);
+    const h = crProtoHistHtml(x); if(h) card.appendChild(el('<div><div style="font-weight:800;font-size:13px;margin-top:8px;">Retouches précédentes</div>'+h+'</div>'));
+    const vb = el('<button class="btn small" style="margin:8px 0;">Voir la fiche complète</button>'); vb.onclick = ()=>{ view.crView = x.id; render(); }; card.appendChild(vb);
+    card.appendChild(crProtoDecisionBox(x));
+    body.appendChild(card);
+  });
+  wrap.appendChild(body);
+}
+
 function crUrl(x){ return siteBase()+'/?crea='+encodeURIComponent(x.id); }
 function crFindPublic(id, ref){
   const list = (((DATA.crea||{}).produits)||[]);
@@ -8206,7 +8293,9 @@ function crPanelSuivi(panel){
         +'<div style="font-size:12px;font-weight:700;">'+esc(x.nom||'')+'</div>'
         +(x.collection?'<div style="font-size:11px;">'+esc(x.collection)+(x.saison?' · '+esc(x.saison):'')+'</div>':'')
         +(x.dateObjectif?'<div style="font-size:11px;font-weight:700;color:'+(late?'#E0392D':'#001D51')+'">objectif '+fmtDate(x.dateObjectif)+(late?' ⚠':'')+'</div>':'')
-        +(x.catalogueId?'<div style="font-size:10px;font-weight:800;color:#1E7A34;">✓ dans le catalogue</div>':'');
+        +(x.catalogueId?'<div style="font-size:10px;font-weight:800;color:#1E7A34;">✓ dans le catalogue</div>':'')
+        +(i===3 && x.proto && x.proto.statut==='attente'?'<div style="font-size:10px;font-weight:800;color:#C2410C;">⏳ attend le commercial</div>':'')
+        +(i===4 && x.proto && x.proto.statut==='retouches'?'<div style="font-size:11px;font-weight:700;color:#A42834;">✎ '+esc(String(x.proto.texte||'').slice(0,70))+'</div>':'');
       card.onclick = ()=>{ view.crView = x.id; render(); };
       col.appendChild(card);
     });
@@ -8327,6 +8416,15 @@ function renderCrView(){
       +(x.catalogueId?'<br><b style="color:#1E7A34;">✓ Ajouté au catalogue produits de la Confection'+(x.refProduit?' — référence '+esc(x.refProduit):'')+'</b>':'')
       +(x.notes?'<br><b>Notes :</b> '+esc(x.notes):'');
     m.appendChild(info);
+    if(x.proto || (x.protoHist||[]).length){
+      const st = x.proto ? x.proto.statut : '';
+      const pb = el('<div class="cr-proto-st"></div>');
+      pb.innerHTML = '<b>Validation du prototype</b> · commercial : '+esc(crCommerciaux(x).map(p=>p.name).join(', ')||'aucun compte commercial')
+        +'<br>'+(st==='attente'?'<span class="cr-st wait">⏳ En attente du commercial depuis '+fmtDT(x.proto.depuis)+'</span>':st==='valide'?'<span class="cr-st ok">✓ Validé par '+esc(crPersonName(x.proto.decidePar))+' le '+fmtDT(x.proto.decideLe)+'</span>':st==='retouches'?'<span class="cr-st ko">✎ Retouches demandées par '+esc(crPersonName(x.proto.decidePar))+'</span><div class="cr-ph-txt" style="font-size:15px;">'+esc(x.proto.texte||'')+'</div>':'')
+        +crProtoHistHtml(x, st==='retouches' || st==='valide');
+      m.appendChild(pb);
+    }
+    if(e.i===3 && x.proto && x.proto.statut==='attente' && (view.role==='admin' || view.role==='commercial')) m.appendChild(crProtoDecisionBox(x));
   }
   const actions = el('<div class="actions" style="flex-wrap:wrap;"></div>');
   const cl = el('<button class="btn">Fermer</button>'); cl.onclick = close; actions.appendChild(cl);
@@ -8334,10 +8432,17 @@ function renderCrView(){
     const pr = el('<button class="btn">Imprimer la fiche</button>'); pr.onclick = ()=>crPrint(x); actions.appendChild(pr);
     const lb = el('<button class="btn">Étiquette QR</button>'); lb.onclick = ()=>crPrintLabel(x); actions.appendChild(lb);
     const cp = el('<button class="btn">Copier le lien de suivi</button>'); cp.onclick = ()=>{ const u = crUrl(x); (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(()=>showToast('✓ Lien copié : '+u)).catch(()=>prompt('Lien de suivi à copier :', u)); }; actions.appendChild(cp);
-    const md = el('<button class="btn">Modifier</button>'); md.onclick = ()=>{ view.crView=null; view.crModal = {mode:'edit', data:JSON.parse(JSON.stringify(x))}; render(); }; actions.appendChild(md);
     const e = crEtape(x);
-    if(e.i<5){ const nx = el('<button class="btn primary">Étape suivante : '+esc(CR_STEPS[e.i+1])+'</button>'); nx.onclick = ()=>crSetEtape(x, e.i+1); actions.appendChild(nx); }
+    if(crCanEdit()){
+    const md = el('<button class="btn">Modifier</button>'); md.onclick = ()=>{ view.crView=null; view.crModal = {mode:'edit', data:JSON.parse(JSON.stringify(x))}; render(); }; actions.appendChild(md);
+    if(e.i===3){
+      if(!x.proto || x.proto.statut!=='attente'){ const sd = el('<button class="btn primary">Envoyer le prototype au commercial</button>'); sd.onclick = ()=>{ const n = crSendProto(x); saveState(n ? 'Commercial prévenu' : 'Aucun compte commercial actif'); }; actions.appendChild(sd); }
+      else { const rs = el('<button class="btn">Relancer le commercial</button>'); rs.onclick = ()=>{ crNotify(crCommerciaux(x).map(p=>p.id), '🔔 Rappel : le prototype '+(x.nom||'')+' ('+(x.refProduit||x.ref)+') attend ta validation (espace Commercial → Prototypes à valider).', x); saveState('Rappel envoyé au commercial'); }; actions.appendChild(rs); }
+    } else if(e.i===4){
+      const rf = el('<button class="btn primary">Retouches faites → renvoyer au commercial</button>'); rf.onclick = ()=>crSetEtape(x, 3); actions.appendChild(rf);
+    } else if(e.i<5){ const nx = el('<button class="btn primary">Étape suivante : '+esc(CR_STEPS[e.i+1])+'</button>'); nx.onclick = ()=>crSetEtape(x, e.i+1); actions.appendChild(nx); }
     if(e.i>=5){ const ct = el('<button class="btn primary" style="background:#37D6A5;">'+(x.catalogueId?'Mettre à jour le catalogue':'Ajouter au catalogue produits')+'</button>'); ct.onclick = ()=>{ if(!String(x.nom||'').trim()){ alert('Le produit doit avoir un nom.'); return; } crToCatalogue(x); }; actions.appendChild(ct); }
+    }
   }
   m.appendChild(actions);
   overlay.appendChild(m);
@@ -8375,7 +8480,7 @@ function renderCrModal(){
   sec('1. Identité du produit');
   frow([field('Nom du produit *','nom',{ph:'ex : Hoodie Oversize Signature'}), field('Collection','collection',{list:'dl-cr-col', ph:'ex : Été 2027'})]);
   frow([select('Catégorie','categorie', CR_CATS.map(v=>[v,v])), select('Cible','cible', CR_CIBLES.map(v=>[v,v]))]);
-  frow([field('Client (si création sur demande)','client',{ph:'facultatif'})]);
+  frow([field('Client (si création sur demande)','client',{ph:'facultatif'}), select('Commercial qui valide le prototype','commercialId', [['','Tous les commerciaux']].concat((DATA.people||[]).filter(p=>p.role==='commercial' && (p.active!==false || p.id===data.commercialId)).map(p=>[p.id, p.name])))]);
   frow([field('Saison','saison',{ph:'ex : Printemps-Été'}), select('Responsable','responsable', [['','—']].concat((DATA.people||[]).filter(p=>p.active!==false).map(p=>[p.id, p.name+' ('+(ROLE_LABEL[p.role]||p.role)+')'])))]);
   frow([field('Date objectif (lancement)','dateObjectif',{type:'date'}), select('Étape','etape', CR_STEPS.slice(0,6).map((s,i)=>[i,(i+1)+'. '+s]))]);
   frow([field('Description / idée','description',{area:true, ph:'Style, coupe, détails, inspiration…'})]);
@@ -8468,6 +8573,7 @@ function renderCrModal(){
     data.etape = Number(data.etape)||0;
     const old = c.produits.find(x=>x.id===data.id);
     if(old && Number(old.etape)!==data.etape){ data.etapesDates = data.etapesDates || {}; data.etapesDates[data.etape] = psNow(); }
+    if(data.etape===3 && (!old || Number(old.etape)!==3)) crSendProto(data);
     const i = c.produits.findIndex(x=>x.id===data.id);
     if(i>=0) c.produits[i] = data; else c.produits.push(data);
     view.crModal = null; view.crView = data.id;
