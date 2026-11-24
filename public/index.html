@@ -567,6 +567,11 @@ button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
 .cr-dot{width:24px;height:24px;border-radius:50%;border:2px solid #001D51;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:0 0 auto}
 .cr-lbl{flex:1}.cr-date{font-size:11px;opacity:.8}
 .cc-box{margin:4px 0 6px}
+.mat-col-info{font-size:13px;margin:0 0 8px;background:#FFF6E6;border:2px dashed #001D51;border-radius:10px;padding:6px 10px}
+.mat-col{border:2px solid #001D51;border-radius:12px;padding:8px 10px;margin-bottom:10px;background:#fff}
+.mat-col-h{display:flex;justify-content:space-between;align-items:center;background:#FFC933;border:2px solid #001D51;border-radius:999px;padding:3px 12px;margin-bottom:8px;font-size:14px}
+.mat-col-h span{font-size:12px;font-weight:700}
+.mat-tot{border-width:3px}
 .ps-com{display:inline-block;background:#FFC933;border:2px solid #001D51;border-radius:999px;padding:1px 8px;font-size:12px;margin-top:2px}
 .ps-com.sm{font-size:10px;padding:0 6px;border-width:1.5px}
 .modal .ps-tchk,.ps-tchk{display:inline-flex;align-items:center;gap:4px;border:2px solid #001D51;border-radius:999px;padding:5px 12px;font-weight:800;font-size:14px;cursor:pointer;margin:0}
@@ -1876,7 +1881,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 77 · étape DTF prête</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 78 · matière par couleur en découpe</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -2585,6 +2590,57 @@ function matiereBlock(ti, quantite, onInput, moyenne){
   return {node:box, read:read};
 }
 
+// ---- Tissu / Matière par couleur (découpe d'une commande à plusieurs couleurs) ----
+function matAggregate(pc, ls){
+  let nbT = 0, wP = 0, wC = 0, wA = 0, mat = 0, tra = 0, hasMat = false, hasTra = false, anyReel = false, anyP = false, anyC = false, anyA = false;
+  ls.forEach(l=>{
+    const v = pc[l.couleur] || {};
+    const reel = matHas(v.nombreReel); if(reel) anyReel = true;
+    const nb = reel ? matNum(v.nombreReel) : l.qte; nbT += nb;
+    if(matHas(v.poidsPiece)){ anyP = true; wP += nb*matNum(v.poidsPiece); }
+    if(matHas(v.poidsCote)){ anyC = true; wC += nb*matNum(v.poidsCote); }
+    if(matHas(v.poidsAccessoires)){ anyA = true; wA += nb*matNum(v.poidsAccessoires); }
+    if(matHas(v.poidsMatelas)){ hasMat = true; mat += matNum(v.poidsMatelas); }
+    if(matHas(v.poidsTrace)){ hasTra = true; tra += matNum(v.poidsTrace); }
+  });
+  const r = x=>Math.round(x*1e10)/1e10;
+  return {poidsMatelas: hasMat ? r(mat) : '', poidsTrace: hasTra ? r(tra) : '',
+    poidsPiece: anyP && nbT ? r(wP/nbT) : '', poidsCote: anyC && nbT ? r(wC/nbT) : '', poidsAccessoires: anyA && nbT ? r(wA/nbT) : '',
+    nombreReel: anyReel ? nbT : ''};
+}
+function matiereCouleursBlock(c, moyenne, onInput){
+  const ls = cmdLignesQ(c);
+  if(ls.length<2){
+    const b = matiereBlock(c.tissuInfo, c.quantite, onInput ? (v=>onInput({agg:v, parCouleur:null})) : null, moyenne);
+    return {node:b.node, read:()=>({agg:b.read(), parCouleur:null})};
+  }
+  const prev = c.tissuParCouleur || {};
+  const box = el('<div class="mat-cols"></div>');
+  box.appendChild(el('<div class="mat-col-info">Cette commande a '+ls.length+' couleurs : remplis les poids <b>pour chaque couleur</b>.</div>'));
+  const blocks = []; let ready = false;
+  ls.forEach(l=>{
+    const sec = el('<div class="mat-col"><div class="mat-col-h"><b>'+esc(l.couleur)+'</b><span>'+l.qte+' pièces</span></div></div>');
+    const b = matiereBlock(prev[l.couleur] || {}, l.qte, ()=>upd(), moyenne);
+    sec.appendChild(b.node); box.appendChild(sec); blocks.push({couleur:l.couleur, qte:l.qte, b:b});
+  });
+  const tot = el('<div class="mat-res mat-tot"></div>'); box.appendChild(tot);
+  function readAll(){ const pc = {}; blocks.forEach(x=>{ pc[x.couleur] = x.b.read(); }); return {parCouleur:pc, agg:matAggregate(pc, ls)}; }
+  function upd(){
+    const r = readAll(); const g = consoGlobale(r.agg, c.quantite);
+    tot.innerHTML = '<div class="mat-line big"><span>Total toutes couleurs</span><b>'+fmtKg(g.total)+' kg</b></div>'
+      + '<div class="mat-formula">'+blocks.map(x=>esc(x.couleur)+' : '+fmtKg(consoGlobale(r.parCouleur[x.couleur], x.qte).total)+' kg').join(' · ')+'</div>';
+    if(ready && onInput) onInput(r);
+  }
+  upd(); ready = true;
+  return {node:box, read:readAll};
+}
+function matParCouleurTexte(c){
+  const pc = c.tissuParCouleur; if(!pc) return '';
+  const ls = cmdLignesQ(c);
+  const parts = ls.map(l=>{ const v = pc[l.couleur]; if(!v) return ''; const g = consoGlobale(v, l.qte); return g.total>0 ? l.couleur+' : '+fmtKg(g.total)+' kg' : ''; }).filter(Boolean);
+  return parts.join(' · ');
+}
+
 // Informations utiles à chaque département (affichées sur chaque carte de tâche)
 function renderDeptDetails(c, dept){
   const box = el('<div class="dept-det"></div>');
@@ -2622,6 +2678,7 @@ function renderDeptDetails(c, dept){
     item('Couleur', c.couleur);
     item('Quantité à couper', has(c.quantite)?c.quantite+' pièces':'');
     { const rows = consoPrevueCmd(c); if(rows.length){ const by = {}; rows.forEach(r=>{ (by[r.couleur] = by[r.couleur]||[]).push(esc(r.tissu)+' '+fmtKg(r.total)+' '+esc(r.unite)); }); const d = el('<div class="full"><div class="k">Tissu à couper par couleur</div></div>'); const v = document.createElement('div'); v.innerHTML = Object.keys(by).map(k=>'<b>'+esc(k)+'</b> : '+by[k].join(' · ')).join('<br>'); d.appendChild(v); box.appendChild(d); } }
+    { const t = matParCouleurTexte(c); if(t) item('Conso réelle par couleur (découpe)', t, true); }
     if(prod && has(prod.consoMoyenne)){
       const u = prod.consoUnite||'kg';
       item('Conso moyenne', prod.consoMoyenne+' '+u+' / pièce');
@@ -2757,7 +2814,7 @@ function renderDeptCard(c, dept){
     card.appendChild(el('<div style="background:#4A6C6F;color:#fff;font-weight:bold;font-size:13px;padding:6px 10px;border-radius:6px;margin:10px 0 8px;">Tissu / Matière</div>'));
     const _prod = c.catalogueId ? catalogueById(c.catalogueId) : null;
     const _moy = (_prod && matHas(_prod.consoMoyenne) && (_prod.consoUnite||'kg')==='kg') ? _prod.consoMoyenne : null;
-    matBlock = matiereBlock(c.tissuInfo, c.quantite, null, _moy);
+    matBlock = matiereCouleursBlock(c, _moy);
     card.appendChild(matBlock.node);
     if(consoPrevueCmd(c).length){ card.appendChild(el('<div style="background:#4A6C6F;color:#fff;font-weight:bold;font-size:13px;padding:6px 10px;border-radius:6px;margin:10px 0 8px;">Consommation par couleur (prévu → réel)</div>')); ccDec = consoCouleurBlock(c, true); card.appendChild(ccDec.node); }
   }
@@ -2777,7 +2834,7 @@ function renderDeptCard(c, dept){
     d.par = view.personId || '';
     dateInputs.forEach(([key,inp])=>{ d[key]=inp.value; });
     if(dept==='confection' && i4) d.fin = i4.value;
-    if(matBlock){ Object.assign(c.tissuInfo, matBlock.read()); c.tissuInfo.consoGlobale = consoGlobale(c.tissuInfo, c.quantite).total; }
+    if(matBlock){ const rr = matBlock.read(); Object.assign(c.tissuInfo, rr.agg); if(rr.parCouleur) c.tissuParCouleur = rr.parCouleur; c.tissuInfo.consoGlobale = consoGlobale(c.tissuInfo, c.quantite).total; }
     if(ccDec){ const rv = ccDec.read(); if(rv) c.consoReelle = rv; }
     const alerted = matBlock ? maybeSendConsoAlert(c) : false;
     saveState('Mis à jour : '+c.reference+(alerted?' — alerte envoyée à l\'admin':''));
@@ -6612,7 +6669,7 @@ function renderModal(){
   if(mode==='edit'){
     m.appendChild(el('<div class="grp-head" style="background:#4A6C6F">Tissu / Matière (rempli par la Découpe)</div>'));
     data.tissuInfo = data.tissuInfo || {};
-    const mb = matiereBlock(data.tissuInfo, data.quantite, v=>{ Object.assign(data.tissuInfo, v); data.tissuInfo.consoGlobale = consoGlobale(data.tissuInfo, data.quantite).total; });
+    const mb = matiereCouleursBlock(data, undefined, r=>{ Object.assign(data.tissuInfo, r.agg); if(r.parCouleur) data.tissuParCouleur = r.parCouleur; data.tissuInfo.consoGlobale = consoGlobale(data.tissuInfo, data.quantite).total; });
     m.appendChild(mb.node);
   }
 
