@@ -628,7 +628,7 @@ button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
 <body>
 <div id="app" class="app"><div style="padding:60px 20px;text-align:center;color:#6B6560;font-family:Arial,sans-serif;font-size:13px;">Chargement…</div></div>
 <script>window.addEventListener("error",function(e){var a=document.getElementById("app");if(a&&/Chargement/.test(a.textContent)&&a.children.length<=1){a.innerHTML='<div style="padding:40px 20px;text-align:center;font-family:Arial,sans-serif;color:#A42834;font-size:14px;"><b>Erreur au démarrage</b><br>'+String(e.message||e).replace(/</g,"&lt;")+'<br><br>Recharge la page (Ctrl+Shift+R). Si le fichier a été ouvert depuis le PC, il est peut-être incomplet : télécharge-le à nouveau.</div>';}});</script>
-<script id="seed-data" type="application/json">{"companyTitle": "Suivi de production", "people": [], "lists": {"tailles": ["S", "M", "L", "XL", "XXL"], "tissus": {"ELIXIR": ["NOIR", "BLANC", "GRIS CHINÉ"]}}, "catalogue": [], "commandes": [], "messages": []}</script>
+<script id="seed-data" type="application/json">{"companyTitle": "Suivi de production", "people": [{"id": "p_admin", "name": "Sidali", "email": "sidalidjebari@gmail.com", "role": "admin", "code": "9999", "active": true}, {"id": "p_commercial", "name": "Responsable Commercial", "email": "commercial@example.com", "role": "commercial", "code": "5005", "active": true}, {"id": "p_decoupe", "name": "Responsable Découpe", "email": "decoupe@example.com", "role": "decoupe", "code": "1001", "active": true}, {"id": "p_confection", "name": "Responsable Confection", "email": "confection@example.com", "role": "confection", "code": "2002", "active": true}, {"id": "p_emballage", "name": "Responsable Emballage", "email": "emballage@example.com", "role": "emballage", "code": "3003", "active": true}, {"id": "p_stock", "name": "Responsable Stock", "email": "stock@example.com", "role": "stock", "code": "4004", "active": true}], "lists": {"tailles": ["S", "M", "L", "XL", "XXL"], "tissus": {"ELIXIR": ["NOIR", "BLANC", "GRIS CHINÉ"]}}, "catalogue": [{"id": "prod_1", "article": "T-SHIRT OVERSIZE", "tissu": "ELIXIR", "tailles": ["S", "M", "L", "XL"], "photo": ""}], "commandes": [{"id": "cmd_1", "catalogueId": "prod_1", "reference": "JB00300", "client": "DJEBS STOCK", "article": "T-SHIRT OVERSIZE", "tissu": "ELIXIR", "tailles": {"S": 50, "M": 50, "L": 50, "XL": 50}, "couleur": "NOIR", "quantite": 200, "dateCommande": "2026-09-01", "dateLivraisonPrevue": "", "urgent": false, "decoupe": {"statut": "Prête", "prevueLe": "2026-09-03", "faiteLe": "2026-09-03"}, "confection": {"statut": "En cours", "atelier": "Chaîne 1", "debut": "2026-09-04", "fin": ""}, "emballage": {"statut": "En attente", "debut": "", "fin": ""}, "tissuInfo": {"poidsMatelas": 120.5, "poidsPiece": 0.24, "consoTissu": 118.2}, "notes": "Exemple — remplacez par vos commandes", "stock": {"quantiteRecue": "", "dateReception": ""}, "ecartGere": false, "ecartNotes": []}], "messages": []}</script>
 <script>
 /* QR encoder — QRCode for JavaScript, Copyright (c) 2009 Kazuhiko Arase, MIT license (http://www.opensource.org/licenses/mit-license.php). QR Code is a registered trademark of DENSO WAVE INCORPORATED. */
 var QRLib=(function(){var __m={};function __req(n){n=n.replace('./','');return __m[n].exports;}
@@ -1854,26 +1854,19 @@ function renderLogin(){
   form.appendChild(el('<div class="pin-error">'+(view.loginError||'')+'</div>'));
 
   const btn = el('<button class="btn primary" style="width:100%;margin-top:4px;">Se connecter</button>');
-  const doLogin = async ()=>{
-    if(view.loginBusy) return;
-    view.loginBusy = true; btn.disabled = true; btn.textContent = 'Connexion…';
-    let r = null;
-    try{ r = await rpc('app_login', {p_id:idInput.value, p_code:codeInput.value}); }catch(e){ r = {ok:false, error:'reseau'}; }
-    view.loginBusy = false;
-    if(!r || !r.ok || !r.person){
-      view.loginError = (r && r.error==='bloque') ? 'Trop d’essais ratés : attends 15 minutes puis réessaie.' : ((r && r.error==='reseau') ? 'Pas de connexion internet : réessaie.' : 'Email/nom ou code incorrect.');
+  const doLogin = ()=>{
+    const person = findPersonForLogin(idInput.value, codeInput.value);
+    if(!person){
+      view.loginError = 'Email/nom ou code incorrect.';
       view.loginCode = '';
       render();
       return;
     }
-    TOKEN = r.token; LOADED_PERSON = r.person;
-    applyRemoteData(r.data || {});
-    const person = (DATA.people||[]).find(p=>p.id===r.person.id) || r.person;
     view.personId = person.id;
     view.role = person.role;
     view.screen = screenForRole(person.role);
     view.loginId=''; view.loginCode=''; view.loginError='';
-    saveSession(person.id, r.token);
+    saveSession(person.id);
     applyScan();
     render();
   };
@@ -1882,7 +1875,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 75 · commercial en personnalisation</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 76 · commercial en personnalisation</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -1903,13 +1896,6 @@ function publicSteps(c){
   });
 }
 function renderTrackResult(box){
-  if(view.personId) return renderTrackResultInner(box);
-  // visiteur : on affiche seulement ce que la base a renvoyé pour cette référence
-  const saved = DATA; const TD = view.trackData || {};
-  DATA = Object.assign({}, saved, {commandes: TD.commandes||[], crea:{produits:((TD.crea||{}).produits)||[]}, perso:{jobs:((TD.perso||{}).jobs)||[]}, people: TD.people||[]});
-  try{ renderTrackResultInner(box); } finally { DATA = saved; }
-}
-function renderTrackResultInner(box){
   box.innerHTML = '';
   let c = null;
   const ref = (view.trackRef||'').trim();
@@ -1957,11 +1943,7 @@ function renderTrackBlock(){
     view.trackRef = inp.value; view.trackId = null; view.trackCrId = null; view.trackPsId = null; view.trackSearched = true;
     if(!view.trackRef.trim()){ renderTrackResult(result); return; }
     result.innerHTML = '<div class="search-msg">Recherche…</div>';
-    if(view.personId) await loadDataFromSupabase();
-    else{
-      try{ view.trackData = await rpc('app_track', {p_q:view.trackRef, p_kind:null, p_id:null}); }
-      catch(e){ view.trackData = null; result.innerHTML = '<div class="search-msg" style="color:var(--red);">Pas de connexion internet : réessaie.</div>'; return; }
-    }
+    await loadDataFromSupabase();
     renderTrackResult(result);
   };
   inp.oninput = ()=>{ view.trackRef = inp.value; };
@@ -2113,8 +2095,13 @@ function refreshChatUI(){
   }
 }
 async function fetchRemoteMessages(){
-  if(!TOKEN) return null;
-  try{ const r = await rpc('app_messages', {p_token:TOKEN}); if(!r || !r.ok){ if(r && r.error==='session') sessionExpired(); return null; } return Array.isArray(r.messages) ? r.messages : []; }catch(e){ return null; }
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main&select=data->messages`, { headers: { 'apikey': SUPABASE_KEY }, cache:'no-store' });
+    if(!res.ok) return null;
+    const rows = await res.json();
+    const msgs = rows && rows[0] ? rows[0].messages : null;
+    return Array.isArray(msgs) ? msgs : [];
+  }catch(e){ return null; }
 }
 function mergeMessages(remote){
   DATA.messages = DATA.messages || [];
@@ -3361,11 +3348,7 @@ function downloadFile(name, text, mime){
   setTimeout(()=>URL.revokeObjectURL(url), 2000);
 }
 function backupPayload(){ return {app:'suivi-production-dj', version:18, exportedAt:new Date().toISOString(), data:DATA}; }
-async function exportJSON(){
-  const p = backupPayload();
-  if(view.role==='admin' && TOKEN){ try{ const r = await rpc('app_export', {p_token:TOKEN}); if(r && r.ok && r.data) p.data = r.data; }catch(e){} }
-  downloadFile('sauvegarde_djebs_'+todayISO()+'.json', JSON.stringify(p), 'application/json');
-}
+function exportJSON(){ downloadFile('sauvegarde_djebs_'+todayISO()+'.json', JSON.stringify(backupPayload()), 'application/json'); }
 function csvCell(v){ if(typeof v==='number' && !Number.isInteger(v)) v = String(v).replace('.',','); return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'; }
 function csvFile(name, header, rows){
   const lines = [header].concat(rows).map(r=>r.map(csvCell).join(';'));
@@ -3690,7 +3673,8 @@ function renderImportModal(){
   cancel.onclick = ()=>{ view.importModal=null; render(); };
   function finish(msg){
     view.importModal = null;
-    saveState(msg).then(()=>{ if(view.personId && !currentPerson()){ clearSession(); view.screen='login'; view.role=null; view.personId=null; render(); } });
+    if(!currentPerson()){ clearSession(); view.screen='login'; view.role=null; view.personId=null; }
+    saveState(msg);
   }
   if(st.type==='generic'){
     const p = document.createElement('p'); p.style.cssText='font-size:13px;margin:0 0 10px;'; p.textContent = st.headline; m.appendChild(p);
@@ -4152,7 +4136,7 @@ function renderPeopleTable(){
     td(p.email||'—');
     td(ROLE_LABEL[p.role]||p.role);
     td(deptName(deptOf(p)));
-    td(p.code ? p.code : (p.hasCode ? '•••• (caché)' : '—'));
+    td(p.code||'—');
     td(p.active!==false ? 'Oui' : 'Non');
     const editTd = document.createElement('td');
     const b = document.createElement('button'); b.className='btn small'; b.textContent='Modifier';
@@ -4202,7 +4186,7 @@ function renderPersonModal(){
   ]);
   frow([
     field('Rôle / département', data.role, v=>{ data.role=v; data.tiles=undefined; data.triTiles=undefined; data.psTiles=undefined; data.crTiles=undefined; if(v==='tricotage'||v==='personnalisation'||v==='crea'){ data.departement=v; const ds=m.querySelector('select[data-dep]'); if(ds) ds.value=v; } refreshPerm(); }, 'role-select'),
-    field(data.hasCode ? 'Nouveau code (vide = garder l\u2019actuel)' : 'Code (4 chiffres)', data.code, v=>data.code=v)
+    field('Code (4 chiffres)', data.code, v=>data.code=v)
   ]);
   const depWrap = el('<div style="margin:2px 0 8px;"></div>');
   depWrap.appendChild(el('<label>Département</label>'));
@@ -4276,8 +4260,7 @@ function renderPersonModal(){
   save.onclick = ()=>{
     if(!data.name || !data.name.trim()){ alert('Le nom est obligatoire.'); return; }
     if(!data.email || !data.email.trim()){ alert("L'email est obligatoire."); return; }
-    if((mode==='create' || !data.hasCode) && (!data.code || !String(data.code).trim())){ alert('Le code est obligatoire.'); return; }
-    if(String(data.code||'').trim()) data.hasCode = true;
+    if(!data.code || !String(data.code).trim()){ alert('Le code est obligatoire.'); return; }
     if(data.role==='tricotage' && Array.isArray(data.triTiles) && !data.triTiles.length){ alert('Coche au moins une case Tricotage.'); return; }
     if(data.role==='personnalisation' && Array.isArray(data.psTiles) && !data.psTiles.length){ alert('Coche au moins une case Personnalisation.'); return; }
     if(ROLE_TILES[data.role] && (!allowedTiles(data).length || (Array.isArray(data.tiles) && !data.tiles.length))){ alert('Coche au moins une case visible.'); return; }
@@ -9333,45 +9316,24 @@ function mergeDoc(local, base, remote){
   }
   return out;
 }
-// ---- Accès sécurisé (V74) : tout passe par des fonctions de la base, les codes ne quittent jamais le serveur ----
-let TOKEN = null;
-try{ TOKEN = localStorage.getItem('dj_token') || null; }catch(e){}
-let LOADED_PERSON = null;
-const SEED_JSON = document.getElementById('seed-data').textContent;
-async function rpc(fn, args, signal){
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method:'POST', headers:{ 'apikey': SUPABASE_KEY, 'Content-Type':'application/json' }, body: JSON.stringify(args||{}), cache:'no-store', signal: signal });
-  if(!res.ok){ const t = await res.text().catch(()=>''); const e = new Error('rpc '+fn+' '+res.status+' '+t.slice(0,160)); e.status = res.status; throw e; }
-  return res.json();
-}
-function applyRemoteData(d){
-  DATA = Object.assign({}, DATA, d);
-  BASE = cloneJSON(d);
-  REMOTE_REV = Number(d._rev||0);
-  LOAD_FAILED = false;
-}
-function forgetData(){
-  // après déconnexion : on ne garde en mémoire que le logo, les couleurs et le nom
-  const keep = {settings: DATA.settings, companyTitle: DATA.companyTitle};
-  DATA = Object.assign(JSON.parse(SEED_JSON), keep);
-  if(!DATA.settings) DATA.settings = {companyName: 'Suivi de production', primaryColor: '#DBC4A0', secondaryColor: '#001D51', logoUrl: ''};
-  BASE = null; REMOTE_REV = null;
-}
-function sessionExpired(){
-  TOKEN = null; LOADED_PERSON = null;
-  try{ localStorage.removeItem('dj_token'); localStorage.removeItem('dj_session'); }catch(e){}
-  if(view.personId){
-    view.personId = null; view.role = null; view.screen = 'login'; view.discussionOpen = false;
-    view.loginError = 'Ta session a expiré : reconnecte-toi.';
-    forgetData(); render();
-  }
-}
 async function fetchRemoteRev(){
-  if(!TOKEN) return undefined;
-  try{ const r = await rpc('app_rev', {p_token:TOKEN}); if(!r || !r.ok){ if(r && r.error==='session') sessionExpired(); return undefined; } return Number(r.rev||0); }catch(e){ return undefined; }
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main&select=data->_rev`, { headers:{ 'apikey': SUPABASE_KEY }, cache:'no-store' });
+    if(!res.ok) return undefined;
+    const rows = await res.json();
+    if(!rows || !rows.length) return undefined;
+    const v = rows[0]._rev;
+    return v==null ? 0 : Number(v);
+  }catch(e){ return undefined; }
 }
 async function fetchRemoteDoc(){
-  if(!TOKEN) return null;
-  try{ const r = await rpc('app_load', {p_token:TOKEN}); if(!r || !r.ok){ if(r && r.error==='session') sessionExpired(); return null; } return r.data || null; }catch(e){ return null; }
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main`, { headers:{ 'apikey': SUPABASE_KEY }, cache:'no-store' });
+    if(!res.ok) return null;
+    const txt = await res.text();
+    const rows = JSON.parse(txt);
+    return (rows && rows.length && rows[0].data) ? rows[0].data : null;
+  }catch(e){ return null; }
 }
 
 // Lecture : la clé publishable s'envoie uniquement dans l'en-tête apikey.
@@ -9381,18 +9343,24 @@ async function loadDataFromSupabase(){
   const ctl = (typeof AbortController!=='undefined') ? new AbortController() : null;
   const timer = setTimeout(()=>{ try{ ctl && ctl.abort(); }catch(e){} }, 15000);
   try {
-    if(TOKEN){
-      const r = await rpc('app_load', {p_token:TOKEN}, ctl ? ctl.signal : undefined);
-      if(r && r.ok && r.data){ clearTimeout(timer); applyRemoteData(r.data); LOADED_PERSON = r.person || null; return; }
-      if(r && r.error==='session') sessionExpired();
-      else { clearTimeout(timer); if(BASE===null) LOAD_FAILED = true; return; }
-    }
-    if(view.personId){ clearTimeout(timer); return; }
-    // pas connecté : seulement le logo, les couleurs et le nom de l'entreprise
-    const pub = await rpc('app_public', {}, ctl ? ctl.signal : undefined);
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main`, {
+      headers: { 'apikey': SUPABASE_KEY }, cache:'no-store', signal: ctl ? ctl.signal : undefined
+    });
     clearTimeout(timer);
-    if(pub){ if(pub.settings) DATA.settings = pub.settings; if(pub.companyTitle) DATA.companyTitle = pub.companyTitle; }
-    LOAD_FAILED = false;
+    if(!res.ok){
+      console.log('Chargement Supabase échoué:', res.status, await res.text());
+      if(BASE===null) LOAD_FAILED = true;
+      return;
+    }
+    const txt = await res.text();
+    const rows = JSON.parse(txt);
+    if(rows && rows.length && rows[0].data){
+      // on garde les valeurs par défaut pour toute clé absente de la base
+      DATA = Object.assign({}, DATA, rows[0].data);
+      BASE = JSON.parse(txt)[0].data;
+      REMOTE_REV = Number(rows[0].data._rev||0);
+      LOAD_FAILED = false;
+    } else if(BASE===null) LOAD_FAILED = true;
   } catch(e){
     clearTimeout(timer);
     console.log('Supabase non disponible:', e.message);
@@ -9401,13 +9369,15 @@ async function loadDataFromSupabase(){
 }
 
 async function patchIfRev(doc, rev){
-  if(!TOKEN){ sessionExpired(); return {ok:false, conflict:false}; }
-  const r = await rpc('app_save', {p_token:TOKEN, p_data:doc, p_rev:rev||0});
-  if(r && r.ok) return {ok:true};
-  if(r && r.conflict) return {ok:false, conflict:true};
-  if(r && r.error==='session') sessionExpired();
-  console.log('Enregistrement refusé :', r);
-  return {ok:false, conflict:false};
+  const cond = rev ? `data->>_rev=eq.${rev}` : `data->>_rev=is.null`;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?id=eq.main&${cond}&select=id`, {
+    method: 'PATCH',
+    headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify({ data: doc })
+  });
+  if(!res.ok){ console.log('Enregistrement Supabase échoué:', res.status, await res.text()); return {ok:false, conflict:false}; }
+  const rows = await res.json().catch(()=>[]);
+  return (rows && rows.length) ? {ok:true} : {ok:false, conflict:true};
 }
 
 let saveChain = Promise.resolve(true);
@@ -9485,18 +9455,17 @@ async function refreshIfStale(){
 }
 
 // Session : on garde la personne connectée même si on actualise la page.
-function saveSession(id, token){
-  try { localStorage.setItem('dj_session', id); if(token) localStorage.setItem('dj_token', token); } catch(e){}
+function saveSession(id){
+  try { localStorage.setItem('dj_session', id); } catch(e){}
 }
 function clearSession(){
-  const t = TOKEN; TOKEN = null; LOADED_PERSON = null;
-  try { localStorage.removeItem('dj_session'); localStorage.removeItem('dj_token'); } catch(e){}
-  if(t) rpc('app_logout', {p_token:t}).catch(()=>{});
-  forgetData();
+  try { localStorage.removeItem('dj_session'); } catch(e){}
 }
 function restoreSession(){
-  if(!TOKEN || !LOADED_PERSON) return;
-  const person = (DATA.people||[]).find(p=>p.id===LOADED_PERSON.id && p.active!==false);
+  let id = null;
+  try { id = localStorage.getItem('dj_session'); } catch(e){}
+  if(!id) return;
+  const person = (DATA.people||[]).find(p=>p.id===id && p.active!==false);
   if(!person){ clearSession(); return; }
   view.personId = person.id;
   view.role = person.role;
@@ -9507,25 +9476,20 @@ async function boot(){
   try{ view.scanId = new URLSearchParams(location.search).get('cmd'); view.lotScanId = new URLSearchParams(location.search).get('lot'); view.psScanId = new URLSearchParams(location.search).get('perso'); view.crScanId = new URLSearchParams(location.search).get('crea'); }catch(e){}
   await loadDataFromSupabase();
   restoreSession();
-  if(!view.personId && (view.scanId || view.crScanId || view.psScanId)){
-    // visiteur sans compte : la base renvoie seulement les informations de suivi
-    try{ view.trackData = await rpc('app_track', {p_q:'', p_kind: view.scanId ? 'cmd' : (view.crScanId ? 'crea' : 'perso'), p_id: view.scanId || view.crScanId || view.psScanId}); }catch(e){ view.trackData = null; }
-  }
-  const TD = view.trackData || {};
   if(!view.personId && view.scanId){
     // visiteur sans compte (client) : le QR ouvre le suivi de la commande
-    const c = (TD.commandes||[]).find(x=>x.id===view.scanId);
+    const c = (DATA.commandes||[]).find(x=>x.id===view.scanId);
     if(c){ view.trackId = c.id; view.trackRef = c.reference; view.trackSearched = true; }
   }
   if(!view.personId && view.crScanId){
     // visiteur sans compte : le QR d'une création ouvre son suivi
-    const x = (((TD.crea||{}).produits)||[]).find(p=>p.id===view.crScanId);
+    const x = (((DATA.crea||{}).produits)||[]).find(p=>p.id===view.crScanId);
     if(x){ view.trackCrId = x.id; view.trackRef = x.refProduit || x.ref; view.trackSearched = true; }
     view.crScanId = null;
   }
   if(!view.personId && view.psScanId){
     // visiteur sans compte : le QR d'une personnalisation ouvre son suivi
-    const j = (((TD.perso||{}).jobs)||[]).find(p=>p.id===view.psScanId);
+    const j = (((DATA.perso||{}).jobs)||[]).find(p=>p.id===view.psScanId);
     if(j){ view.trackPsId = j.id; view.trackRef = j.ref; view.trackSearched = true; }
     view.psScanId = null;
   }
