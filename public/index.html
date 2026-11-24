@@ -567,6 +567,8 @@ button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
 .cr-dot{width:24px;height:24px;border-radius:50%;border:2px solid #001D51;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:0 0 auto}
 .cr-lbl{flex:1}.cr-date{font-size:11px;opacity:.8}
 .cc-box{margin:4px 0 6px}
+.ps-dem{border:2px solid #001D51;border-radius:12px;padding:8px 10px;margin:0 0 12px;background:#FFF0F7}
+.ps-dem textarea{width:100%;box-sizing:border-box;border:2px solid #001D51;border-radius:10px;padding:6px 8px;font-family:inherit;background:#FFF6E6}
 .mat-col-info{font-size:13px;margin:0 0 8px;background:#FFF6E6;border:2px dashed #001D51;border-radius:10px;padding:6px 10px}
 .mat-col{border:2px solid #001D51;border-radius:12px;padding:8px 10px;margin-bottom:10px;background:#fff}
 .mat-col-h{display:flex;justify-content:space-between;align-items:center;background:#FFC933;border:2px solid #001D51;border-radius:999px;padding:3px 12px;margin-bottom:8px;font-size:14px}
@@ -1872,7 +1874,7 @@ function renderLogin(){
     view.screen = screenForRole(person.role);
     view.loginId=''; view.loginCode=''; view.loginError='';
     saveSession(person.id);
-    if(psMigrateSteps()) saveToSupabase();
+    if(psMigrateSteps() + crMigrateSteps()) saveToSupabase();
     applyScan();
     render();
   };
@@ -1881,7 +1883,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 78 · matière par couleur en découpe</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 79 · gradation et envoi en personnalisation</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -3901,7 +3903,7 @@ function renderAdminScreen(extra){
       grid.appendChild(t4);
     }
     {
-      const cc = CR(); const enC = cc.produits.filter(x=>crEtape(x).i<5).length, val = cc.produits.filter(x=>crEtape(x).i===5).length;
+      const cc = CR(); const enC = cc.produits.filter(x=>crEtape(x).i<5).length, val = cc.produits.filter(x=>crEtape(x).i===5 || crEtape(x).i===6).length;
       const t5 = el('<button class="dept-tile" style="background:#BFD2FF;"></button>');
       t5.appendChild(el('<div class="dept-ic">'+CR_ICON+'</div>'));
       const tx5 = el('<div></div>');
@@ -6691,6 +6693,40 @@ function renderModal(){
     field('Date réception', data.stock.dateReception, v=>data.stock.dateReception=v, 'date')
   ]);
 
+  // personnalisation demandée avec la commande → envoyée automatiquement au département Personnalisation
+  { const lies = (((DATA.perso||{}).jobs)||[]).filter(j=>j.cmdId===data.id);
+    m.appendChild(el('<div class="grp-head" style="background:#B83280">Personnalisation (DTF, broderie, sérigraphie)</div>'));
+    const pw = el('<div class="ps-dem"></div>'); m.appendChild(pw);
+    if(lies.length){
+      pw.appendChild(el('<div>✓ Déjà envoyée en personnalisation : <b>'+lies.map(j=>esc(j.ref)+' · '+esc(psTechLabel(j))+' · '+esc(psStepLabel(j, psEtape(j).i))).join(' — ')+'</b></div>'));
+    } else {
+      data.persoDemande = data.persoDemande || {techniques:[], detail:'', images:[]};
+      const pz = data.persoDemande; pz.images = pz.images || [];
+      pw.appendChild(el('<div style="font-size:12px;margin-bottom:6px;">Coche si cette commande a besoin de personnalisation : elle arrivera directement dans l’espace Personnalisation à l’enregistrement.</div>'));
+      const row = el('<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;"></div>');
+      const extra = el('<div></div>');
+      Object.keys(PS_TECH).forEach(k=>{
+        const on = pz.techniques.indexOf(k)>=0;
+        const lb = el('<label class="ps-tchk" style="background:'+(on?PS_TECH[k].color:'#fff')+';"></label>');
+        const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = on;
+        cb.onchange = ()=>{ pz.techniques = Object.keys(PS_TECH).filter(x=>x===k ? cb.checked : pz.techniques.indexOf(x)>=0); lb.style.background = cb.checked ? PS_TECH[k].color : '#fff'; extra.style.display = pz.techniques.length ? '' : 'none'; };
+        lb.appendChild(cb); lb.appendChild(document.createTextNode(' '+PS_TECH[k].label)); row.appendChild(lb);
+      });
+      pw.appendChild(row);
+      extra.appendChild(el('<label>Détail : emplacements, taille du logo, couleurs…</label>'));
+      const ta = document.createElement('textarea'); ta.rows = 2; ta.value = pz.detail || ''; ta.placeholder = 'ex : logo poitrine cœur 8 cm en broderie + grand logo dos en DTF'; ta.oninput = ()=>{ pz.detail = ta.value; }; extra.appendChild(ta);
+      const ib = el('<div style="margin-top:6px;"></div>'); extra.appendChild(ib);
+      const drawI = ()=>{
+        ib.innerHTML = ''; ib.appendChild(el('<label>Logo / maquette (photos)</label>'));
+        const g = el('<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0;"></div>');
+        pz.images.forEach((u,i)=>{ const b = el('<div style="position:relative;"><img src="'+u+'" style="height:70px;width:70px;object-fit:cover;border:2px solid #001D51;border-radius:8px;background:#fff;"></div>'); const x = el('<button class="btn small" style="position:absolute;top:1px;right:1px;padding:0 5px;">✕</button>'); x.onclick = ()=>{ pz.images.splice(i,1); drawI(); }; b.appendChild(x); g.appendChild(b); });
+        ib.appendChild(g);
+        if(pz.images.length < PS_MAX_IMGS){ const fi = document.createElement('input'); fi.type='file'; fi.accept='image/*'; fi.multiple = true; fi.onchange = async ()=>{ for(const f of Array.from(fi.files||[]).slice(0, PS_MAX_IMGS-pz.images.length)){ try{ pz.images.push(await resizeImageFileJpeg(f, 900, 0.72)); }catch(e){ alert('Image illisible : '+f.name); } } drawI(); }; ib.appendChild(fi); }
+      };
+      drawI();
+      extra.style.display = pz.techniques.length ? '' : 'none';
+      pw.appendChild(extra);
+    } }
   const ccWrap = el('<div></div>'); m.appendChild(ccWrap);
   let ccBlock = null;
   const ccDraw = ()=>{ ccWrap.innerHTML=''; if(!data.catalogueId) return; try{ syncLignes(); }catch(e){} ccWrap.appendChild(el('<div class="grp-head" style="background:#4A6C6F">Consommation de tissu par couleur</div>')); ccBlock = consoCouleurBlock(data, mode==='edit'); ccWrap.appendChild(ccBlock.node); const rb = el('<button class="btn small" style="margin:4px 0 10px;">Recalculer</button>'); rb.onclick = ccDraw; ccWrap.appendChild(rb); };
@@ -6724,15 +6760,19 @@ function renderModal(){
     data.lignes = data.lignes.filter((l,i)=>l.couleur || Object.keys(l.tailles||{}).length || data.lignes.length===1);
     syncLignes();
     rememberNames(data);
+    let psNew = null;
+    if(data.persoDemande && !(data.persoDemande.techniques||[]).length) delete data.persoDemande;
     if(mode==='create'){
       DATA.commandes.push(data);
+      psNew = cmdSendPerso(data); if(psNew){ data.persoDemande.envoyeeLe = psNow(); data.persoDemande.psId = psNew.id; data.persoDemande.images = []; }
       view.modal=null;
-      saveState('Nouvelle commande ajoutée : '+data.reference);
+      saveState('Nouvelle commande ajoutée : '+data.reference+(psNew?' · envoyée en personnalisation ('+psNew.ref+')':''));
     } else {
       const idx = DATA.commandes.findIndex(x=>x.id===data.id);
       if(idx>=0) DATA.commandes[idx]=data;
+      psNew = cmdSendPerso(data); if(psNew){ data.persoDemande.envoyeeLe = psNow(); data.persoDemande.psId = psNew.id; data.persoDemande.images = []; }
       view.modal=null;
-      saveState('Commande modifiée : '+data.reference);
+      saveState('Commande modifiée : '+data.reference+(psNew?' · envoyée en personnalisation ('+psNew.ref+')':''));
     }
   };
   const del = mode==='edit' ? el('<button class="btn" style="color:#A42834;border-color:#A42834;">Supprimer</button>') : null;
@@ -8040,7 +8080,7 @@ function renderPsView(){
     grid.appendChild(el('<div style="text-align:center;border:3px solid #001D51;border-radius:14px;padding:10px;background:#fff;">'+qrSvg(psUrl(j),150)+'<div style="font-weight:800;margin-top:4px;">'+esc(j.ref)+'</div></div>'));
     const total = psTotal(j);
     const info = el('<div style="flex:1;min-width:220px;font-size:14px;line-height:1.7;"></div>');
-    info.innerHTML = '<b>Client :</b> '+esc(j.client||'—')+(j.cmdRef?' · commande confection <b>'+esc(j.cmdRef)+'</b>':'')
+    info.innerHTML = '<b>Client :</b> '+esc(j.client||'—')+(j.cmdRef?' · commande confection <b>'+esc(j.cmdRef)+'</b>':'')+(j.crRef?' · <b style="background:#D9C8FF;border:2px solid #001D51;border-radius:999px;padding:0 8px;">Prototype Créa '+esc(j.crRef)+'</b>':'')
       +'<br><b>Commercial :</b> '+(psCommercialName(j)?'<b style="background:#FFC933;border:2px solid #001D51;border-radius:999px;padding:0 8px;">'+esc(psCommercialName(j))+'</b>':'aucun (client direct)')
       +'<br><b>Article :</b> '+esc(j.article||'—')+(j.couleurSupport?' · '+esc(j.couleurSupport):'')+' · <b>'+esc(j.quantite||'0')+'</b> pièces'
       +'<br><b>Emplacements :</b><br>'+psZonesText(j)
@@ -8262,8 +8302,8 @@ function renderPsModal(){
 // =====================================================================
 // ----- Département CRÉA : création de nouveaux produits -----
 // =====================================================================
-const CR_STEPS = ['Idée','Croquis / design','Patronage','Prototype','Retouches','Validé','Lancé en production'];
-const CR_COLORS = ['#FFF6E6','#BFD2FF','#FFC933','#FFE1DE','#FFE9B8','#37D6A5','#B9F0DC'];
+const CR_STEPS = ['Idée','Croquis / design','Patronage','Prototype','Retouches','Validé','Gradation des tailles','Lancé en production'];
+const CR_COLORS = ['#FFF6E6','#BFD2FF','#FFC933','#FFE1DE','#FFE9B8','#37D6A5','#D9C8FF','#B9F0DC'];
 const CR_CATS = ['T-shirt','Polo','Sweat / Hoodie','Veste','Pantalon / Jogging','Short','Robe','Chemise','Ensemble','Casquette / accessoire','Autre'];
 const CR_CIBLES = ['Homme','Femme','Unisexe','Enfant'];
 const CR_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.5l5 5L9 20H4v-5L14.5 4.5Z"/><path d="M12.5 6.5l5 5"/><path d="M4 20l3.5-1.2"/></svg>';
@@ -8284,10 +8324,66 @@ function crBlank(){
   const c = CR();
   return {id:'cr_'+Date.now(), ref:trNextRef('CR', c.produits, 3), nom:'', collection:'', saison:'', categorie:'T-shirt', cible:'Unisexe', responsable:view.personId||'', dateObjectif:'',
     description:'', images:[], tissus:[{tissu:'', couleur:'', conso:'', unite:'kg', prix:''}], couleurs:'', tailles:[], fournitures:[], persoTech:'', persoDetail:'', refPatron:'',
-    facon:'', coutPerso:'', prixVente:'', etape:0, etapesDates:{0:psNow()}, notes:'', catalogueId:'', refProduit:nextCatRef(), creeLe:psNow(), creePar:view.personId||''};
+    facon:'', coutPerso:'', prixVente:'', stepsV:CR_STEPS_V, etape:0, etapesDates:{0:psNow()}, notes:'', catalogueId:'', refProduit:nextCatRef(), creeLe:psNow(), creePar:view.personId||''};
 }
-function crSetEtape(x, i){ x.etape = i; x.etapesDates = x.etapesDates || {}; x.etapesDates[i] = psNow(); x.etapesPar = x.etapesPar || {}; x.etapesPar[i] = view.personId; if(i===3) crSendProto(x); saveState(x.ref+' : '+CR_STEPS[i]+(i===3?' · commercial prévenu':'')); }
+// V79 : nouvelle étape « Gradation des tailles » avant « Lancé en production » → on recale les produits déjà lancés
+const CR_STEPS_V = 2;
+function crMigrateSteps(){
+  let n = 0;
+  (((DATA.crea||{}).produits)||[]).forEach(x=>{
+    if(Number(x.stepsV||1) >= CR_STEPS_V) return;
+    const sh = obj=>{ const o = {}; Object.keys(obj||{}).forEach(k=>{ const i = Number(k); o[i>=6 ? i+1 : i] = obj[k]; }); return o; };
+    if(Number(x.etape)>=6) x.etape = Number(x.etape)+1;
+    x.etapesDates = sh(x.etapesDates); if(x.etapesPar) x.etapesPar = sh(x.etapesPar);
+    x.stepsV = CR_STEPS_V; n++;
+  });
+  return n;
+}
+function crSetEtape(x, i){ x.etape = i; x.etapesDates = x.etapesDates || {}; x.etapesDates[i] = psNow(); x.etapesPar = x.etapesPar || {}; x.etapesPar[i] = view.personId; if(i===3){ crSendProto(x); crSendPersoProto(x); } saveState(x.ref+' : '+CR_STEPS[i]+(i===3?' · commercial prévenu':'')); }
 // ---- validation du prototype par le commercial ----
+// ---- envoi automatique en Personnalisation (prototype Créa / commande Confection) ----
+function psStaffIds(techs){
+  return (DATA.people||[]).filter(p=>p.active!==false && (p.role==='personnalisation' || (Array.isArray(p.psTiles) && p.psTiles.some(k=>k==='cmd' || (techs||[]).indexOf(k)>=0))) ).map(p=>p.id);
+}
+function psNotifyNew(j, why){
+  const me = currentPerson(); DATA.messages = DATA.messages || [];
+  psStaffIds(psTechs(j)).forEach((id,k)=>DATA.messages.push({id:'msg_'+Date.now()+'_ps'+k+'_'+Math.random().toString(36).slice(2,6), author:(me?me.name:'Djeb’s Pilot'), role:view.role, personId:view.personId||'system', to:id, psId:j.id,
+    text:'🎨 Nouvelle personnalisation '+j.ref+' ('+psTechLabel(j)+') : '+why+' · '+(j.article||'')+' · '+(j.quantite||'?')+' pcs. Elle est dans ton espace Personnalisation.', ts:new Date().toISOString()}));
+  if(DATA.messages.length>200) DATA.messages = DATA.messages.slice(-200);
+}
+function crSendPersoProto(x){
+  if(!x || !x.persoTech || !PS_TECH[x.persoTech]) return null;
+  const P = PS();
+  if(P.jobs.some(j=>j.crId===x.id && !psDone(j))) return null;     // déjà en cours en personnalisation
+  const tour = (x.proto && x.proto.tour) || 1;
+  const j = psBlankJob(x.persoTech);
+  j.crId = x.id; j.crRef = x.refProduit || x.ref; j.client = 'Créa'+(x.client?' — '+x.client:' (prototype)'); j.article = x.nom || ''; j.quantite = 1;
+  j.couleurSupport = String(x.couleurs||'').split(/[,;/]/)[0].trim(); j.finPrevue = x.dateObjectif || ''; j.commercialId = x.commercialId || '';
+  j.zones = [{zone:'Autre', largeur:'', hauteur:'', couleurs:'', points:'', tech:x.persoTech}];
+  j.maquettes = (x.images||[]).slice(0, PS_MAX_IMGS); j.maquette = j.maquettes[0] || '';
+  j.notes = 'PROTOTYPE Créa '+x.ref+(x.refProduit?' ('+x.refProduit+')':'')+(tour>1?' — version '+tour:'')+(x.persoDetail?' · '+x.persoDetail:'');
+  j.creePar = view.personId || ''; j.auto = 'crea';
+  P.jobs.push(j);
+  psNotifyNew(j, 'prototype Créa '+(x.refProduit||x.ref));
+  return j;
+}
+function cmdSendPerso(c){
+  const pz = c.persoDemande; if(!pz || !Array.isArray(pz.techniques) || !pz.techniques.length) return null;
+  const P = PS();
+  if(P.jobs.some(j=>j.cmdId===c.id)) return null;                   // déjà envoyée
+  const techs = Object.keys(PS_TECH).filter(k=>pz.techniques.indexOf(k)>=0); if(!techs.length) return null;
+  const j = psBlankJob(techs[0]);
+  j.techniques = techs; j.technique = techs[0];
+  j.cmdId = c.id; j.cmdRef = c.reference; j.client = c.client || ''; j.article = c.article || ''; j.quantite = c.quantite || '';
+  j.couleurSupport = (Array.isArray(c.lignes) ? c.lignes.map(l=>l.couleur).filter(Boolean).join(', ') : '') || c.couleur || '';
+  j.dateLivraison = c.dateLivraisonPrevue || ''; j.commercialId = c.commercialId || (view.role==='commercial' ? view.personId : '');
+  j.zones = techs.map(k=>({zone:'Poitrine cœur', largeur:'', hauteur:'', couleurs:'', points:'', tech:k}));
+  j.maquettes = (pz.images||[]).slice(0, PS_MAX_IMGS); j.maquette = j.maquettes[0] || '';
+  j.notes = pz.detail || ''; j.urgent = !!c.urgent; j.creePar = view.personId || ''; j.auto = 'cmd';
+  P.jobs.push(j);
+  psNotifyNew(j, 'commande confection '+c.reference+(c.client?' · '+c.client:''));
+  return j;
+}
 function crCanEdit(){ return view.role==='admin' || view.role==='crea' || view.role==='superviseur' || allowedCr(currentPerson()).length>0; }
 function crCommerciaux(x){
   const all = (DATA.people||[]).filter(p=>p.role==='commercial' && p.active!==false);
@@ -8390,7 +8486,7 @@ function crTrackCard(x){
   card.appendChild(el('<div class="track-msg'+(fin?' ok':'')+'">'+(fin?'✓ Création terminée : lancée en production.':'Étape en cours : <b>'+esc(e.label)+'</b>')+'</div>'));
   const info = el('<div class="track-info"></div>');
   info.appendChild(el('<div><span>Commencée le</span><b>'+(x.creeLe?fmtDate(String(x.creeLe).slice(0,10)):'—')+'</b></div>'));
-  if(x.dateObjectif){ const r = psDays(todayISO(), x.dateObjectif); info.appendChild(el('<div><span>Date prévue</span><b>'+fmtDate(x.dateObjectif)+(e.i<5 ? (r<0?' <span style="color:#E0392D">('+(-r)+' j de retard)</span>':(r===0?' (aujourd\'hui)':' (dans '+r+' j)')) : '')+'</b></div>')); }
+  if(x.dateObjectif){ const r = psDays(todayISO(), x.dateObjectif); info.appendChild(el('<div><span>Date prévue</span><b>'+fmtDate(x.dateObjectif)+(e.i<e.last ? (r<0?' <span style="color:#E0392D">('+(-r)+' j de retard)</span>':(r===0?' (aujourd\'hui)':' (dans '+r+' j)')) : '')+'</b></div>')); }
   if(x.client) info.appendChild(el('<div><span>Client</span><b>'+esc(x.client)+'</b></div>'));
   card.appendChild(info);
   return card;
@@ -8420,8 +8516,8 @@ function renderCrea(w, wrap, opts){
     wrap.appendChild(bar);
   }
   const enCours = c.produits.filter(x=>crEtape(x).i<5);
-  const valides = c.produits.filter(x=>crEtape(x).i===5);
-  const lances = c.produits.filter(x=>crEtape(x).i===6);
+  const valides = c.produits.filter(x=>crEtape(x).i===5 || crEtape(x).i===6);
+  const lances = c.produits.filter(x=>crEtape(x).i===CR_STEPS.length-1);
   const retard = enCours.filter(x=>x.dateObjectif && x.dateObjectif<todayISO()).length;
   if(!opts.embedded || opts.main){
     const kpi = el('<div class="kpi-row"></div>');
@@ -8474,7 +8570,7 @@ function crPanelSuivi(panel){
     col.appendChild(el('<div style="font-weight:800;font-size:13px;margin-bottom:6px;display:flex;justify-content:space-between;"><span>'+(i+1)+'. '+title+'</span><span class="icon-tile-badge" style="position:static;">'+items.length+'</span></div>'));
     if(!items.length) col.appendChild(el('<div style="font-size:12px;opacity:.5;">—</div>'));
     items.forEach(x=>{
-      const late = i<5 && x.dateObjectif && x.dateObjectif<todayISO();
+      const late = i<CR_STEPS.length-1 && x.dateObjectif && x.dateObjectif<todayISO();
       const card = el('<button style="display:block;width:100%;text-align:left;border:2px solid #001D51;border-radius:10px;padding:6px 8px;margin-bottom:6px;background:'+(late?'#FFE1DE':'#fff')+';cursor:pointer;font-family:inherit;color:#001D51;box-shadow:2px 2px 0 #001D51;"></button>');
       card.innerHTML = (x.images&&x.images[0]?'<img src="'+x.images[0]+'" style="width:100%;height:90px;object-fit:cover;border-radius:6px;margin-bottom:4px;">':'')
         +'<div style="display:flex;justify-content:space-between;gap:4px;"><b>'+esc(x.refProduit||x.ref)+'</b><span style="font-size:10px;">'+esc(x.categorie||'')+'</span></div>'
@@ -8593,12 +8689,12 @@ function renderCrView(){
     const k = crCout(x);
     const info = el('<div style="font-size:14px;line-height:1.7;"></div>');
     info.innerHTML = '<b>Collection :</b> '+esc(x.collection||'—')+(x.saison?' · '+esc(x.saison):'')+' · <b>Catégorie :</b> '+esc(x.categorie||'—')+' · '+esc(x.cible||'')
-      +'<br><b>Responsable :</b> '+esc(crPersonName(x.responsable)||'—')+(x.dateObjectif?' · <b>Objectif :</b> <span style="'+(e.i<5 && x.dateObjectif<todayISO()?'color:#E0392D;font-weight:800':'')+'">'+fmtDate(x.dateObjectif)+'</span>':'')
+      +'<br><b>Responsable :</b> '+esc(crPersonName(x.responsable)||'—')+(x.dateObjectif?' · <b>Objectif :</b> <span style="'+(e.i<e.last && x.dateObjectif<todayISO()?'color:#E0392D;font-weight:800':'')+'">'+fmtDate(x.dateObjectif)+'</span>':'')
       +(x.description?'<br><b>Description :</b> '+esc(x.description):'')
       +'<br><b>Matières :</b> '+((x.tissus||[]).filter(t=>t.tissu).map(t=>esc(t.tissu)+(t.couleur?' '+esc(t.couleur):'')+(t.conso?' · '+esc(t.conso)+' '+esc(t.unite||'')+' / pièce':'')).join(' — ')||'—')
       +'<br><b>Couleurs :</b> '+esc(x.couleurs||'—')+' · <b>Tailles :</b> '+esc((x.tailles||[]).join(' ')||'—')
       +((x.fournitures||[]).length?'<br><b>Fournitures :</b> '+x.fournitures.map(f=>esc(f.nom)+(f.qte?' ×'+esc(f.qte):'')).join(', '):'')
-      +'<br><b>Personnalisation :</b> '+(x.persoTech?PS_TECH[x.persoTech].label+(x.persoDetail?' — '+esc(x.persoDetail):''):'aucune')
+      +'<br><b>Personnalisation :</b> '+(x.persoTech?PS_TECH[x.persoTech].label+(x.persoDetail?' — '+esc(x.persoDetail):''):'aucune')+(()=>{ const js = (((DATA.perso||{}).jobs)||[]).filter(j=>j.crId===x.id); return js.length ? ' · <b>'+js.map(j=>esc(j.ref)+' ('+esc(psStepLabel(j, psEtape(j).i))+')').join(', ')+'</b>' : (x.persoTech ? ' · <i>sera envoyée en personnalisation au passage à Prototype</i>' : ''); })()
       +(x.refPatron?'<br><b>Réf. patron :</b> '+esc(x.refPatron):'')
       +(crMoney()?'<br><b>Coût de revient :</b> '+fmtDA(k.total)+' / pièce (matières '+fmtDA(k.mat)+', fournitures '+fmtDA(k.fou)+', façon '+fmtDA(k.fac)+', perso '+fmtDA(k.perso)+')'+(k.pv?' · <b>Prix de vente :</b> '+fmtDA(k.pv)+' · <b style="color:'+(k.marge>=0?'#1E7A34':'#E0392D')+'">marge '+fmtDA(k.marge)+' ('+k.margePct.toFixed(1)+' %)</b>':''):'')
       +(x.catalogueId?'<br><b style="color:#1E7A34;">✓ Ajouté au catalogue produits de la Confection'+(x.refProduit?' — référence '+esc(x.refProduit):'')+'</b>':'')
@@ -8628,8 +8724,8 @@ function renderCrView(){
       else { const rs = el('<button class="btn">Relancer le commercial</button>'); rs.onclick = ()=>{ crNotify(crCommerciaux(x).map(p=>p.id), '🔔 Rappel : le prototype '+(x.nom||'')+' ('+(x.refProduit||x.ref)+') attend ta validation (espace Commercial → Prototypes à valider).', x); saveState('Rappel envoyé au commercial'); }; actions.appendChild(rs); }
     } else if(e.i===4){
       const rf = el('<button class="btn primary">Retouches faites → renvoyer au commercial</button>'); rf.onclick = ()=>crSetEtape(x, 3); actions.appendChild(rf);
-    } else if(e.i<5){ const nx = el('<button class="btn primary">Étape suivante : '+esc(CR_STEPS[e.i+1])+'</button>'); nx.onclick = ()=>crSetEtape(x, e.i+1); actions.appendChild(nx); }
-    if(e.i>=5){ const ct = el('<button class="btn primary" style="background:#37D6A5;">'+(x.catalogueId?'Mettre à jour le catalogue':'Ajouter au catalogue produits')+'</button>'); ct.onclick = ()=>{ if(!String(x.nom||'').trim()){ alert('Le produit doit avoir un nom.'); return; } crToCatalogue(x); }; actions.appendChild(ct); }
+    } else if(e.i<6){ const nx = el('<button class="btn primary">Étape suivante : '+esc(CR_STEPS[e.i+1])+'</button>'); nx.onclick = ()=>crSetEtape(x, e.i+1); actions.appendChild(nx); }
+    if(e.i>=6){ const ct = el('<button class="btn primary" style="background:#37D6A5;">'+(x.catalogueId?'Mettre à jour le catalogue':(e.i===6?'Lancer en production (ajouter au catalogue)':'Ajouter au catalogue produits'))+'</button>'); ct.onclick = ()=>{ if(!String(x.nom||'').trim()){ alert('Le produit doit avoir un nom.'); return; } crToCatalogue(x); }; actions.appendChild(ct); }
     }
   }
   m.appendChild(actions);
@@ -8670,7 +8766,7 @@ function renderCrModal(){
   frow([select('Catégorie','categorie', CR_CATS.map(v=>[v,v])), select('Cible','cible', CR_CIBLES.map(v=>[v,v]))]);
   frow([field('Client (si création sur demande)','client',{ph:'facultatif'}), select('Commercial qui valide le prototype','commercialId', [['','Tous les commerciaux']].concat((DATA.people||[]).filter(p=>p.role==='commercial' && (p.active!==false || p.id===data.commercialId)).map(p=>[p.id, p.name])))]);
   frow([field('Saison','saison',{ph:'ex : Printemps-Été'}), select('Responsable','responsable', [['','—']].concat((DATA.people||[]).filter(p=>p.active!==false).map(p=>[p.id, p.name+' ('+(ROLE_LABEL[p.role]||p.role)+')'])))]);
-  frow([field('Date objectif (lancement)','dateObjectif',{type:'date'}), select('Étape','etape', CR_STEPS.slice(0,6).map((s,i)=>[i,(i+1)+'. '+s]))]);
+  frow([field('Date objectif (lancement)','dateObjectif',{type:'date'}), select('Étape','etape', CR_STEPS.slice(0,7).map((s,i)=>[i,(i+1)+'. '+s]))]);
   frow([field('Description / idée','description',{area:true, ph:'Style, coupe, détails, inspiration…'})]);
 
   sec('2. Images (croquis, inspiration, prototype) — 4 maximum');
@@ -8761,7 +8857,7 @@ function renderCrModal(){
     data.etape = Number(data.etape)||0;
     const old = c.produits.find(x=>x.id===data.id);
     if(old && Number(old.etape)!==data.etape){ data.etapesDates = data.etapesDates || {}; data.etapesDates[data.etape] = psNow(); }
-    if(data.etape===3 && (!old || Number(old.etape)!==3)) crSendProto(data);
+    if(data.etape===3 && (!old || Number(old.etape)!==3)){ crSendProto(data); crSendPersoProto(data); }
     const i = c.produits.findIndex(x=>x.id===data.id);
     if(i>=0) c.produits[i] = data; else c.produits.push(data);
     view.crModal = null; view.crView = data.id;
@@ -9535,7 +9631,7 @@ async function refreshIfStale(){
     REMOTE_REV = Number(remote._rev||0);
     DATA._rev = REMOTE_REV;
     render();
-    if(psMigrateSteps()) saveToSupabase();
+    if(psMigrateSteps() + crMigrateSteps()) saveToSupabase();
   } finally { refreshBusy = false; }
 }
 
@@ -9561,7 +9657,7 @@ async function boot(){
   try{ view.scanId = new URLSearchParams(location.search).get('cmd'); view.lotScanId = new URLSearchParams(location.search).get('lot'); view.psScanId = new URLSearchParams(location.search).get('perso'); view.crScanId = new URLSearchParams(location.search).get('crea'); }catch(e){}
   await loadDataFromSupabase();
   restoreSession();
-  if(view.personId && psMigrateSteps()) saveToSupabase();
+  if(view.personId && (psMigrateSteps() + crMigrateSteps())) saveToSupabase();
   if(!view.personId && view.scanId){
     // visiteur sans compte (client) : le QR ouvre le suivi de la commande
     const c = (DATA.commandes||[]).find(x=>x.id===view.scanId);
