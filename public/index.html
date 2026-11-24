@@ -1813,7 +1813,7 @@ function renderLogin(){
   head.appendChild(el('<div class="pop-chip">Espace équipe ✂</div>'));
   wrap.appendChild(head);
   // Client arrivé par le QR de sa commande : on affiche d'abord le suivi
-  const trackFirst = !!(view.trackId || view.trackCrId);
+  const trackFirst = !!(view.trackId || view.trackCrId || view.trackPsId);
   if(trackFirst){ const tf = el('<div class="pop-track"></div>'); tf.appendChild(renderTrackBlock()); wrap.appendChild(tf); }
   const grid = el('<div class="pop-grid"></div>');
   const hero = el('<div class="pop-hero"></div>');
@@ -1871,7 +1871,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 71 · validation prototype par commercial</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 72 · photos multiples et recherche PS</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -1901,7 +1901,9 @@ function renderTrackResult(box){
     c = ms.length ? ms[ms.length-1] : null;
   }
   if(!c && !view.trackId){
-    const cr = crFindPublic(view.trackCrId, ref);
+    const pj = psFindPublic(view.trackPsId, view.trackPsId ? '' : ref);
+    if(pj){ box.appendChild(psTrackCard(pj)); return; }
+    const cr = view.trackPsId ? null : crFindPublic(view.trackCrId, ref);
     if(cr){ box.appendChild(crTrackCard(cr)); return; }
   }
   if(!c){
@@ -1926,15 +1928,15 @@ function renderTrackResult(box){
 }
 function renderTrackBlock(){
   const box = el('<div class="track-box"></div>');
-  box.appendChild(el('<h2>Suivre ma commande ou ma création</h2>'));
-  box.appendChild(el('<p>Entrez la référence de votre commande ou de votre création (ex : JB0001, CR001 ou #00108). Pas besoin de compte.</p>'));
+  box.appendChild(el('<h2>Suivre ma commande</h2>'));
+  box.appendChild(el('<p>Entrez la référence de votre commande, de votre impression / broderie ou de votre création (ex : JB0001, PS0010, CR001 ou #00108). Pas besoin de compte.</p>'));
   const row = el('<div class="search-row" style="margin:0 0 8px;"></div>');
   const inp = document.createElement('input');
-  inp.placeholder = 'Référence (ex : JB0001)';
+  inp.placeholder = 'Référence (ex : JB0001 ou PS0010)';
   inp.value = view.trackRef || '';
   const result = el('<div></div>');
   const go = async ()=>{
-    view.trackRef = inp.value; view.trackId = null; view.trackCrId = null; view.trackSearched = true;
+    view.trackRef = inp.value; view.trackId = null; view.trackCrId = null; view.trackPsId = null; view.trackSearched = true;
     if(!view.trackRef.trim()){ renderTrackResult(result); return; }
     result.innerHTML = '<div class="search-msg">Recherche…</div>';
     await loadDataFromSupabase();
@@ -7535,6 +7537,45 @@ function psRetard(j){ if(psDone(j)) return false; const d = j.finPrevue || j.dat
 function psTotal(j){ return trNum(j.quantite)*trNum(j.prixUnitaire) + trNum(j.fraisFixes); }
 function psJob(id){ return PS().jobs.find(j=>j.id===id); }
 function psUrl(j){ return siteBase()+'/?perso='+encodeURIComponent(j.id); }
+const PS_MAX_IMGS = 8;
+function psImgs(j){ if(!j) return []; if(Array.isArray(j.maquettes) && j.maquettes.length) return j.maquettes.filter(Boolean); return j.maquette ? [j.maquette] : []; }
+function psOpenImg(u){ const w = window.open('', '_blank'); if(!w){ return; } w.document.write('<!doctype html><title>Photo</title><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="'+u+'" style="max-width:100%;max-height:100vh;"></body>'); w.document.close(); }
+function psGallery(list, h){
+  const g = el('<div style="display:flex;gap:8px;flex-wrap:wrap;"></div>');
+  list.forEach(u=>{ const im = el('<img src="'+u+'" style="height:'+(h||150)+'px;max-width:100%;object-fit:cover;border:2px solid #001D51;border-radius:12px;background:#fff;cursor:zoom-in;">'); im.onclick = ()=>psOpenImg(u); g.appendChild(im); });
+  return g;
+}
+function psFindPublic(id, ref){
+  const list = (((DATA.perso||{}).jobs)||[]);
+  if(id) return list.find(j=>j.id===id) || null;
+  const r = String(ref||'').replace(/\s+/g,'').toLowerCase(); if(!/^ps\d+$/.test(r)) return null;
+  const n = parseInt(r.slice(2),10);
+  return list.find(j=>String(j.ref||'').toLowerCase()===r) || list.find(j=>/^ps\d+$/i.test(String(j.ref||'')) && parseInt(String(j.ref).slice(2),10)===n) || null;
+}
+function psTrackCard(j){
+  const st = psSteps(j); const e = psEtape(j);
+  const card = el('<div class="track-card"></div>');
+  card.appendChild(el('<div style="font-size:12px;text-align:center;font-weight:800;letter-spacing:.5px;opacity:.75;">SUIVI DE PERSONNALISATION</div>'));
+  card.appendChild(el('<div style="font-size:22px;font-weight:bold;text-align:center;">'+esc(j.ref)+'</div>'));
+  card.appendChild(el('<div style="font-size:13px;color:var(--text-soft);text-align:center;margin:2px 0 10px;">'+esc((PS_TECH[j.technique]||PS_TECH.dtf).label)+(j.article?' · '+esc(j.article):'')+(j.couleurSupport?' '+esc(j.couleurSupport):'')+(j.quantite?' · '+esc(j.quantite)+' pièces':'')+'</div>'));
+  const imgs = psImgs(j); if(imgs.length){ const g = psGallery(imgs, 110); g.style.justifyContent='center'; g.style.marginBottom='10px'; card.appendChild(g); }
+  const tr = el('<div class="cr-track"></div>');
+  st.forEach((s,i)=>{
+    const state = i<e.i ? 'done' : (i===e.i ? (i===e.last ? 'done' : 'cur') : 'todo');
+    const d = (j.etapesDates||{})[i];
+    tr.appendChild(el('<div class="cr-step '+state+'"><span class="cr-dot">'+(state==='done'?'✓':(i+1))+'</span><span class="cr-lbl">'+esc(s)+'</span>'+(d && i<=e.i ? '<span class="cr-date">'+fmtDT(d)+'</span>' : '')+'</div>'));
+  });
+  card.appendChild(tr);
+  const fin = e.i>=e.last-1;
+  card.appendChild(el('<div class="track-msg'+(fin?' ok':'')+'">'+(e.i>=e.last?'✓ Personnalisation terminée et envoyée.':(fin?'✓ Personnalisation terminée.':'Étape en cours : <b>'+esc(e.label)+'</b>'))+'</div>'));
+  const info = el('<div class="track-info"></div>');
+  info.appendChild(el('<div><span>Commandée le</span><b>'+(j.date?fmtDate(j.date):'—')+'</b></div>'));
+  if(j.finPrevue) info.appendChild(el('<div><span>Fin prévue</span><b>'+fmtDate(j.finPrevue)+'</b></div>'));
+  if(j.dateLivraison) info.appendChild(el('<div><span>Livraison prévue</span><b>'+fmtDate(j.dateLivraison)+'</b></div>'));
+  if(j.cmdRef) info.appendChild(el('<div><span>Commande liée</span><b>'+esc(j.cmdRef)+'</b></div>'));
+  card.appendChild(info);
+  return card;
+}
 function psMvtUnit(m){ if(m.prixUnit!=null && m.prixUnit!=='') return trNum(m.prixUnit); return (trNum(m.prix) && trNum(m.qte)) ? trNum(m.prix)/trNum(m.qte) : 0; }
 function psConsoPrixMoyen(id){ let q=0, v=0; PS().mvtConso.forEach(m=>{ if(m.consoId===id && m.type==='entree' && psMvtUnit(m)>0){ q+=trNum(m.qte); v+=trNum(m.qte)*psMvtUnit(m); } }); return q ? v/q : 0; }
 function psConsoDernierPrix(id){ const l = PS().mvtConso.filter(m=>m.consoId===id && m.type==='entree' && psMvtUnit(m)>0).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))); return l.length ? psMvtUnit(l[0]) : 0; }
@@ -7894,7 +7935,7 @@ function renderPsView(){
     grid.appendChild(info);
     m.appendChild(grid);
     if(psLivre(j) && psCanRate(j)){ const rb = el('<div style="margin-top:12px;border:2px dashed #001D51;border-radius:12px;padding:8px 10px;"><div style="font-weight:700;margin-bottom:6px;">'+(j.satisfaction?'Modifier la satisfaction client':'Le client est-il satisfait ?')+'</div></div>'); rb.appendChild(psRateWidget(j)); m.appendChild(rb); }
-    if(j.maquette) m.appendChild(el('<div style="margin-top:12px;"><div style="font-weight:700;margin-bottom:4px;">Maquette</div><img src="'+j.maquette+'" style="max-width:100%;max-height:320px;border:2px solid #001D51;border-radius:12px;background:#fff;"></div>'));
+    { const imgs = psImgs(j); if(imgs.length){ const gw = el('<div style="margin-top:12px;"><div style="font-weight:700;margin-bottom:4px;">Photos / maquettes ('+imgs.length+') <span style="font-size:12px;font-weight:600;opacity:.7;">— clique pour agrandir</span></div></div>'); gw.appendChild(psGallery(imgs, imgs.length>1?150:260)); m.appendChild(gw); } }
   }
   const actions = el('<div class="actions"></div>');
   const cl = el('<button class="btn">Fermer</button>'); cl.onclick = close; actions.appendChild(cl);
@@ -7954,11 +7995,16 @@ function renderPsModal(){
     // maquette
     const mq = el('<div style="margin:6px 0 10px;"></div>'); m.appendChild(mq);
     function drawMq(){
-      mq.innerHTML = ''; mq.appendChild(el('<label>Maquette (photo ou capture du logo)</label>'));
-      if(data.maquette){ mq.appendChild(el('<img src="'+data.maquette+'" style="max-height:120px;max-width:100%;border:2px solid #001D51;border-radius:10px;display:block;margin:4px 0;background:#fff;">')); const rm = el('<button class="btn small">Retirer la maquette</button>'); rm.onclick=()=>{ data.maquette=''; drawMq(); }; mq.appendChild(rm); }
-      const fi = document.createElement('input'); fi.type='file'; fi.accept='image/*';
-      fi.onchange = async ()=>{ const f = fi.files && fi.files[0]; if(!f) return; try{ data.maquette = await resizeImageFileJpeg(f, 900, 0.75); drawMq(); }catch(e){ alert('Image illisible.'); } };
-      mq.appendChild(fi);
+      data.maquettes = psImgs(data).slice(); data.maquette = data.maquettes[0] || '';
+      mq.innerHTML = ''; mq.appendChild(el('<label>Photos / maquettes (logo, BAT, emplacement…) — '+PS_MAX_IMGS+' maximum, tu peux en choisir plusieurs à la fois</label>'));
+      const g = el('<div style="display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 6px;"></div>');
+      data.maquettes.forEach((u,i)=>{ const b = el('<div style="position:relative;"><img src="'+u+'" style="height:96px;width:96px;object-fit:cover;border:2px solid #001D51;border-radius:10px;background:#fff;"></div>'); const x = el('<button class="btn small" style="position:absolute;top:2px;right:2px;padding:0 6px;">✕</button>'); x.onclick = ()=>{ data.maquettes.splice(i,1); data.maquette = data.maquettes[0]||''; drawMq(); }; b.appendChild(x); if(i===0) b.appendChild(el('<div style="position:absolute;left:4px;bottom:4px;background:#FFC933;border:1px solid #001D51;border-radius:6px;font-size:10px;font-weight:800;padding:0 4px;">principale</div>')); g.appendChild(b); });
+      mq.appendChild(g);
+      if(data.maquettes.length < PS_MAX_IMGS){
+        const fi = document.createElement('input'); fi.type='file'; fi.accept='image/*'; fi.multiple = true;
+        fi.onchange = async ()=>{ const fs = Array.from(fi.files||[]); const room = PS_MAX_IMGS - data.maquettes.length; if(fs.length>room) alert('Maximum '+PS_MAX_IMGS+' photos : seules les '+room+' premières sont ajoutées.'); for(const f of fs.slice(0, room)){ try{ data.maquettes.push(await resizeImageFileJpeg(f, 900, 0.72)); }catch(e){ alert('Image illisible : '+f.name); } } data.maquette = data.maquettes[0]||''; drawMq(); };
+        mq.appendChild(fi);
+      } else mq.appendChild(el('<div style="font-size:12px;opacity:.75;">Maximum atteint ('+PS_MAX_IMGS+' photos). Retire une photo pour en ajouter une autre.</div>'));
     }
     drawMq();
     const prixBox = el('<div style="font-weight:800;margin:4px 0 10px;"></div>');
@@ -9382,6 +9428,12 @@ async function boot(){
     const x = (((DATA.crea||{}).produits)||[]).find(p=>p.id===view.crScanId);
     if(x){ view.trackCrId = x.id; view.trackRef = x.refProduit || x.ref; view.trackSearched = true; }
     view.crScanId = null;
+  }
+  if(!view.personId && view.psScanId){
+    // visiteur sans compte : le QR d'une personnalisation ouvre son suivi
+    const j = (((DATA.perso||{}).jobs)||[]).find(p=>p.id===view.psScanId);
+    if(j){ view.trackPsId = j.id; view.trackRef = j.ref; view.trackSearched = true; }
+    view.psScanId = null;
   }
   applyScan();
   render();
