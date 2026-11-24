@@ -567,6 +567,8 @@ button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
 .cr-dot{width:24px;height:24px;border-radius:50%;border:2px solid #001D51;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:0 0 auto}
 .cr-lbl{flex:1}.cr-date{font-size:11px;opacity:.8}
 .cc-box{margin:4px 0 6px}
+.modal .ps-tchk,.ps-tchk{display:inline-flex;align-items:center;gap:4px;border:2px solid #001D51;border-radius:999px;padding:5px 12px;font-weight:800;font-size:14px;cursor:pointer;margin:0}
+.ps-tchk input{width:auto;margin:0}
 .cr-proto-card{border:3px solid #001D51;border-radius:16px;background:#FFF6E6;padding:12px;margin-bottom:12px;box-shadow:4px 4px 0 #001D51}
 .cr-pill{border:2px solid #001D51;border-radius:999px;padding:1px 9px;background:#FFC933;font-size:13px}
 .cr-dec{border:2px dashed #001D51;border-radius:12px;padding:10px;background:#fff;margin-top:8px}
@@ -1871,7 +1873,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 72 · photos multiples et recherche PS</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 73 · plusieurs techniques par commande</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -5839,7 +5841,7 @@ function renderOrderView(){
   const psLies = (((DATA.perso||{}).jobs)||[]).filter(j=>j.cmdId===c.id);
   if(psLies.length){
     const box = el('<div style="margin:10px 0;"><div style="font-weight:800;margin-bottom:6px;">Personnalisation</div></div>');
-    psLies.forEach(j=>box.appendChild(el('<div style="border:2px solid #001D51;border-radius:10px;padding:6px 10px;margin-bottom:6px;background:'+PS_TECH[j.technique].color+';font-size:13px;"><b>'+esc(j.ref)+'</b> · '+PS_TECH[j.technique].label+' · '+esc(j.quantite||'')+' pcs · étape : <b>'+esc(psEtape(j).label)+'</b>'+(j.dateLivraison?' · livraison '+fmtDate(j.dateLivraison):'')+'</div>')));
+    psLies.forEach(j=>box.appendChild(el('<div style="border:2px solid #001D51;border-radius:10px;padding:6px 10px;margin-bottom:6px;background:'+psTechColor(j)+';font-size:13px;"><b>'+esc(j.ref)+'</b> · '+psTechLabel(j)+' · '+esc(j.quantite||'')+' pcs · étape : <b>'+esc(psEtape(j).label)+'</b>'+(j.dateLivraison?' · livraison '+fmtDate(j.dateLivraison):'')+'</div>')));
     m.appendChild(box);
   }
   if(c.notes) m.appendChild(el('<div class="ov-notes"><b>Notes :</b> '+esc(c.notes)+'</div>'));
@@ -7372,7 +7374,21 @@ function PS(){
   if(!p.tarifs || typeof p.tarifs!=='object') p.tarifs = {};
   return p;
 }
-function psSteps(j){ return (PS_TECH[j.technique]||PS_TECH.dtf).steps; }
+// ---- une commande peut combiner plusieurs techniques (ex : DTF + Broderie) ----
+function psTechs(j){ if(!j) return ['dtf']; const l = (Array.isArray(j.techniques) ? j.techniques : []).filter(k=>PS_TECH[k]); if(l.length) return Object.keys(PS_TECH).filter(k=>l.indexOf(k)>=0); return [PS_TECH[j.technique] ? j.technique : 'dtf']; }
+function psHas(j, k){ return psTechs(j).indexOf(k)>=0; }
+function psTechLabel(j){ return psTechs(j).map(k=>PS_TECH[k].label).join(' + '); }
+function psTechColor(j){ const t = psTechs(j); return t.length===1 ? PS_TECH[t[0]].color : 'linear-gradient(90deg,'+t.map(k=>PS_TECH[k].color).join(',')+')'; }
+function psStepDefs(j){
+  const t = psTechs(j);
+  if(t.length===1){ const st = PS_TECH[t[0]].steps; return st.map((s,i)=>({label:s, key:(i>0 && i<st.length-3) ? t[0]+'|'+s : s})); }
+  const base = PS_TECH[t[0]].steps; const out = [{label:base[0], key:base[0]}];
+  t.forEach(k=>{ const st = PS_TECH[k].steps; st.slice(1, st.length-3).forEach(s=>out.push({label:PS_TECH[k].label+' · '+s, key:k+'|'+s})); });
+  base.slice(-3).forEach(s=>out.push({label:s, key:s}));
+  return out;
+}
+function psSteps(j){ return psStepDefs(j).map(x=>x.label); }
+function psZoneTech(j, z){ const t = psTechs(j); return (z && z.tech && t.indexOf(z.tech)>=0) ? z.tech : t[0]; }
 function psNow(){ return new Date().toISOString(); }
 function fmtDT(x){
   if(!x) return '';
@@ -7423,8 +7439,8 @@ function psReceptionBlock(wrap, dest){
   wrap.appendChild(el('<div class="section-title" style="background:#FF5A4D;color:#fff;">Personnalisation à réceptionner ('+jobs.length+')</div>'));
   const body = el('<div class="section-body"></div>');
   jobs.forEach(j=>{
-    const card = el('<div style="border:2px solid #001D51;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:'+PS_TECH[j.technique].color+';display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;"></div>');
-    card.appendChild(el('<div style="font-size:14px;line-height:1.5;"><b>'+esc(j.ref)+'</b> · '+PS_TECH[j.technique].label+(j.cmdRef?' · commande <b>'+esc(j.cmdRef)+'</b>':'')+'<br>'+esc(j.client||'')+' · '+esc(j.article||'')+' · <b>'+esc(j.quantite||'')+' pcs</b><br><span style="font-size:12px;">Terminée le '+fmtDT(j.termineLe)+(psDelai(j)?' ('+psDelai(j).txt.replace(/^[✓⚠] /,'')+')':'')+' · envoyée le '+fmtDT(j.envoiLe)+'</span></div>'));
+    const card = el('<div style="border:2px solid #001D51;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:'+psTechColor(j)+';display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;"></div>');
+    card.appendChild(el('<div style="font-size:14px;line-height:1.5;"><b>'+esc(j.ref)+'</b> · '+psTechLabel(j)+(j.cmdRef?' · commande <b>'+esc(j.cmdRef)+'</b>':'')+'<br>'+esc(j.client||'')+' · '+esc(j.article||'')+' · <b>'+esc(j.quantite||'')+' pcs</b><br><span style="font-size:12px;">Terminée le '+fmtDT(j.termineLe)+(psDelai(j)?' ('+psDelai(j).txt.replace(/^[✓⚠] /,'')+')':'')+' · envoyée le '+fmtDT(j.envoiLe)+'</span></div>'));
     const acts = el('<div style="display:flex;gap:6px;flex-wrap:wrap;"></div>');
     const v = el('<button class="btn small">Afficher</button>'); v.onclick = ()=>{ view.psView = j.id; render(); };
     const ok = el('<button class="btn small primary">Marquer comme reçue</button>'); ok.onclick = ()=>{ j.recuLe = psNow(); j.recuPar = view.personId; saveState(j.ref+' reçue'); };
@@ -7496,7 +7512,7 @@ function psPanelEval(panel){
   body.appendChild(el('<div style="font-size:12px;opacity:.8;margin:-4px 0 10px;">Délai : commandes terminées avant ou à la « fin prévue ». Satisfaction : notée après l\'envoi (par le commercial ou l\'admin). La note est la moyenne des deux.</div>'));
   // par technique
   body.appendChild(el('<div style="font-weight:800;margin:10px 0 6px;">Par technique</div>'));
-  body.appendChild(trTable(['Technique','Terminées','Délai respecté','Clients satisfaits','Note'], Object.keys(PS_TECH).map(k=>{ const s2 = psEvalStats(jobs.filter(j=>j.technique===k)); return ['<b>'+PS_TECH[k].label+'</b>', s2.fin, psPct(s2.pD)+' <span style="font-size:11px">('+s2.ontime+'/'+s2.wd+')</span>', psPct(s2.pS)+' <span style="font-size:11px">('+s2.sat+'/'+s2.rated+')</span>', s2.stars===null?'—':starsHtml(s2.stars)+' '+fmt1(s2.stars)]; })));
+  body.appendChild(trTable(['Technique','Terminées','Délai respecté','Clients satisfaits','Note'], Object.keys(PS_TECH).map(k=>{ const s2 = psEvalStats(jobs.filter(j=>psHas(j,k))); return ['<b>'+PS_TECH[k].label+'</b>', s2.fin, psPct(s2.pD)+' <span style="font-size:11px">('+s2.ontime+'/'+s2.wd+')</span>', psPct(s2.pS)+' <span style="font-size:11px">('+s2.sat+'/'+s2.rated+')</span>', s2.stars===null?'—':starsHtml(s2.stars)+' '+fmt1(s2.stars)]; })));
   // par personne
   const ids = Array.from(new Set(jobs.map(j=>j.termineePar).filter(Boolean)));
   if(ids.length){
@@ -7507,12 +7523,12 @@ function psPanelEval(panel){
   const aNoter = PS().jobs.filter(j=>psLivre(j) && !j.satisfaction);
   body.appendChild(el('<div style="font-weight:800;margin:14px 0 6px;">Satisfaction à noter ('+aNoter.length+')</div>'));
   if(!aNoter.length) body.appendChild(el('<div style="font-size:13px;opacity:.7;">Rien à noter.</div>'));
-  aNoter.forEach(j=>{ const c = el('<div style="border:2px solid #001D51;border-radius:12px;padding:8px 10px;margin-bottom:6px;background:#fff;"></div>'); c.appendChild(el('<div style="font-size:13px;margin-bottom:6px;"><b>'+esc(j.ref)+'</b> · '+esc(j.client||'')+' · '+PS_TECH[j.technique].label+' · '+esc(j.quantite||'')+' pcs · envoyée '+PS_DEST[j.destination]+' le '+fmtDT(j.envoiLe)+'</div>')); c.appendChild(psRateWidget(j)); body.appendChild(c); });
+  aNoter.forEach(j=>{ const c = el('<div style="border:2px solid #001D51;border-radius:12px;padding:8px 10px;margin-bottom:6px;background:#fff;"></div>'); c.appendChild(el('<div style="font-size:13px;margin-bottom:6px;"><b>'+esc(j.ref)+'</b> · '+esc(j.client||'')+' · '+psTechLabel(j)+' · '+esc(j.quantite||'')+' pcs · envoyée '+PS_DEST[j.destination]+' le '+fmtDT(j.envoiLe)+'</div>')); c.appendChild(psRateWidget(j)); body.appendChild(c); });
   // problèmes
   const pb = jobs.filter(j=>(psDelai(j) && psDelai(j).late && j.termineLe) || j.satisfaction==='non');
   if(pb.length){
     body.appendChild(el('<div style="font-weight:800;margin:14px 0 6px;">À améliorer ('+pb.length+')</div>'));
-    body.appendChild(trTable(['Réf.','Client','Technique','Délai','Satisfaction','Remarque'], pb.map(j=>{ const dl = psDelai(j); return ['<b>'+esc(j.ref)+'</b>', esc(j.client||''), PS_TECH[j.technique].label, dl?'<span style="color:'+(dl.late?'#E0392D':'#1E7A34')+'">'+dl.txt+'</span>':'—', j.satisfaction==='non'?'<b style="color:#E0392D">Pas satisfait</b>':(j.satisfaction==='oui'?'<span style="color:#1E7A34">Satisfait</span>':'—'), esc(j.satisfactionNote||'')]; })));
+    body.appendChild(trTable(['Réf.','Client','Technique','Délai','Satisfaction','Remarque'], pb.map(j=>{ const dl = psDelai(j); return ['<b>'+esc(j.ref)+'</b>', esc(j.client||''), psTechLabel(j), dl?'<span style="color:'+(dl.late?'#E0392D':'#1E7A34')+'">'+dl.txt+'</span>':'—', j.satisfaction==='non'?'<b style="color:#E0392D">Pas satisfait</b>':(j.satisfaction==='oui'?'<span style="color:#1E7A34">Satisfait</span>':'—'), esc(j.satisfactionNote||'')]; })));
   }
 }
 function psMyEval(wrap){
@@ -7530,7 +7546,7 @@ function psRateBlock(wrap){
   if(!jobs.length) return;
   wrap.appendChild(el('<div class="section-title" style="background:#37D6A5;">Personnalisation : satisfaction client à noter ('+jobs.length+')</div>'));
   const body = el('<div class="section-body"></div>');
-  jobs.forEach(j=>{ const c = el('<div style="border:2px solid #001D51;border-radius:12px;padding:8px 10px;margin-bottom:6px;background:#fff;"></div>'); c.appendChild(el('<div style="font-size:13px;margin-bottom:6px;"><b>'+esc(j.ref)+'</b> · '+esc(j.client||'')+' · '+PS_TECH[j.technique].label+' · '+esc(j.quantite||'')+' pcs · reçue le '+fmtDT(j.recuLe)+'</div>')); c.appendChild(psRateWidget(j)); body.appendChild(c); });
+  jobs.forEach(j=>{ const c = el('<div style="border:2px solid #001D51;border-radius:12px;padding:8px 10px;margin-bottom:6px;background:#fff;"></div>'); c.appendChild(el('<div style="font-size:13px;margin-bottom:6px;"><b>'+esc(j.ref)+'</b> · '+esc(j.client||'')+' · '+psTechLabel(j)+' · '+esc(j.quantite||'')+' pcs · reçue le '+fmtDT(j.recuLe)+'</div>')); c.appendChild(psRateWidget(j)); body.appendChild(c); });
   wrap.appendChild(body);
 }
 function psRetard(j){ if(psDone(j)) return false; const d = j.finPrevue || j.dateLivraison; return !!(d && d < todayISO()); }
@@ -7557,7 +7573,7 @@ function psTrackCard(j){
   const card = el('<div class="track-card"></div>');
   card.appendChild(el('<div style="font-size:12px;text-align:center;font-weight:800;letter-spacing:.5px;opacity:.75;">SUIVI DE PERSONNALISATION</div>'));
   card.appendChild(el('<div style="font-size:22px;font-weight:bold;text-align:center;">'+esc(j.ref)+'</div>'));
-  card.appendChild(el('<div style="font-size:13px;color:var(--text-soft);text-align:center;margin:2px 0 10px;">'+esc((PS_TECH[j.technique]||PS_TECH.dtf).label)+(j.article?' · '+esc(j.article):'')+(j.couleurSupport?' '+esc(j.couleurSupport):'')+(j.quantite?' · '+esc(j.quantite)+' pièces':'')+'</div>'));
+  card.appendChild(el('<div style="font-size:13px;color:var(--text-soft);text-align:center;margin:2px 0 10px;">'+esc(psTechLabel(j))+(j.article?' · '+esc(j.article):'')+(j.couleurSupport?' '+esc(j.couleurSupport):'')+(j.quantite?' · '+esc(j.quantite)+' pièces':'')+'</div>'));
   const imgs = psImgs(j); if(imgs.length){ const g = psGallery(imgs, 110); g.style.justifyContent='center'; g.style.marginBottom='10px'; card.appendChild(g); }
   const tr = el('<div class="cr-track"></div>');
   st.forEach((s,i)=>{
@@ -7596,22 +7612,24 @@ function psPrix(technique, zones, tf){
   tf = tf || PS().tarifs; let unit = 0, fixe = 0;
   (zones||[]).forEach(z=>{
     const L = trNum(z.largeur), H = trNum(z.hauteur);
-    if(technique==='dtf'){ unit += Math.max(trNum(tf.dtfMin), L*H*trNum(tf.dtfCm2)) + trNum(tf.dtfPose); }
-    if(technique==='broderie'){ unit += Math.max(trNum(tf.brodMin), trNum(z.points)/1000*trNum(tf.brod1000)); fixe += trNum(tf.brodProg); }
-    if(technique==='serigraphie'){ const nc = Math.max(1, Math.round(trNum(z.couleurs))||1); unit += Math.max(trNum(tf.seriMin), nc*trNum(tf.seriCouleur)); fixe += nc*trNum(tf.seriEcran); }
+    const tq = (z.tech && PS_TECH[z.tech] && z.tech!==technique && z._multi!==false) ? z.tech : technique;
+    if(tq==='dtf'){ unit += Math.max(trNum(tf.dtfMin), L*H*trNum(tf.dtfCm2)) + trNum(tf.dtfPose); }
+    if(tq==='broderie'){ unit += Math.max(trNum(tf.brodMin), trNum(z.points)/1000*trNum(tf.brod1000)); fixe += trNum(tf.brodProg); }
+    if(tq==='serigraphie'){ const nc = Math.max(1, Math.round(trNum(z.couleurs))||1); unit += Math.max(trNum(tf.seriMin), nc*trNum(tf.seriCouleur)); fixe += nc*trNum(tf.seriEcran); }
   });
   return {unit:Math.round(unit*100)/100, fixe:Math.round(fixe*100)/100};
 }
 function psZonesText(j){ return (j.zones||[]).map(z=>{
   let t = esc(z.zone||'—');
   if(z.largeur||z.hauteur) t += ' '+esc(z.largeur||'?')+'×'+esc(z.hauteur||'?')+' cm';
-  if(j.technique==='broderie' && z.points) t += ' · '+esc(z.points)+' pts';
-  if(j.technique==='serigraphie' && z.couleurs) t += ' · '+esc(z.couleurs)+' coul.';
+  const zt = psZoneTech(j, z); if(psTechs(j).length>1) t = '<b>'+PS_TECH[zt].label+'</b> · '+t;
+  if(zt==='broderie' && z.points) t += ' · '+esc(z.points)+' pts';
+  if(zt==='serigraphie' && z.couleurs) t += ' · '+esc(z.couleurs)+' coul.';
   return t; }).join('<br>') || '—'; }
 function psBlankJob(technique){
   const p = PS();
   return {id:'ps_'+Date.now(), ref:trNextRef('PS', p.jobs, 4), date:todayISO(), client:'', cmdId:'', technique:technique||'dtf', article:'', couleurSupport:'', quantite:'',
-    zones:[{zone:'Poitrine cœur', largeur:'', hauteur:'', couleurs:'', points:''}], maquette:'', finPrevue:'', dateLivraison:'', urgent:false, etape:0, etapesDates:{}, prixUnitaire:'', fraisFixes:'', paye:'', notes:'', creeLe:new Date().toISOString()};
+    techniques:[technique||'dtf'], zones:[{zone:'Poitrine cœur', largeur:'', hauteur:'', couleurs:'', points:''}], maquette:'', finPrevue:'', dateLivraison:'', urgent:false, etape:0, etapesDates:{}, prixUnitaire:'', fraisFixes:'', paye:'', notes:'', creeLe:new Date().toISOString()};
 }
 
 function renderPerso(w, wrap, opts){
@@ -7642,7 +7660,7 @@ function renderPerso(w, wrap, opts){
   kpi.appendChild(el('<div class="kpi'+(reste>0?' alert':'')+'"><div class="num" style="font-size:18px;">'+fmtDA(reste)+'</div><div class="label">Reste à encaisser</div></div>')); }
   if(!opts.embedded || opts.main) wrap.appendChild(kpi);
 
-  const cnt = t=>enCours.filter(j=>j.technique===t).length || null;
+  const cnt = t=>enCours.filter(j=>psHas(j,t)).length || null;
   const tiles = [
     {key:'board', label:'Tableau de bord', sub:'Vue d\'ensemble · retards', badge: retard || null, ic: ICONS.stats},
     {key:'cmd', label:'Commandes', badge: enCours.length || null, ic: ICONS.commandes},
@@ -7692,7 +7710,7 @@ function psPanelJobs(panel, tech){
   row.appendChild(f);
   row.appendChild(trBtn('+ Nouvelle commande'+(tech?' '+PS_TECH[tech].label:''), ()=>{ view.psModal = {type:'job', mode:'create', data:psBlankJob(tech||'dtf')}; render(); }, true));
   body.appendChild(row);
-  let jobs = p.jobs.filter(j=>!tech || j.technique===tech);
+  let jobs = p.jobs.filter(j=>!tech || psHas(j,tech));
   const fl = view.perso.filtre;
   jobs = jobs.filter(j=> fl==='tout' ? true : fl==='encours' ? !psLivre(j) : fl==='retard' ? psRetard(j) : fl==='alivrer' ? (psDone(j) && !psLivre(j)) : psLivre(j));
   jobs.sort((a,b)=> (b.urgent?1:0)-(a.urgent?1:0) || String(a.dateLivraison||'9999').localeCompare(String(b.dateLivraison||'9999')));
@@ -7709,7 +7727,7 @@ function psPanelJobs(panel, tech){
     if(j.envoiLe) selBox.appendChild(el('<div style="font-size:10px;">Envoyée '+PS_DEST[j.destination]+' le '+fmtDT(j.envoiLe)+(j.recuLe?' · <b>reçue</b> le '+fmtDT(j.recuLe):' · <b style="color:#E0392D">pas encore reçue</b>')+'</div>'));
     const total = psTotal(j), rest = total - trNum(j.paye);
     return ['<b>'+esc(j.ref)+'</b>'+(j.urgent?' <span class="pill" style="background:#FF5A4D;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px;">URGENT</span>':'')+(j.cmdRef?'<br><span style="font-size:11px">cmd '+esc(j.cmdRef)+'</span>':''),
-      esc(j.client||'—'), '<span class="pill" style="background:'+PS_TECH[j.technique].color+';color:#001D51;">'+PS_TECH[j.technique].label+'</span>',
+      esc(j.client||'—'), '<span class="pill" style="background:'+psTechColor(j)+';color:#001D51;">'+psTechLabel(j)+'</span>',
       esc(j.article||'—')+(j.couleurSupport?'<br><span style="font-size:11px">'+esc(j.couleurSupport)+'</span>':''), esc(j.quantite||'—'), psZonesText(j),
       (()=>{ const dl = psDelai(j); if(!dl) return '—'; return fmtDate(j.finPrevue)+'<br><span style="font-size:11px;font-weight:700;color:'+(dl.late?'#E0392D':(dl.done?'#1E7A34':'#001D51'))+'">'+dl.txt+'</span>'; })(),
       j.dateLivraison ? '<span style="'+(!psDone(j) && j.dateLivraison<todayISO()?'color:#E0392D;font-weight:800':'')+'">'+fmtDate(j.dateLivraison)+'</span>' : '—',
@@ -7726,7 +7744,7 @@ function psPanelBoard(panel){
   const row = el('<div class="add-row" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-start;"></div>');
   [['','Toutes']].concat(Object.keys(PS_TECH).map(k=>[k,PS_TECH[k].label])).forEach(([v,l])=>row.appendChild(trBtn(l, ()=>{ view.perso.boardTech = v; render(); }, view.perso.boardTech===v)));
   body.appendChild(row);
-  const jobs = p.jobs.filter(j=>!view.perso.boardTech || j.technique===view.perso.boardTech);
+  const jobs = p.jobs.filter(j=>!view.perso.boardTech || psHas(j,view.perso.boardTech));
   const actifs = jobs.filter(j=>!psLivre(j) || !j.recuLe);
   const today = todayISO(), in7 = new Date(Date.now()+7*86400000).toISOString().slice(0,10);
   const due = j=>j.finPrevue || j.dateLivraison || '';
@@ -7742,7 +7760,7 @@ function psPanelBoard(panel){
   body.appendChild(g);
   // charge par technique
   const charge = el('<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:4px 0 14px;"></div>');
-  Object.keys(PS_TECH).forEach(k=>{ const js = p.jobs.filter(j=>j.technique===k && !psDone(j)); const q = js.reduce((a,j)=>a+trNum(j.quantite),0); const late = js.filter(psRetard).length;
+  Object.keys(PS_TECH).forEach(k=>{ const js = p.jobs.filter(j=>psHas(j,k) && !psDone(j)); const q = js.reduce((a,j)=>a+trNum(j.quantite),0); const late = js.filter(psRetard).length;
     charge.appendChild(el('<div style="border:2px solid #001D51;border-radius:12px;padding:8px 12px;background:'+PS_TECH[k].color+';"><b>'+PS_TECH[k].label+'</b><div style="font-size:13px;">'+js.length+' commande(s) · '+q+' pièces'+(late?' · <b style="color:#A42834">'+late+' en retard</b>':'')+'</div></div>')); });
   body.appendChild(charge);
   // colonnes (kanban)
@@ -7755,7 +7773,7 @@ function psPanelBoard(panel){
     items.forEach(j=>{
       const dl = psDelai(j); const late = psRetard(j);
       const card = el('<button style="display:block;width:100%;text-align:left;border:2px solid #001D51;border-radius:10px;padding:6px 8px;margin-bottom:6px;background:'+(late?'#FFE1DE':'#fff')+';cursor:pointer;font-family:inherit;color:#001D51;box-shadow:2px 2px 0 #001D51;"></button>');
-      card.innerHTML = '<div style="display:flex;justify-content:space-between;gap:4px;"><b>'+esc(j.ref)+'</b><span class="pill" style="background:'+PS_TECH[j.technique].color+';color:#001D51;font-size:10px;padding:1px 6px;">'+PS_TECH[j.technique].label+'</span></div>'
+      card.innerHTML = '<div style="display:flex;justify-content:space-between;gap:4px;"><b>'+esc(j.ref)+'</b><span class="pill" style="background:'+psTechColor(j)+';color:#001D51;font-size:10px;padding:1px 6px;">'+psTechLabel(j)+'</span></div>'
         +'<div style="font-size:12px;">'+esc(j.client||'')+' · '+esc(j.quantite||'')+' pcs</div>'
         +'<div style="font-size:11px;opacity:.85;">'+esc(psStepLabel(j, psEtape(j).i))+'</div>'
         +(dl?'<div style="font-size:11px;font-weight:700;color:'+(dl.late?'#E0392D':(dl.done?'#1E7A34':'#001D51'))+'">'+dl.txt+'</div>':(j.dateLivraison?'<div style="font-size:11px;">livraison '+fmtDate(j.dateLivraison)+'</div>':''))
@@ -7854,14 +7872,16 @@ function psZonesEditor(box, d, onchange){
     r.appendChild(s);
     const inp = (key, ph, w)=>{ const x=document.createElement('input'); x.type='number'; x.min='0'; x.step='any'; x.placeholder=ph; x.value=z[key]||''; x.style.cssText='flex:1 1 '+(w||70)+'px;width:'+(w||70)+'px;padding:6px;border:2px solid #001D51;border-radius:10px;background:#FFF6E6;font-weight:600;'; x.oninput=()=>{ z[key]=x.value; onchange(); }; return x; };
     r.appendChild(inp('largeur','larg. cm')); r.appendChild(inp('hauteur','haut. cm'));
-    if(d.technique==='broderie') r.appendChild(inp('points','nb points', 90));
-    if(d.technique==='serigraphie') r.appendChild(inp('couleurs','nb couleurs', 90));
+    const zt = psZoneTech(d, z);
+    if(psTechs(d).length>1){ const ts = document.createElement('select'); ts.style.cssText='flex:1 1 110px;padding:6px;border:2px solid #001D51;border-radius:10px;font-weight:800;background:'+PS_TECH[zt].color+';'; psTechs(d).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=PS_TECH[k].label; if(k===zt) o.selected=true; ts.appendChild(o); }); ts.onchange = ()=>{ z.tech = ts.value; psZonesEditor(box, d, onchange); onchange(); }; r.insertBefore(ts, r.firstChild); }
+    if(zt==='broderie') r.appendChild(inp('points','nb points', 90));
+    if(zt==='serigraphie') r.appendChild(inp('couleurs','nb couleurs', 90));
     const x = el('<button class="btn small">✕</button>'); x.onclick = ()=>{ d.zones.splice(i,1); psZonesEditor(box, d, onchange); onchange(); };
     r.appendChild(x);
     box.appendChild(r);
   });
   const add = el('<button class="btn small">+ Ajouter un emplacement</button>');
-  add.onclick = ()=>{ d.zones.push({zone:'Dos', largeur:'', hauteur:'', couleurs:'', points:''}); psZonesEditor(box, d, onchange); onchange(); };
+  add.onclick = ()=>{ const t = psTechs(d); d.zones.push({zone:'Dos', largeur:'', hauteur:'', couleurs:'', points:'', tech:t[t.length-1]}); psZonesEditor(box, d, onchange); onchange(); };
   box.appendChild(add);
 }
 
@@ -7900,7 +7920,7 @@ function psPrintLabel(j){
   const logo = (DATA.settings && DATA.settings.logoUrl) || DEFAULT_LOGO;
   w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(j.ref)+'</title><style>body{font-family:Arial,sans-serif;text-align:center;margin:18px;color:#000}img.l{height:44px;margin-bottom:6px}.r{font-size:28px;font-weight:bold;margin-top:6px}.i{font-size:15px;margin-top:4px}</style></head><body>'
     +'<img class="l" src="'+logo+'">'+qrSvg(psUrl(j), 240)+'<div class="r">'+esc(j.ref)+'</div><div class="i"><b>'+esc(j.client||'')+'</b></div>'
-    +'<div class="i">'+esc(PS_TECH[j.technique].label)+' · '+esc(j.article||'')+' · '+esc(j.quantite||'')+' pièces</div>'
+    +'<div class="i">'+esc(psTechLabel(j))+' · '+esc(j.article||'')+' · '+esc(j.quantite||'')+' pièces</div>'
     +'<div class="i">'+(j.dateLivraison?'Livraison : '+fmtDate(j.dateLivraison):'')+'</div>'
     +'<script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>');
   w.document.close();
@@ -7913,7 +7933,7 @@ function renderPsView(){
   if(!j){ m.appendChild(el('<h2>Commande introuvable</h2>')); }
   else{
     const e = psEtape(j);
-    m.appendChild(el('<h2>'+esc(j.ref)+' <span class="pill" style="background:'+PS_TECH[j.technique].color+';color:#001D51;font-size:12px;vertical-align:middle;">'+PS_TECH[j.technique].label+'</span>'+(j.urgent?' <span class="pill" style="background:#FF5A4D;color:#fff;font-size:12px;vertical-align:middle;">URGENT</span>':'')+'</h2>'));
+    m.appendChild(el('<h2>'+esc(j.ref)+' <span class="pill" style="background:'+psTechColor(j)+';color:#001D51;font-size:12px;vertical-align:middle;">'+psTechLabel(j)+'</span>'+(j.urgent?' <span class="pill" style="background:#FF5A4D;color:#fff;font-size:12px;vertical-align:middle;">URGENT</span>':'')+'</h2>'));
     // frise des étapes
     const fr = el('<div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px;"></div>');
     psSteps(j).forEach((s,i)=>{ const done = i<=e.i; fr.appendChild(el('<div style="border:2px solid #001D51;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;background:'+(i===e.i?'#FFC933':(done?'#37D6A5':'#fff'))+';">'+(i+1)+'. '+esc(psStepLabel(j,i))+((j.etapesDates||{})[i] && i<=e.i?' · '+fmtDT(j.etapesDates[i]):'')+'</div>')); });
@@ -7987,7 +8007,26 @@ function renderPsModal(){
       else data.cmdRef = '';
       ['client','article','quantite','couleurSupport','dateLivraison'].forEach(k=>{ const i = m.querySelector('input[data-k='+k+']'); if(i) i.value = data[k]||''; });
     })]);
-    frow([select('Technique *','technique', Object.keys(PS_TECH).map(k=>[k, PS_TECH[k].label]), ()=>{ data.etape = 0; psZonesEditor(zbox, data, upd); upd(); }), field('Client *','client',{list:'dl-ps-clients'})]);
+    { const tw = el('<div></div>'); tw.appendChild(el('<label>Technique(s) * <span style="font-weight:600;opacity:.75;">— coche plusieurs si la commande combine DTF, broderie…</span></label>'));
+      const row = el('<div style="display:flex;gap:6px;flex-wrap:wrap;"></div>');
+      Object.keys(PS_TECH).forEach(k=>{
+        const lb = el('<label class="ps-tchk" style="background:'+(psHas(data,k)?PS_TECH[k].color:'#fff')+';"></label>');
+        const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = psHas(data,k);
+        cb.onchange = ()=>{
+          const list = Object.keys(PS_TECH).filter(x=>x===k ? cb.checked : psHas(data,x));
+          if(!list.length){ cb.checked = true; alert('Choisis au moins une technique.'); return; }
+          const oldDefs = psStepDefs(data), oldKey = (oldDefs[Number(data.etape)||0]||{}).key, oldDates = data.etapesDates||{};
+          (data.zones||[]).forEach(z=>{ z.tech = psZoneTech(data, z); });
+          data.techniques = list; data.technique = list[0];
+          (data.zones||[]).forEach(z=>{ if(!z.tech || list.indexOf(z.tech)<0) z.tech = list[0]; });
+          const nd = psStepDefs(data); const nk = nd.map(x=>x.key); const dates = {};
+          oldDefs.forEach((d0,i)=>{ const ni = nk.indexOf(d0.key); if(ni>=0 && oldDates[i]) dates[ni] = oldDates[i]; });
+          data.etapesDates = dates; const ne = nk.indexOf(oldKey); data.etape = ne>=0 ? Math.min(ne, nd.length-2) : 0;
+          render();
+        };
+        lb.appendChild(cb); lb.appendChild(document.createTextNode(' '+PS_TECH[k].label)); row.appendChild(lb);
+      });
+      tw.appendChild(row); frow([tw, field('Client *','client',{list:'dl-ps-clients'})]); }
     frow([field('Article / support','article',{list:'dl-ps-articles', ph:'ex : T-shirt, Hoodie, Casquette'}), field('Couleur du support','couleurSupport',{ph:'ex : Noir'})]);
     frow([field('Quantité (pièces) *','quantite',{type:'number', onchange:()=>upd()}), field('Fin prévue le (délai personnalisation)','finPrevue',{type:'date'})]);
     frow([field('Date de livraison au client','dateLivraison',{type:'date'})]);
@@ -8060,7 +8099,7 @@ function renderPsModal(){
     if(mode==='edit'){
       const js = p.jobs.filter(j=>normName(j.client)===normName(view.psModal.oldName||data.nom)).slice().reverse();
       m.appendChild(el('<div style="font-weight:700;margin:8px 0 6px;">Commandes ('+js.length+')</div>'));
-      if(js.length) m.appendChild(trTable(['Réf.','Date','Technique','Qté','Étape','Total'], js.map(j=>['<b>'+esc(j.ref)+'</b>', fmtDate(j.date), PS_TECH[j.technique].label, esc(j.quantite||''), esc(psEtape(j).label), fmtDA(psTotal(j))])));
+      if(js.length) m.appendChild(trTable(['Réf.','Date','Technique','Qté','Étape','Total'], js.map(j=>['<b>'+esc(j.ref)+'</b>', fmtDate(j.date), psTechLabel(j), esc(j.quantite||''), esc(psEtape(j).label), fmtDA(psTotal(j))])));
       else m.appendChild(el('<div style="font-size:13px;opacity:.7;">Aucune commande.</div>'));
     }
   }
@@ -8085,7 +8124,7 @@ function renderPsModal(){
     if(type==='job'){
       if(!String(data.client||'').trim()){ alert('Indique le client.'); return; }
       if(!(trNum(data.quantite)>0)){ alert('Indique la quantité.'); return; }
-      data.client = String(data.client).trim(); data.etape = Math.min(Number(data.etape)||0, psSteps(data).length-2);
+      data.client = String(data.client).trim(); data.techniques = psTechs(data); data.technique = data.techniques[0]; data.etape = Math.min(Number(data.etape)||0, psSteps(data).length-2);
       const old = p.jobs.find(x=>x.id===data.id);
       if(!old || Number(old.etape)!==data.etape){ data.etapesDates = data.etapesDates || {}; data.etapesDates[data.etape] = psNow(); if(data.etape===psSteps(data).length-2 && !data.termineLe){ data.termineLe = data.etapesDates[data.etape]; data.termineePar = view.personId; } }
       data.zones = (data.zones||[]).filter(z=>z.zone);
