@@ -1867,6 +1867,7 @@ function renderLogin(){
     view.screen = screenForRole(person.role);
     view.loginId=''; view.loginCode=''; view.loginError='';
     saveSession(person.id);
+    if(psMigrateSteps()) saveToSupabase();
     applyScan();
     render();
   };
@@ -1875,7 +1876,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 76 · commercial en personnalisation</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 77 · étape DTF prête</div>'));
   grid.appendChild(w2);
   wrap.appendChild(grid);
   wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
@@ -7357,7 +7358,7 @@ function renderTricoModal(){
 // ----- Département PERSONNALISATION : DTF, broderie, sérigraphie -----
 // =====================================================================
 const PS_TECH = {
-  dtf:         {label:'DTF',         color:'#BFD2FF', steps:['Maquette / BAT','Impression film','Poudrage & cuisson','Pressage','Contrôle','Terminé','Envoyée']},
+  dtf:         {label:'DTF',         color:'#BFD2FF', steps:['Maquette / BAT','Impression film','Poudrage & cuisson','DTF prête','Pressage','Contrôle','Terminé','Envoyée']},
   broderie:    {label:'Broderie',    color:'#FFC933', steps:['Maquette / BAT','Programmation','Broderie','Finition (coupe fils)','Contrôle','Terminé','Envoyée']},
   serigraphie: {label:'Sérigraphie', color:'#37D6A5', steps:['Maquette / BAT','Films & écrans','Impression','Séchage','Contrôle','Terminé','Envoyée']}
 };
@@ -7381,15 +7382,41 @@ function psTechs(j){ if(!j) return ['dtf']; const l = (Array.isArray(j.technique
 function psHas(j, k){ return psTechs(j).indexOf(k)>=0; }
 function psTechLabel(j){ return psTechs(j).map(k=>PS_TECH[k].label).join(' + '); }
 function psTechColor(j){ const t = psTechs(j); return t.length===1 ? PS_TECH[t[0]].color : 'linear-gradient(90deg,'+t.map(k=>PS_TECH[k].color).join(',')+')'; }
-function psStepDefs(j){
-  const t = psTechs(j);
-  if(t.length===1){ const st = PS_TECH[t[0]].steps; return st.map((s,i)=>({label:s, key:(i>0 && i<st.length-3) ? t[0]+'|'+s : s})); }
-  const base = PS_TECH[t[0]].steps; const out = [{label:base[0], key:base[0]}];
-  t.forEach(k=>{ const st = PS_TECH[k].steps; st.slice(1, st.length-3).forEach(s=>out.push({label:PS_TECH[k].label+' · '+s, key:k+'|'+s})); });
+function psStepDefs(j, over){
+  const t = psTechs(j); const S = k=>(over && over[k]) || PS_TECH[k].steps;
+  if(t.length===1){ const st = S(t[0]); return st.map((s,i)=>({label:s, key:(i>0 && i<st.length-3) ? t[0]+'|'+s : s})); }
+  const base = S(t[0]); const out = [{label:base[0], key:base[0]}];
+  t.forEach(k=>{ const st = S(k); st.slice(1, st.length-3).forEach(s=>out.push({label:PS_TECH[k].label+' · '+s, key:k+'|'+s})); });
   base.slice(-3).forEach(s=>out.push({label:s, key:s}));
   return out;
 }
 function psSteps(j){ return psStepDefs(j).map(x=>x.label); }
+// V77 : nouvelle étape « DTF prête » après Poudrage & cuisson → on recale les commandes DTF déjà en cours
+const PS_STEPS_V = 2;
+const PS_DTF_STEPS_V1 = ['Maquette / BAT','Impression film','Poudrage & cuisson','Pressage','Contrôle','Terminé','Envoyée'];
+function psMigrateSteps(){
+  let n = 0;
+  (((DATA.perso||{}).jobs)||[]).forEach(j=>{
+    if(Number(j.stepsV||1) >= PS_STEPS_V) return;
+    if(psHas(j,'dtf')){
+      const oldDefs = psStepDefs(j, {dtf:PS_DTF_STEPS_V1}); const nk = psStepDefs(j).map(x=>x.key);
+      const remap = obj=>{ const out = {}; Object.keys(obj||{}).forEach(i=>{ const d0 = oldDefs[Number(i)]; const ni = d0 ? nk.indexOf(d0.key) : -1; if(ni>=0) out[ni] = obj[i]; }); return out; };
+      const cur = oldDefs[Number(j.etape)||0]; const ne = cur ? nk.indexOf(cur.key) : -1;
+      if(ne>=0) j.etape = ne;
+      j.etapesDates = remap(j.etapesDates);
+      if(j.etapesPar) j.etapesPar = remap(j.etapesPar);
+    }
+    j.stepsV = PS_STEPS_V; n++;
+  });
+  return n;
+}
+// colonne du tableau de bord selon le sens de l'étape (marche avec toutes les techniques)
+function psBoardCol(j){
+  const e = psEtape(j); const last = e.last;
+  if(e.i<=0) return 0;
+  if(e.i>=last) return 6; if(e.i===last-1) return 5; if(e.i===last-2) return 4;
+  const m = Math.max(1, last-3); return 1 + Math.min(2, Math.floor((e.i-1)*3/m));
+}
 function psZoneTech(j, z){ const t = psTechs(j); return (z && z.tech && t.indexOf(z.tech)>=0) ? z.tech : t[0]; }
 function psNow(){ return new Date().toISOString(); }
 function fmtDT(x){
@@ -7642,7 +7669,7 @@ function psComTag(j, small){ const n = psCommercialName(j); return n ? '<span cl
 function psBlankJob(technique){
   const p = PS();
   return {id:'ps_'+Date.now(), ref:trNextRef('PS', p.jobs, 4), date:todayISO(), client:'', cmdId:'', technique:technique||'dtf', article:'', couleurSupport:'', quantite:'',
-    techniques:[technique||'dtf'], zones:[{zone:'Poitrine cœur', largeur:'', hauteur:'', couleurs:'', points:''}], maquette:'', finPrevue:'', dateLivraison:'', urgent:false, etape:0, etapesDates:{}, prixUnitaire:'', fraisFixes:'', paye:'', notes:'', creeLe:new Date().toISOString(), creePar:view.personId||'', commercialId:(view.role==='commercial' ? view.personId : '')};
+    stepsV:PS_STEPS_V, techniques:[technique||'dtf'], zones:[{zone:'Poitrine cœur', largeur:'', hauteur:'', couleurs:'', points:''}], maquette:'', finPrevue:'', dateLivraison:'', urgent:false, etape:0, etapesDates:{}, prixUnitaire:'', fraisFixes:'', paye:'', notes:'', creeLe:new Date().toISOString(), creePar:view.personId||'', commercialId:(view.role==='commercial' ? view.personId : '')};
 }
 
 function renderPerso(w, wrap, opts){
@@ -7780,7 +7807,7 @@ function psPanelBoard(panel){
   const board = el('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;padding-bottom:8px;"></div>');
   PS_BOARD_COLS.forEach((title, i)=>{
     const col = el('<div data-col="1" style="background:#FFF6E6;border:2px solid #001D51;border-radius:14px;padding:8px;min-height:120px;"></div>');
-    const items = actifs.filter(j=>psEtape(j).i===i).sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0) || String(due(a)||'9999').localeCompare(String(due(b)||'9999')));
+    const items = actifs.filter(j=>psBoardCol(j)===i).sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0) || String(due(a)||'9999').localeCompare(String(due(b)||'9999')));
     col.appendChild(el('<div style="font-weight:800;font-size:13px;margin-bottom:6px;display:flex;justify-content:space-between;"><span>'+title+'</span><span class="icon-tile-badge" style="position:static;">'+items.length+'</span></div>'));
     if(!items.length) col.appendChild(el('<div style="font-size:12px;opacity:.5;">—</div>'));
     items.forEach(j=>{
@@ -9451,6 +9478,7 @@ async function refreshIfStale(){
     REMOTE_REV = Number(remote._rev||0);
     DATA._rev = REMOTE_REV;
     render();
+    if(psMigrateSteps()) saveToSupabase();
   } finally { refreshBusy = false; }
 }
 
@@ -9476,6 +9504,7 @@ async function boot(){
   try{ view.scanId = new URLSearchParams(location.search).get('cmd'); view.lotScanId = new URLSearchParams(location.search).get('lot'); view.psScanId = new URLSearchParams(location.search).get('perso'); view.crScanId = new URLSearchParams(location.search).get('crea'); }catch(e){}
   await loadDataFromSupabase();
   restoreSession();
+  if(view.personId && psMigrateSteps()) saveToSupabase();
   if(!view.personId && view.scanId){
     // visiteur sans compte (client) : le QR ouvre le suivi de la commande
     const c = (DATA.commandes||[]).find(x=>x.id===view.scanId);
