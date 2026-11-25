@@ -646,6 +646,26 @@ button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
 .pop-nav .pop-nav-c{background:var(--pop-coral);transform:rotate(-2deg)}
 .pop-cats{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:22px;align-items:start}
 .pop-cats.one{grid-template-columns:1fr;max-width:620px;margin-left:auto;margin-right:auto}
+.pop-cats.one.wide{max-width:1040px}
+.ccat-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.ccat-top h2{font:900 26px 'Arial Black',Arial,sans-serif;margin:0;color:var(--pop-navy);flex:1}
+.ccat-q{flex:1 1 220px;padding:10px 12px;border:3px solid var(--pop-navy);border-radius:12px;background:#fff;font:700 15px Arial,sans-serif}
+.ccat-info{background:#FFF6E6;border:2px dashed var(--pop-navy);border-radius:12px;padding:8px 12px;font-size:14px;margin-bottom:14px}
+.ccat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.ccat-card{background:#fff;border:3px solid var(--pop-navy);border-radius:18px;box-shadow:5px 5px 0 var(--pop-navy);padding:10px;display:flex;flex-direction:column;gap:6px}
+.ccat-img{aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:#FFF6E6;border:2px solid var(--pop-navy);display:flex;align-items:center;justify-content:center}
+.ccat-img img{width:100%;height:100%;object-fit:cover}
+.ccat-noimg svg{width:60px;height:60px;opacity:.4}
+.ccat-name{font:900 16px 'Arial Black',Arial,sans-serif;color:var(--pop-navy)}
+.ccat-ref{font-size:12px;opacity:.8}
+.ccat-card .btn{margin-top:auto}
+.ccmd-head{display:flex;gap:12px;align-items:center}
+.ccmd-head img{width:84px;height:84px;object-fit:cover;border:3px solid var(--pop-navy);border-radius:14px}
+.ccmd-line{border:2px solid var(--pop-navy);border-radius:12px;padding:8px 10px;margin:8px 0;background:#FFF6E6}
+.ccmd-line .rf label,.ccmd-size label{display:block;font:800 11px Arial,sans-serif;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.ccmd-line input{width:100%;box-sizing:border-box;border:2px solid var(--pop-navy);border-radius:10px;padding:8px;font:700 15px Arial,sans-serif;background:#fff}
+.ccmd-sizes{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;margin:6px 0}
+.ccmd-tot{margin:10px 0;font-size:16px;background:#fff;border:3px solid var(--pop-navy);border-radius:12px;padding:8px 12px}
 .pop-choose{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:26px}
 .pop-choice{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:34px 24px 26px;border:3px solid var(--pop-navy);border-radius:26px;box-shadow:10px 10px 0 var(--pop-navy);cursor:pointer;font-family:inherit;color:var(--pop-navy);transition:transform .12s, box-shadow .12s}
 .pop-choice:hover{transform:translate(-3px,-3px);box-shadow:13px 13px 0 var(--pop-navy)}
@@ -1847,6 +1867,7 @@ function render(){
   if(view.psView && !view.psModal && !view.psSend) app.appendChild(renderPsView());
   if(view.psSend) app.appendChild(renderPsSend());
   if(view.rcOpen && view.role==='admin' && !view.orderView) app.appendChild(renderReclamModal());
+  if(view.dmOpen && (view.role==='admin' || view.role==='commercial') && !view.modal) app.appendChild(renderDemandesModal());
   if(view.crModal) app.appendChild(renderCrModal());
   if(view.crView && !view.crModal) app.appendChild(renderCrView());
   if(view.settingsModal) app.appendChild(renderSettingsModal());
@@ -1901,13 +1922,20 @@ function renderLogin(){
   cT.onclick = ()=>{ view.homeSpace = 'team'; render(); window.scrollTo(0,0); setTimeout(()=>{ const i = document.querySelector('.login-form input'); if(i) i.focus(); }, 60); };
   choose.appendChild(cC); choose.appendChild(cT);
   const cats = el('<div class="pop-cats one"></div>');
-  const back = ()=>{ const b = el('<button class="pop-back">← Retour à l\u2019accueil</button>'); b.onclick = ()=>{ view.homeSpace = null; view.trackId = null; view.trackCrId = null; view.trackPsId = null; render(); window.scrollTo(0,0); }; return b; };
+  const back = ()=>{ const b = el('<button class="pop-back">← Retour à l\u2019accueil</button>'); b.onclick = ()=>{ view.homeSpace = null; view.clientPage = null; view.trackId = null; view.trackCrId = null; view.trackPsId = null; render(); window.scrollTo(0,0); }; return b; };
   const colC = el('<div class="pop-col" id="esp-client"></div>');
   const colT = el('<div class="pop-col" id="esp-team"></div>');
   if(sp==='client'){
     const hd = el('<div class="pop-sphead"></div>'); hd.appendChild(back()); hd.appendChild(el('<div class="pop-cat-tag c"><span class="tg-ic">'+HOME_IC.client+'</span>ESPACE CLIENT</div>')); colC.appendChild(hd);
-    colC.appendChild(renderTrackBlock());
-    colC.appendChild(renderReclamBlock());
+    if(view.clientPage==='catalogue' || view.clientPage==='commande'){ cats.classList.add('wide'); colC.appendChild(view.clientPage==='commande' ? renderClientCommande() : renderClientCatalogue()); }
+    else {
+      colC.appendChild(renderTrackBlock());
+      const cb = el('<div class="track-box ccat-box"><h2>Notre catalogue</h2><p>Découvrez nos produits et passez votre commande en ligne (à partir de '+CMD_MIN+' pièces).</p></div>');
+      const n = clientCatalogue().length;
+      const go = el('<button class="btn primary reclam-open">Voir le catalogue ('+n+' produit'+(n>1?'s':'')+') et commander</button>'); go.onclick = ()=>{ view.clientPage = 'catalogue'; render(); window.scrollTo(0,0); };
+      cb.appendChild(go); colC.appendChild(cb);
+      colC.appendChild(renderReclamBlock());
+    }
     cats.appendChild(colC);
   } else if(sp==='team'){
     const hd = el('<div class="pop-sphead"></div>'); hd.appendChild(back()); hd.appendChild(el('<div class="pop-cat-tag t"><span class="tg-ic">'+HOME_IC.team+'</span>ESPACE ÉQUIPE</div>')); colT.appendChild(hd);
@@ -1973,7 +2001,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 83 · rôle acheteur démarcheur</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 84 · catalogue client et demandes</div>'));
   colT.appendChild(w2);
   if(sp!=='team') colT.innerHTML = '';
   wrap.appendChild(grid);
@@ -1985,6 +2013,170 @@ const HOME_IC = {
   client: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 15l14-7 14 7v16l-14 7-14-7V15Z"/><path d="M8 15l14 7 14-7"/><path d="M22 22v16"/><circle cx="35" cy="33" r="6.5" fill="#fff"/><path d="M39.6 37.6L44 42"/></svg>',
   team: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="15" r="6"/><path d="M5 38c.8-7.5 5.6-11.5 12-11.5S28.2 30.5 29 38"/><circle cx="33" cy="17" r="5"/><path d="M30.5 26.6c1-.3 1.8-.4 2.5-.4 5.3 0 9.3 3.4 10 9.8"/></svg>'
 };
+// ---------- CATALOGUE CLIENT + DEMANDE DE COMMANDE (nouvelle JB, minimum 300 pièces) ----------
+const CMD_MIN = 300;
+function clientCatalogue(){ return (DATA.catalogue||[]).filter(p=>p && p.article && !p.cacheClient).slice().sort((a,b)=>String(b.creeLe||'').localeCompare(String(a.creeLe||''))); }
+function clientCouleurs(p){ const l = ((DATA.lists||{}).tissus||{})[String(p.tissu||'').toUpperCase()] || []; return l.slice(); }
+function renderClientCatalogue(){
+  const box = el('<div class="ccat"></div>');
+  const top = el('<div class="ccat-top"></div>');
+  const back = el('<button class="pop-back">← Suivi de commande</button>'); back.onclick = ()=>{ view.clientPage = null; render(); };
+  top.appendChild(back); top.appendChild(el('<h2>Notre catalogue</h2>'));
+  const q = document.createElement('input'); q.placeholder = 'Rechercher un produit…'; q.className = 'ccat-q'; q.value = view.ccatQ || '';
+  top.appendChild(q); box.appendChild(top);
+  box.appendChild(el('<div class="ccat-info">Choisissez un produit puis indiquez les couleurs et les quantités par taille. <b>Commande minimum : '+CMD_MIN+' pièces.</b></div>'));
+  const grid = el('<div class="ccat-grid"></div>'); box.appendChild(grid);
+  const draw = ()=>{
+    grid.innerHTML = '';
+    const s = normName(view.ccatQ||'');
+    const list = clientCatalogue().filter(p=>!s || normName(p.article).indexOf(s)>=0 || normName(p.refPatron).indexOf(s)>=0);
+    if(!list.length){ grid.appendChild(el('<div class="empty-msg">Aucun produit.</div>')); return; }
+    list.forEach(p=>{
+      const c = el('<div class="ccat-card"></div>');
+      c.appendChild(el(p.photo ? '<div class="ccat-img"><img src="'+p.photo+'" alt=""></div>' : '<div class="ccat-img ccat-noimg">'+HOME_IC.client+'</div>'));
+      c.appendChild(el('<div class="ccat-name">'+esc(p.article)+'</div>'));
+      c.appendChild(el('<div class="ccat-ref">'+esc(p.refPatron||'')+((p.tailles||[]).length?' · '+esc(p.tailles.join(' ')):'')+'</div>'));
+      const b = el('<button class="btn primary">Commander</button>'); b.onclick = ()=>{ view.clientPage = 'commande'; view.cdProd = p.id; view.cd = null; view.cdSent = null; render(); window.scrollTo(0,0); };
+      c.appendChild(b); grid.appendChild(c);
+    });
+  };
+  q.oninput = ()=>{ view.ccatQ = q.value; draw(); };
+  draw();
+  return box;
+}
+function renderClientCommande(){
+  const p = (DATA.catalogue||[]).find(x=>x.id===view.cdProd);
+  const box = el('<div class="ccat"></div>');
+  const top = el('<div class="ccat-top"></div>');
+  const back = el('<button class="pop-back">← Catalogue</button>'); back.onclick = ()=>{ view.clientPage = 'catalogue'; render(); };
+  top.appendChild(back); box.appendChild(top);
+  if(view.cdSent){
+    box.appendChild(el('<div class="track-box"><div class="reclam-ok" style="font-size:16px;">✓ Votre demande de commande <b>'+esc(view.cdSent.ref)+'</b> ('+view.cdSent.qte+' pièces) est enregistrée.<br>Un commercial vous contacte très vite pour confirmer les détails et le prix.</div><p style="margin-top:10px;">Gardez cette référence : vous pourrez suivre votre commande avec <b>'+esc(view.cdSent.ref)+'</b> dans « Suivre ma commande ».</p></div>'));
+    const again = el('<button class="btn">Voir d’autres produits</button>'); again.onclick = ()=>{ view.cdSent = null; view.clientPage = 'catalogue'; render(); };
+    box.appendChild(again); return box;
+  }
+  if(!p){ box.appendChild(el('<div class="empty-msg">Produit introuvable.</div>')); return box; }
+  const tailles = (p.tailles||[]).length ? p.tailles : (((DATA.lists||{}).tailles)||['S','M','L','XL']);
+  const coul = clientCouleurs(p);
+  const f = view.cd = view.cd || {lignes:[{couleur:coul[0]||'', tailles:{}}]};
+  const card = el('<div class="track-box ccmd"></div>');
+  card.appendChild(el('<div class="ccmd-head">'+(p.photo?'<img src="'+p.photo+'" alt="">':'')+'<div><div class="ccat-name" style="font-size:20px;">'+esc(p.article)+'</div><div class="ccat-ref">'+esc(p.refPatron||'')+'</div></div></div>'));
+  card.appendChild(el('<h2 style="margin-top:12px;">1. Couleurs et quantités</h2>'));
+  const tot = el('<div class="ccmd-tot"></div>');
+  const total = ()=>f.lignes.reduce((a,l)=>a+Object.values(l.tailles||{}).reduce((x,v)=>x+(Number(v)||0),0),0);
+  const updTot = ()=>{ const t = total(); tot.innerHTML = 'Total : <b>'+t+' pièces</b> '+(t>=CMD_MIN ? '<span style="color:#1E7A34">✓ minimum atteint</span>' : '<span style="color:#E0392D">— minimum '+CMD_MIN+' pièces (encore '+(CMD_MIN-t)+')</span>'); };
+  const dl = document.createElement('datalist'); dl.id = 'dl-cd-coul'; coul.forEach(c=>{ const o = document.createElement('option'); o.value = c; dl.appendChild(o); }); card.appendChild(dl);
+  f.lignes.forEach((l,li)=>{
+    const lw = el('<div class="ccmd-line"></div>');
+    const cw = el('<div class="rf"><label>Couleur</label></div>'); const ci = document.createElement('input'); ci.setAttribute('list','dl-cd-coul'); ci.placeholder = 'ex : Noir'; ci.value = l.couleur||''; ci.oninput = ()=>{ l.couleur = ci.value; }; cw.appendChild(ci); lw.appendChild(cw);
+    const tw = el('<div class="ccmd-sizes"></div>');
+    tailles.forEach(t=>{ const sw = el('<div class="ccmd-size"><label>'+esc(t)+'</label></div>'); const si = document.createElement('input'); si.type='number'; si.min='0'; si.inputMode='numeric'; si.value = l.tailles[t]||''; si.oninput = ()=>{ const v = Math.max(0, parseInt(si.value,10)||0); if(v) l.tailles[t] = v; else delete l.tailles[t]; updTot(); }; sw.appendChild(si); tw.appendChild(sw); });
+    lw.appendChild(tw);
+    if(f.lignes.length>1){ const rm = el('<button class="btn small">✕ Retirer</button>'); rm.onclick = ()=>{ f.lignes.splice(li,1); render(); }; lw.appendChild(rm); }
+    card.appendChild(lw);
+  });
+  const add = el('<button class="btn small">+ Ajouter une couleur</button>'); add.onclick = ()=>{ f.lignes.push({couleur:'', tailles:{}}); render(); }; card.appendChild(add);
+  card.appendChild(tot); updTot();
+  card.appendChild(el('<h2 style="margin-top:14px;">2. Vos coordonnées</h2>'));
+  const form = el('<div class="reclam-form"></div>');
+  const fld = (label, key, opt)=>{ opt = opt||{}; const w = el('<div class="rf"><label>'+label+'</label></div>'); const i = document.createElement(opt.area?'textarea':'input'); if(opt.area) i.rows = 3; else i.type = opt.type||'text'; if(opt.ph) i.placeholder = opt.ph; if(opt.max) i.maxLength = opt.max; i.value = f[key]||''; i.oninput = ()=>{ f[key] = i.value; }; i.setAttribute('data-cd', key); w.appendChild(i); return w; };
+  const r1 = el('<div class="rf-row"></div>'); r1.appendChild(fld('Nom *','nom',{max:60})); r1.appendChild(fld('Prénom *','prenom',{max:60})); form.appendChild(r1);
+  const r2 = el('<div class="rf-row"></div>'); r2.appendChild(fld('Téléphone *','tel',{type:'tel', ph:'ex : 0555 12 34 56', max:20})); r2.appendChild(fld('Email','email',{type:'email', ph:'facultatif', max:80})); form.appendChild(r2);
+  const r3 = el('<div class="rf-row"></div>'); r3.appendChild(fld('Boutique / société','boutique',{ph:'facultatif', max:80})); r3.appendChild(fld('Ville / wilaya','ville',{max:60})); form.appendChild(r3);
+  const r4 = el('<div class="rf-row"></div>'); r4.appendChild(fld('Date de livraison souhaitée','date',{type:'date'})); r4.appendChild(el('<div></div>')); form.appendChild(r4);
+  form.appendChild(fld('Précisions (logo, personnalisation, emballage…)','note',{area:true, max:1000}));
+  const hp = document.createElement('input'); hp.type='text'; hp.tabIndex = -1; hp.autocomplete = 'off'; hp.className = 'rc-hp'; hp.oninput = ()=>{ f.hp = hp.value; }; form.appendChild(hp);
+  const err = el('<div class="reclam-err"></div>'); form.appendChild(err);
+  const send = el('<button class="btn primary" style="width:100%;padding:13px;margin-top:6px;">Envoyer ma demande de commande</button>');
+  send.onclick = async ()=>{
+    const v = k=>String(f[k]||'').trim(); const t = total(); let msg = '';
+    if(t<CMD_MIN) msg = 'La commande minimum est de '+CMD_MIN+' pièces (vous en avez '+t+').';
+    else if(f.lignes.some(l=>Object.keys(l.tailles||{}).length && !String(l.couleur||'').trim())) msg = 'Indiquez la couleur de chaque ligne.';
+    else if(!v('nom') || !v('prenom')) msg = 'Indiquez votre nom et votre prénom.';
+    else if(v('tel').replace(/[^0-9]/g,'').length<9) msg = 'Indiquez un numéro de téléphone valide.';
+    else if(v('email') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email'))) msg = 'L’adresse email n’est pas valide.';
+    if(msg){ err.textContent = msg; return; }
+    if(f.hp){ view.cdSent = {ref:'JB', qte:t}; render(); return; }
+    let last = 0; try{ last = Number(localStorage.getItem('dj_cmd_last')||0); }catch(e){}
+    if(Date.now()-last < 60000){ err.textContent = 'Une demande vient d’être envoyée depuis cet appareil : patientez une minute.'; return; }
+    send.disabled = true; send.textContent = 'Envoi…';
+    const r = await sendDemandeClient(p, f, t);
+    if(!r){ send.disabled = false; send.textContent = 'Envoyer ma demande de commande'; err.textContent = 'L’envoi a échoué : vérifiez internet puis réessayez.'; return; }
+    try{ localStorage.setItem('dj_cmd_last', String(Date.now())); }catch(e){}
+    view.cd = null; view.cdSent = {ref:r, qte:t}; render(); window.scrollTo(0,0);
+  };
+  form.appendChild(send);
+  card.appendChild(form); box.appendChild(card);
+  return box;
+}
+async function sendDemandeClient(p, f, t){
+  if(LOAD_FAILED || BASE===null) await loadDataFromSupabase();
+  if(LOAD_FAILED || BASE===null) return null;
+  DATA.demandes = Array.isArray(DATA.demandes) ? DATA.demandes : [];
+  const v = k=>String(f[k]||'').trim();
+  const ref = nextReference();
+  const d = {id:'dm_'+Date.now()+Math.floor(Math.random()*1000), ref:ref, date:psNow(), statut:'nouvelle', catalogueId:p.id, article:p.article, tissu:p.tissu||'', photo:'',
+    lignes: f.lignes.filter(l=>Object.keys(l.tailles||{}).length).map(l=>({couleur:String(l.couleur||'').trim().toUpperCase(), tailles:Object.assign({}, l.tailles)})), quantite:t,
+    nom:v('nom').slice(0,60), prenom:v('prenom').slice(0,60), tel:v('tel').slice(0,20), email:v('email').slice(0,80), boutique:v('boutique').slice(0,80), ville:v('ville').slice(0,60), dateSouhaitee:v('date'), note:v('note').slice(0,1000)};
+  DATA.demandes.push(d);
+  const txt = '🛒 Nouvelle demande de commande '+ref+' (site) : '+d.article+' · '+t+' pièces · '+d.prenom+' '+d.nom+(d.boutique?' ('+d.boutique+')':'')+' · '+d.tel+'. À confirmer dans « Demandes clients ».';
+  DATA.messages = DATA.messages || [];
+  DATA.messages.push({id:'msg_'+Date.now()+'_dm', author:'Demande client', role:'system', personId:'system', alert:true, demId:d.id, text:txt, ts:new Date().toISOString()});
+  (DATA.people||[]).filter(x=>x.role==='commercial' && x.active!==false).forEach((x,k)=>DATA.messages.push({id:'msg_'+Date.now()+'_dmc'+k, author:'Demande client', role:'system', personId:'system', to:x.id, demId:d.id, text:txt, ts:new Date().toISOString()}));
+  if(DATA.messages.length>200) DATA.messages = DATA.messages.slice(-200);
+  const ok = await saveToSupabase();
+  return ok ? ref : null;
+}
+// ---- côté équipe : demandes à confirmer ----
+const DM_STATUTS = {nouvelle:'À confirmer', confirmee:'Confirmée', refusee:'Refusée'};
+function dmAtraiter(){ return (DATA.demandes||[]).filter(d=>d.statut==='nouvelle').length; }
+function dmCreerCommande(d){
+  const p = (DATA.catalogue||[]).find(x=>x.id===d.catalogueId);
+  const c = blankCommande();
+  c.reference = d.ref; c.catalogueId = d.catalogueId||''; c.article = d.article||''; c.tissu = (p && p.tissu) || d.tissu || '';
+  c.lignes = (d.lignes||[]).map(l=>({couleur:l.couleur, tailles:Object.assign({}, l.tailles)})); if(!c.lignes.length) c.lignes = [{couleur:'', tailles:{}}];
+  c.quantite = d.quantite; c.client = d.boutique || (d.prenom+' '+d.nom).trim(); c.dateLivraisonPrevue = d.dateSouhaitee || '';
+  c.notes = 'Demande client '+d.ref+' (site) · '+d.prenom+' '+d.nom+' · '+d.tel+(d.email?' · '+d.email:'')+(d.ville?' · '+d.ville:'')+(d.note?' · '+d.note:'');
+  c.demandeId = d.id;
+  view.dmOpen = false; view.modal = {mode:'create', data:c}; render();
+}
+function renderDemandesPanel(target){
+  target.appendChild(el('<div class="section-title" style="background:#2f6bff;color:#fff;">Demandes clients (catalogue en ligne)</div>'));
+  const body = el('<div class="section-body"></div>'); target.appendChild(body);
+  view.dmFiltre = view.dmFiltre || 'nouvelle';
+  const row = el('<div class="add-row" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-start;"></div>');
+  [['nouvelle','À confirmer ('+dmAtraiter()+')'],['toutes','Toutes ('+(DATA.demandes||[]).length+')']].forEach(([k,l])=>row.appendChild(trBtn(l, ()=>{ view.dmFiltre = k; render(); }, view.dmFiltre===k)));
+  body.appendChild(row);
+  const list = (DATA.demandes||[]).filter(d=>view.dmFiltre==='toutes' || d.statut==='nouvelle').slice().reverse();
+  if(!list.length){ body.appendChild(el('<div class="empty-msg">Aucune demande '+(view.dmFiltre==='nouvelle'?'à confirmer':'')+'.</div>')); return; }
+  list.forEach(d=>{
+    const p = (DATA.catalogue||[]).find(x=>x.id===d.catalogueId);
+    const card = el('<div class="rc-card '+(d.statut==='nouvelle'?'nouvelle':(d.statut==='confirmee'?'traitee':''))+'"></div>');
+    card.innerHTML = '<div class="rc-top"><b>'+esc(d.ref)+'</b> · '+fmtDT(d.date)+' <span class="rc-st '+(d.statut==='nouvelle'?'nouvelle':(d.statut==='confirmee'?'traitee':'encours'))+'">'+DM_STATUTS[d.statut]+'</span></div>'
+      +'<div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;">'+(p && p.photo?'<img src="'+p.photo+'" style="width:64px;height:64px;object-fit:cover;border:2px solid #001D51;border-radius:10px;">':'')+'<div><b>'+esc(d.article)+'</b>'+(p&&p.refPatron?' · '+esc(p.refPatron):'')+' · <b>'+esc(d.quantite)+' pièces</b><br>'+(d.lignes||[]).map(l=>esc(l.couleur||'?')+' : '+Object.keys(l.tailles||{}).map(t=>esc(t)+'×'+esc(l.tailles[t])).join(' ')).join('<br>')+'</div></div>'
+      +'<div><b>'+esc(d.prenom)+' '+esc(d.nom)+'</b>'+(d.boutique?' · '+esc(d.boutique):'')+(d.ville?' · '+esc(d.ville):'')+' · <a href="tel:'+esc(String(d.tel).replace(/[^0-9+]/g,''))+'">'+esc(d.tel)+'</a>'+(d.email?' · <a href="mailto:'+esc(d.email)+'">'+esc(d.email)+'</a>':'')+'</div>'
+      +(d.dateSouhaitee?'<div><b>Livraison souhaitée :</b> '+fmtDate(d.dateSouhaitee)+'</div>':'')
+      +(d.note?'<div class="rc-note">'+esc(d.note)+'</div>':'')
+      +(d.statut==='confirmee'?'<div style="font-size:12px;color:#1E7A34;font-weight:800;">✓ Commande '+esc(d.ref)+' créée le '+fmtDT(d.confirmeLe)+(d.confirmePar?' par '+esc(crPersonName(d.confirmePar)):'')+'</div>':'')
+      +(d.statut==='refusee'?'<div style="font-size:12px;color:#A42834;font-weight:800;">Refusée'+(d.motifRefus?' : '+esc(d.motifRefus):'')+'</div>':'');
+    if(d.statut==='nouvelle'){
+      const acts = el('<div class="rc-acts"></div>');
+      const ok = el('<button class="btn small primary">Créer la commande '+esc(d.ref)+'</button>'); ok.onclick = ()=>dmCreerCommande(d);
+      const no = el('<button class="btn small" style="color:#A42834;border-color:#A42834;">Refuser</button>'); no.onclick = ()=>{ const m = prompt('Motif du refus (le client ne le voit pas) :', ''); if(m===null) return; d.statut = 'refusee'; d.motifRefus = m; d.refuseLe = psNow(); d.refusePar = view.personId; saveState('Demande '+d.ref+' refusée'); };
+      acts.appendChild(ok); acts.appendChild(no); card.appendChild(acts);
+    }
+    body.appendChild(card);
+  });
+}
+function renderDemandesModal(){
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal" style="max-width:860px;"></div>');
+  renderDemandesPanel(m);
+  const actions = el('<div class="actions"></div>'); const cl = el('<button class="btn">Fermer</button>'); cl.onclick = ()=>{ view.dmOpen = false; render(); }; actions.appendChild(cl); m.appendChild(actions);
+  overlay.appendChild(m); overlay.onclick = e=>{ if(e.target===overlay){ view.dmOpen = false; render(); } };
+  return overlay;
+}
+
 // ---------- RÉCLAMATION CLIENT (va directement chez l'admin) ----------
 const RC_MOTIFS = {retard:'Retard de livraison', qualite:'Problème sur la commande (qualité, erreur, quantité)', autre:'Autre'};
 const RC_STATUTS = {nouvelle:'Nouvelle', encours:'En cours', traitee:'Traitée'};
@@ -2115,6 +2307,10 @@ function renderTrackResult(box){
     if(pj){ box.appendChild(psTrackCard(pj)); return; }
     const cr = view.trackPsId ? null : crFindPublic(view.trackCrId, ref);
     if(cr){ box.appendChild(crTrackCard(cr)); return; }
+  }
+  if(!c && ref){
+    const dm = (DATA.demandes||[]).filter(x=>String(x.ref||'').toLowerCase()===ref.toLowerCase()).pop();
+    if(dm){ box.appendChild(el('<div class="track-card"><div style="font-size:22px;font-weight:bold;text-align:center;">'+esc(dm.ref)+'</div><div style="font-size:13px;color:var(--text-soft);text-align:center;margin:2px 0 10px;">'+esc(dm.article)+' · '+esc(dm.quantite)+' pièces</div><div class="track-msg'+(dm.statut==='refusee'?'':' ')+'">'+(dm.statut==='refusee'?'Votre demande n’a pas pu être retenue. Contactez-nous pour en parler.':'✓ Demande reçue le '+fmtDT(dm.date)+'. Elle est en attente de confirmation par un commercial.')+'</div></div>')); return; }
   }
   if(!c){
     if(view.trackSearched || view.trackId) box.appendChild(el('<div class="search-msg" style="color:var(--red);">Aucune commande trouvée avec cette référence. Vérifiez la référence ou contactez votre commercial.</div>'));
@@ -3052,6 +3248,7 @@ function renderCommercialScreen(){
   const wrap = el('<div class="wrap"></div>');
   myEvalSection(wrap);
   crProtoBlock(wrap);
+  if(dmAtraiter()){ const b = el('<button class="ach-open" style="background:#BFD2FF;"><span class="ach-ic">'+HOME_IC.client+'</span><span><b>'+dmAtraiter()+' demande(s) client à confirmer</b><br><small>Commandes passées depuis le catalogue en ligne</small></span></button>'); b.onclick = ()=>{ view.dmOpen = true; render(); }; wrap.appendChild(b); }
   if(allowedTiles(currentPerson()).length) wrap.appendChild(renderAdminScreen(true));
   psReceptionBlock(wrap, 'commercial');
   psRateBlock(wrap);
@@ -4181,6 +4378,16 @@ function renderAdminScreen(extra){
       if(n) t7.appendChild(el('<div class="icon-tile-badge">'+n+'</div>'));
       t7.onclick = ()=>{ view.rcOpen = true; render(); };
       grid.appendChild(t7);
+      const nd = dmAtraiter(), td = (DATA.demandes||[]).length;
+      const t8 = el('<button class="dept-tile rc-tile" style="background:'+(nd?'#BFD2FF':'#EEF3FF')+';"></button>');
+      t8.appendChild(el('<div class="dept-ic">'+HOME_IC.client+'</div>'));
+      const tx8 = el('<div></div>');
+      tx8.appendChild(el('<div class="dept-name">Demandes clients</div>'));
+      tx8.appendChild(el('<div class="dept-sub">Commandes passées depuis le catalogue en ligne<br>'+(nd?'<b>'+nd+' à confirmer</b>':'Rien à confirmer')+' · '+td+' au total</div>'));
+      t8.appendChild(tx8);
+      if(nd) t8.appendChild(el('<div class="icon-tile-badge">'+nd+'</div>'));
+      t8.onclick = ()=>{ view.dmOpen = true; render(); };
+      grid.appendChild(t8);
     }
     deptList().filter(d=>d.id!=='confection' && d.id!=='tricotage' && d.id!=='personnalisation' && d.id!=='crea').forEach(d=>{
       const n = (DATA.people||[]).filter(p=>deptOf(p)===d.id && p.active!==false).length;
@@ -4913,6 +5120,7 @@ function renderCatalogueModal(){
   cRow.appendChild(cInp); cRow.appendChild(cUnit);
   cWrap.appendChild(cRow);
   frow([patWrap]);
+  { const vw = el('<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin:0 0 10px;"></label>'); const vc = document.createElement('input'); vc.type='checkbox'; vc.checked = !data.cacheClient; vc.style.width='auto'; vc.onchange = ()=>{ data.cacheClient = !vc.checked; }; vw.appendChild(vc); vw.appendChild(document.createTextNode('Visible dans l\u2019Espace client (les clients peuvent le voir et le commander)')); m.appendChild(vw); }
   // tissus du produit (un produit peut avoir 2 tissus ou plus : corps, côte, doublure…)
   { const tw = el('<div class="fo-sec"></div>'); m.appendChild(tw);
     data.tissus = catTissus(data).map(t=>({tissu:t.tissu, conso:t.conso, unite:t.unite||'kg'}));
@@ -6386,7 +6594,7 @@ function renderTable(onlyMine){
 // (par exemple pour relancer une référence déjà existante).
 function nextReference(){
   let max = 0;
-  (DATA.commandes||[]).forEach(c=>{
+  (DATA.commandes||[]).concat(DATA.demandes||[]).forEach(c=>{
     const m = /^JB(\d+)$/i.exec(String(c.reference||'').trim());
     if(m){
       const n = parseInt(m[1], 10);
@@ -7022,6 +7230,7 @@ function renderModal(){
     if(data.persoDemande && !(data.persoDemande.techniques||[]).length) delete data.persoDemande;
     if(mode==='create'){
       DATA.commandes.push(data);
+      if(data.demandeId){ const dm = (DATA.demandes||[]).find(x=>x.id===data.demandeId); if(dm){ dm.statut = 'confirmee'; dm.cmdId = data.id; dm.confirmeLe = psNow(); dm.confirmePar = view.personId; if(data.reference!==dm.ref) dm.ref = data.reference; } }
       psNew = cmdSendPerso(data); if(psNew){ data.persoDemande.envoyeeLe = psNow(); data.persoDemande.psId = psNew.id; data.persoDemande.images = []; }
       view.modal=null;
       saveState('Nouvelle commande ajoutée : '+data.reference+(psNew?' · envoyée en personnalisation ('+psNew.ref+')':''));
@@ -8609,7 +8818,7 @@ function crMigrateSteps(){
   });
   return n;
 }
-function crSetEtape(x, i){ x.etape = i; x.etapesDates = x.etapesDates || {}; x.etapesDates[i] = psNow(); x.etapesPar = x.etapesPar || {}; x.etapesPar[i] = view.personId; if(i===3){ crSendProto(x); crSendPersoProto(x); } saveState(x.ref+' : '+CR_STEPS[i]+(i===3?' · commercial prévenu':'')); }
+function crSetEtape(x, i){ x.etape = i; x.etapesDates = x.etapesDates || {}; x.etapesDates[i] = psNow(); x.etapesPar = x.etapesPar || {}; x.etapesPar[i] = view.personId; if(i===3){ crSendProto(x); crSendPersoProto(x); } if(i>=5 && crAutoCatalogue(x)) showToast('✓ Ajouté au catalogue produits'); saveState(x.ref+' : '+CR_STEPS[i]+(i===3?' · commercial prévenu':'')); }
 // ---- validation du prototype par le commercial ----
 // ---- envoi automatique en Personnalisation (prototype Créa / commande Confection) ----
 function psStaffIds(techs){
@@ -8689,6 +8898,7 @@ function crProtoDecision(x, ok, texte){
   const i = ok ? 5 : 4;
   x.etape = i; x.etapesDates = x.etapesDates || {}; x.etapesDates[i] = psNow(); x.etapesPar = x.etapesPar || {}; x.etapesPar[i] = view.personId;
   crNotify(crCreaPeople(x), ok ? '✅ Prototype VALIDÉ par '+who+' : '+(x.nom||'')+' ('+(x.refProduit||x.ref)+'). Aucune retouche.' : '✎ Retouches demandées par '+who+' pour '+(x.nom||'')+' ('+(x.refProduit||x.ref)+') : '+texte, x);
+  if(ok) crAutoCatalogue(x);
   saveState(ok ? 'Prototype validé : '+(x.nom||'') : 'Retouches envoyées à la Créa');
 }
 function crProtoHistHtml(x, skipLast){
@@ -8908,7 +9118,8 @@ function crPanelCouts(panel){
 }
 
 // ---- Ajouter au catalogue (Confection) ----
-function crToCatalogue(x){
+function crToCatalogue(x, opts){
+  opts = opts || {};
   DATA.catalogue = DATA.catalogue || [];
   const t0 = (x.tissus||[]).find(t=>t.tissu) || {};
   const entry = {id:'prod_'+Date.now(), article:String(x.nom||'').trim().toUpperCase(), tissu:String(t0.tissu||'').trim().toUpperCase(), tailles:(x.tailles||[]).slice(), photo:(x.images||[])[0]||'', refPatron:'', consoMoyenne:t0.conso||'', consoUnite:t0.unite||'kg', creeLe:new Date().toISOString(), creaRef:x.ref, patron:x.refPatron||''};
@@ -8924,8 +9135,15 @@ function crToCatalogue(x){
   DATA.lists.tissus = DATA.lists.tissus || {};
   (x.tissus||[]).forEach(t=>{ const tt = String(t.tissu||'').trim().toUpperCase(); if(!tt) return; DATA.lists.tissus[tt] = DATA.lists.tissus[tt] || []; const cc = String(t.couleur||'').trim().toUpperCase(); if(cc && DATA.lists.tissus[tt].indexOf(cc)<0) DATA.lists.tissus[tt].push(cc); });
   x.catalogueId = entry.id;
-  x.etape = CR_STEPS.length-1; x.etapesDates = x.etapesDates || {}; x.etapesDates[x.etape] = psNow();
-  saveState(x.ref+' ajouté au catalogue produits');
+  if(!opts.keepEtape){ x.etape = CR_STEPS.length-1; x.etapesDates = x.etapesDates || {}; x.etapesDates[x.etape] = psNow(); }
+  if(!opts.silent) saveState(x.ref+' ajouté au catalogue produits');
+}
+// produit validé en Créa → il part tout seul dans le catalogue produits (sans changer son étape)
+function crAutoCatalogue(x){
+  if(!x || Number(x.etape)<5 || !String(x.nom||'').trim()) return false;
+  if(x.catalogueId && (DATA.catalogue||[]).some(p=>p.id===x.catalogueId)) return false;
+  crToCatalogue(x, {keepEtape:true, silent:true});
+  return true;
 }
 
 // ---- Fiche produit (affichage) ----
@@ -8998,7 +9216,7 @@ function renderCrView(){
     } else if(e.i===4){
       const rf = el('<button class="btn primary">Retouches faites → renvoyer au commercial</button>'); rf.onclick = ()=>crSetEtape(x, 3); actions.appendChild(rf);
     } else if(e.i<6){ const nx = el('<button class="btn primary">Étape suivante : '+esc(CR_STEPS[e.i+1])+'</button>'); nx.onclick = ()=>crSetEtape(x, e.i+1); actions.appendChild(nx); }
-    if(e.i>=6){ const ct = el('<button class="btn primary" style="background:#37D6A5;">'+(x.catalogueId?'Mettre à jour le catalogue':(e.i===6?'Lancer en production (ajouter au catalogue)':'Ajouter au catalogue produits'))+'</button>'); ct.onclick = ()=>{ if(!String(x.nom||'').trim()){ alert('Le produit doit avoir un nom.'); return; } crToCatalogue(x); }; actions.appendChild(ct); }
+    if(e.i>=6){ const ct = el('<button class="btn primary" style="background:#37D6A5;">'+(e.i===6?'Lancer en production':(x.catalogueId?'Mettre à jour le catalogue':'Ajouter au catalogue produits'))+'</button>'); ct.onclick = ()=>{ if(!String(x.nom||'').trim()){ alert('Le produit doit avoir un nom.'); return; } crToCatalogue(x); }; actions.appendChild(ct); }
     }
   }
   m.appendChild(actions);
@@ -9131,6 +9349,7 @@ function renderCrModal(){
     const old = c.produits.find(x=>x.id===data.id);
     if(old && Number(old.etape)!==data.etape){ data.etapesDates = data.etapesDates || {}; data.etapesDates[data.etape] = psNow(); }
     if(data.etape===3 && (!old || Number(old.etape)!==3)){ crSendProto(data); crSendPersoProto(data); }
+    if(data.etape>=5) crAutoCatalogue(data);
     const i = c.produits.findIndex(x=>x.id===data.id);
     if(i>=0) c.produits[i] = data; else c.produits.push(data);
     view.crModal = null; view.crView = data.id;
