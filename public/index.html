@@ -626,6 +626,35 @@ button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
 .pop-ver{font:700 11px Arial,sans-serif;color:var(--green);margin-top:14px;text-align:center}
 .pop-stk{position:absolute;font:900 14px Arial,sans-serif;padding:9px 14px;border-radius:99px;border:3px solid var(--pop-navy);box-shadow:4px 4px 0 var(--pop-navy);color:var(--pop-navy);pointer-events:none}
 .pop-track{position:relative;max-width:560px;margin:34px auto 0}
+.pop-nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.pop-nav .pop-chip{border:0;cursor:pointer}
+.pop-nav .pop-nav-c{background:var(--pop-coral);transform:rotate(-2deg)}
+.pop-cats{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:22px;align-items:start}
+.pop-col{position:relative;scroll-margin-top:12px}
+.pop-cat-tag{display:inline-block;font:900 14px 'Arial Black',Arial,sans-serif;letter-spacing:.08em;border:3px solid var(--pop-navy);border-radius:99px;padding:7px 16px;margin:0 0 12px;box-shadow:4px 4px 0 var(--pop-navy);color:var(--pop-navy)}
+.pop-cat-tag.c{background:#FFC933}.pop-cat-tag.t{background:#37D6A5}
+.pop-col .track-box{margin-top:0;margin-bottom:18px}
+.pop-col .pop-ticket{transform:none}
+.pop-about{margin-top:40px;grid-template-columns:1fr}
+.pop-about .pop-hero h1{font-size:54px}
+.reclam-box .reclam-open{width:100%;padding:12px}
+.reclam-form .rf-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.reclam-form .rf{margin-bottom:8px}
+.reclam-form label{display:block;font:800 11px Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--pop-navy);margin-bottom:4px}
+.reclam-form input,.reclam-form select,.reclam-form textarea{width:100%;box-sizing:border-box;border:2px solid var(--pop-navy);border-radius:10px;padding:9px 10px;font:600 14px Arial,sans-serif;background:#FFF6E6}
+.reclam-form .rc-hp{position:absolute;left:-5000px;width:1px;height:1px;opacity:0}
+.reclam-err{color:#E0392D;font-weight:800;font-size:13px;min-height:16px}
+.reclam-ok{background:#D7F7EC;border:2px solid #1E7A34;border-radius:12px;padding:10px 12px;font-weight:700;color:#14532d}
+.rc-tile{position:relative}
+.rc-card{border:2px solid var(--pop-navy);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:#fff;font-size:14px;line-height:1.6;box-shadow:3px 3px 0 var(--pop-navy)}
+.rc-card.nouvelle{background:#FFF0F7}.rc-card.traitee{opacity:.75}
+.rc-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rc-st{border:2px solid var(--pop-navy);border-radius:99px;padding:0 8px;font-size:12px;font-weight:800}
+.rc-st.nouvelle{background:#FF5A4D;color:#fff}.rc-st.encours{background:#FFC933}.rc-st.traitee{background:#37D6A5}
+.rc-note{white-space:pre-wrap;background:#FFF6E6;border-radius:8px;padding:6px 8px;margin:4px 0;font-weight:600}
+.rc-acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.rc-rep{flex:1 1 220px;padding:6px 8px;border:2px solid var(--pop-navy);border-radius:8px}
+@media(max-width:860px){.pop-cats{grid-template-columns:1fr;gap:24px}.reclam-form .rf-row{grid-template-columns:1fr}.pop-about .pop-hero h1{font-size:40px}.pop-nav .pop-chip{padding:8px 12px;font-size:12px}}
 .pop-track .track-box{margin-top:0}
 @media(max-width:860px){.pop-wrap{padding:20px 16px 40px}.pop-grid{grid-template-columns:1fr;gap:30px}.pop-hero h1{font-size:46px}.pop-stk{display:none}.pop-ticket{transform:none}.pop-lead{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.pop-mq div{animation:none}}
@@ -1571,6 +1600,7 @@ const STATUS_OPTIONS = ["En attente","En cours","Prête","Problème","Tissu non 
 // the user shared) — hand-drawn here as inline SVG so the page stays fully
 // self-contained (no external icon font / CDN).
 const ICONS = {
+  reclam: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10v4a1 1 0 0 0 1 1H7l6 4V5L7 9H4.5a1 1 0 0 0-1 1Z"/><path d="M16.5 9a4 4 0 0 1 0 6"/><path d="M19 6.5a7.5 7.5 0 0 1 0 11"/></svg>',
   delai: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="12" cy="15" r="3"/><path d="M12 13.6V15l1 .8"/></svg>',
   clients: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c.4-3.6 3-5.6 6.5-5.6s6.1 2 6.5 5.6"/><circle cx="17" cy="9" r="2.6"/><path d="M17.5 14.2c2.4.2 3.8 1.9 4 4.3"/></svg>',
   commandes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 10.5h6M9 13.5h6M9 16.5h4"/></svg>',
@@ -1783,6 +1813,7 @@ function render(){
   if(view.psModal) app.appendChild(renderPsModal());
   if(view.psView && !view.psModal && !view.psSend) app.appendChild(renderPsView());
   if(view.psSend) app.appendChild(renderPsSend());
+  if(view.rcOpen && view.role==='admin' && !view.orderView) app.appendChild(renderReclamModal());
   if(view.crModal) app.appendChild(renderCrModal());
   if(view.crView && !view.crModal) app.appendChild(renderCrView());
   if(view.settingsModal) app.appendChild(renderSettingsModal());
@@ -1821,17 +1852,27 @@ function renderLogin(){
   const head = el('<div class="pop-head"></div>');
   const logoWrap = el('<div></div>'); logoWrap.appendChild(logoEl(64, false));
   head.appendChild(logoWrap);
-  head.appendChild(el('<div class="pop-chip">Espace équipe ✂</div>'));
+  { const nav = el('<div class="pop-nav"></div>');
+    const b1 = el('<button class="pop-chip pop-nav-c">Espace client</button>'); b1.onclick = ()=>{ const t = document.getElementById('esp-client'); if(t) t.scrollIntoView({behavior:'smooth', block:'start'}); };
+    const b2 = el('<button class="pop-chip">Espace équipe ✂</button>'); b2.onclick = ()=>{ const t = document.getElementById('esp-team'); if(t) t.scrollIntoView({behavior:'smooth', block:'start'}); };
+    nav.appendChild(b1); nav.appendChild(b2); head.appendChild(nav); }
   wrap.appendChild(head);
-  // Client arrivé par le QR de sa commande : on affiche d'abord le suivi
   const trackFirst = !!(view.trackId || view.trackCrId || view.trackPsId);
-  if(trackFirst){ const tf = el('<div class="pop-track"></div>'); tf.appendChild(renderTrackBlock()); wrap.appendChild(tf); }
-  const grid = el('<div class="pop-grid"></div>');
+  // deux espaces sur la même page : client (suivi + réclamation) et équipe (connexion)
+  const cats = el('<div class="pop-cats"></div>');
+  const colC = el('<div class="pop-col" id="esp-client"><div class="pop-cat-tag c">ESPACE CLIENT</div></div>');
+  colC.appendChild(renderTrackBlock());
+  colC.appendChild(renderReclamBlock());
+  const colT = el('<div class="pop-col" id="esp-team"><div class="pop-cat-tag t">ESPACE ÉQUIPE</div></div>');
+  cats.appendChild(colC); cats.appendChild(colT);
+  wrap.appendChild(cats);
+  const grid = el('<div class="pop-grid pop-about"></div>');
   const hero = el('<div class="pop-hero"></div>');
   hero.appendChild(el('<h1><span class="a">Fais</span> briller<br>chaque <span class="b">commande</span></h1>'));
   hero.appendChild(el('<p class="pop-lead">'+esc(DATA.companyTitle||'Suivi de production')+' : découpe, confection, emballage, stock. Suis tout, gagne tes étoiles et fais passer les commandes prioritaires en premier.</p>'));
   hero.appendChild(el('<div class="pop-steps"><div class="s"><i style="background:#FF5A4D">1</i>Découpe</div><div class="s"><i style="background:#2f6bff">2</i>Confection</div><div class="s"><i style="background:#37D6A5;color:#001D51">3</i>Emballage</div><div class="s"><i style="background:#001D51">4</i>Stock</div></div>'));
   grid.appendChild(hero);
+  if(trackFirst) grid.style.display = 'none';
   const w2 = el('<div class="pop-ticket"></div>');
   w2.appendChild(el('<div class="pop-star">Note<br>5★<br>auto</div>'));
   w2.appendChild(el('<h2>Ton billet<br>d\'entrée</h2>'));
@@ -1883,13 +1924,116 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 79 · gradation et envoi en personnalisation</div>'));
-  grid.appendChild(w2);
+  w2.appendChild(el('<div class="pop-ver">Version 80 · espace client et réclamations</div>'));
+  colT.appendChild(w2);
   wrap.appendChild(grid);
-  wrap.appendChild(el('<div class="pop-stk" style="left:46%;top:210px;background:#FFC933;transform:rotate(-8deg)">NOUVEAU !</div>'));
-  if(!trackFirst){ const tb = el('<div class="pop-track"></div>'); tb.appendChild(renderTrackBlock()); wrap.appendChild(tb); }
   w.appendChild(wrap);
   return w;
+}
+
+// ---------- RÉCLAMATION CLIENT (va directement chez l'admin) ----------
+const RC_MOTIFS = {retard:'Retard de livraison', qualite:'Problème sur la commande (qualité, erreur, quantité)', autre:'Autre'};
+const RC_STATUTS = {nouvelle:'Nouvelle', encours:'En cours', traitee:'Traitée'};
+function renderReclamBlock(){
+  const box = el('<div class="track-box reclam-box" id="reclam"></div>');
+  box.appendChild(el('<h2>Un retard ou un souci avec votre commande ?</h2>'));
+  box.appendChild(el('<p>Envoyez-nous une réclamation : elle arrive directement chez le responsable, qui vous recontacte.</p>'));
+  if(view.reclamSent){
+    box.appendChild(el('<div class="reclam-ok">✓ Réclamation <b>'+esc(view.reclamSent)+'</b> envoyée. Nous vous recontactons au plus vite.</div>'));
+    const again = el('<button class="btn small" style="margin-top:8px;">Envoyer une autre réclamation</button>'); again.onclick = ()=>{ view.reclamSent = null; view.reclamOpen = true; render(); };
+    box.appendChild(again); return box;
+  }
+  if(!view.reclamOpen){
+    const b = el('<button class="btn primary reclam-open">Faire une réclamation</button>'); b.onclick = ()=>{ view.reclamOpen = true; if(!view.reclam) view.reclam = {}; if(!view.reclam.ref && view.trackRef) view.reclam.ref = view.trackRef.trim(); render(); setTimeout(()=>{ const t = document.getElementById('reclam'); if(t) t.scrollIntoView({block:'nearest'}); }, 50); };
+    box.appendChild(b); return box;
+  }
+  const f = view.reclam = view.reclam || {};
+  const form = el('<div class="reclam-form"></div>');
+  const fld = (label, key, opt)=>{ opt = opt||{}; const w = el('<div class="rf"><label>'+label+'</label></div>'); const i = document.createElement(opt.area?'textarea':'input'); if(opt.area) i.rows = 4; else i.type = opt.type||'text'; if(opt.ph) i.placeholder = opt.ph; if(opt.max) i.maxLength = opt.max; if(opt.mode) i.inputMode = opt.mode; i.value = f[key]||''; i.oninput = ()=>{ f[key] = i.value; }; i.setAttribute('data-rc', key); w.appendChild(i); return w; };
+  const r1 = el('<div class="rf-row"></div>'); r1.appendChild(fld('Nom *','nom',{max:60})); r1.appendChild(fld('Prénom *','prenom',{max:60})); form.appendChild(r1);
+  const r2 = el('<div class="rf-row"></div>'); r2.appendChild(fld('Téléphone *','tel',{type:'tel', mode:'tel', ph:'ex : 0555 12 34 56', max:20})); r2.appendChild(fld('Email','email',{type:'email', ph:'facultatif', max:80})); form.appendChild(r2);
+  const r3 = el('<div class="rf-row"></div>'); r3.appendChild(fld('Référence de la commande','ref',{ph:'ex : JB0001', max:20}));
+  { const w = el('<div class="rf"><label>Motif *</label></div>'); const sel = document.createElement('select'); sel.setAttribute('data-rc','motif'); Object.keys(RC_MOTIFS).forEach(k=>{ const o = document.createElement('option'); o.value = k; o.textContent = RC_MOTIFS[k]; if((f.motif||'retard')===k) o.selected = true; sel.appendChild(o); }); f.motif = f.motif || 'retard'; sel.onchange = ()=>{ f.motif = sel.value; }; w.appendChild(sel); r3.appendChild(w); }
+  form.appendChild(r3);
+  form.appendChild(fld('Votre message *','note',{area:true, ph:'Expliquez le problème : retard, défaut, erreur…', max:1000}));
+  const hp = document.createElement('input'); hp.type='text'; hp.tabIndex = -1; hp.autocomplete = 'off'; hp.className = 'rc-hp'; hp.setAttribute('aria-hidden','true'); hp.oninput = ()=>{ f.hp = hp.value; }; form.appendChild(hp);
+  const err = el('<div class="reclam-err"></div>'); form.appendChild(err);
+  const row = el('<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>');
+  const send = el('<button class="btn primary">Envoyer la réclamation</button>');
+  const cancel = el('<button class="btn">Annuler</button>'); cancel.onclick = ()=>{ view.reclamOpen = false; render(); };
+  send.onclick = async ()=>{
+    const v = k=>String(f[k]||'').trim();
+    const digits = v('tel').replace(/[^0-9]/g,'');
+    let msg = '';
+    if(!v('nom') || !v('prenom')) msg = 'Indiquez votre nom et votre prénom.';
+    else if(digits.length<9) msg = 'Indiquez un numéro de téléphone valide.';
+    else if(v('email') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email'))) msg = 'L’adresse email n’est pas valide.';
+    else if(v('note').length<5) msg = 'Écrivez votre message (quelques mots au moins).';
+    if(msg){ err.textContent = msg; return; }
+    if(f.hp){ view.reclamSent = 'RC'; view.reclamOpen = false; render(); return; }      // robot
+    let last = 0; try{ last = Number(localStorage.getItem('dj_reclam_last')||0); }catch(e){}
+    if(Date.now()-last < 60000){ err.textContent = 'Une réclamation vient d’être envoyée depuis cet appareil : patientez une minute.'; return; }
+    send.disabled = true; send.textContent = 'Envoi…';
+    const ref = await sendReclamation({nom:v('nom'), prenom:v('prenom'), tel:v('tel'), email:v('email'), commandeRef:v('ref'), motif:f.motif||'retard', note:v('note')});
+    if(!ref){ send.disabled = false; send.textContent = 'Envoyer la réclamation'; err.textContent = 'L’envoi a échoué : vérifiez internet puis réessayez.'; return; }
+    try{ localStorage.setItem('dj_reclam_last', String(Date.now())); }catch(e){}
+    view.reclam = {}; view.reclamOpen = false; view.reclamSent = ref; render();
+  };
+  row.appendChild(send); row.appendChild(cancel); form.appendChild(row);
+  box.appendChild(form);
+  return box;
+}
+async function sendReclamation(r){
+  if(LOAD_FAILED || BASE===null) await loadDataFromSupabase();
+  if(LOAD_FAILED || BASE===null) return null;
+  DATA.reclamations = Array.isArray(DATA.reclamations) ? DATA.reclamations : [];
+  const ref = trNextRef('RC', DATA.reclamations, 4);
+  const cmd = r.commandeRef ? (DATA.commandes||[]).filter(c=>String(c.reference||'').trim().toLowerCase()===r.commandeRef.toLowerCase()).pop() : null;
+  const rc = Object.assign({id:'rc_'+Date.now()+Math.floor(Math.random()*1000), ref:ref, date:psNow(), commandeId: cmd ? cmd.id : '', statut:'nouvelle', reponse:''}, r);
+  rc.nom = rc.nom.slice(0,60); rc.prenom = rc.prenom.slice(0,60); rc.note = rc.note.slice(0,1000);
+  DATA.reclamations.push(rc);
+  DATA.messages = DATA.messages || [];
+  DATA.messages.push({id:'msg_'+Date.now()+'_rc'+Math.random().toString(36).slice(2,6), author:'Réclamation client', role:'system', personId:'system', alert:true, reclamId:rc.id,
+    text:'📣 Réclamation '+ref+' — '+RC_MOTIFS[rc.motif]+' · '+rc.prenom+' '+rc.nom+' · '+rc.tel+(rc.email?' · '+rc.email:'')+(rc.commandeRef?' · commande '+rc.commandeRef+(cmd?'':' (référence introuvable)'):'')+' : '+rc.note, ts:new Date().toISOString()});
+  if(DATA.messages.length>200) DATA.messages = DATA.messages.slice(-200);
+  const ok = await saveToSupabase();
+  return ok ? ref : null;
+}
+function renderReclamModal(){
+  const overlay = el('<div class="modal-overlay"></div>');
+  const m = el('<div class="modal" style="max-width:860px;"></div>');
+  renderReclamPanel(m);
+  const actions = el('<div class="actions"></div>'); const cl = el('<button class="btn">Fermer</button>'); cl.onclick = ()=>{ view.rcOpen = false; render(); }; actions.appendChild(cl); m.appendChild(actions);
+  overlay.appendChild(m); overlay.onclick = e=>{ if(e.target===overlay){ view.rcOpen = false; render(); } };
+  return overlay;
+}
+function rcAtraiter(){ return (DATA.reclamations||[]).filter(r=>r.statut!=='traitee').length; }
+function renderReclamPanel(panel){
+  panel.appendChild(el('<div class="section-title" style="background:#B83280;color:#fff;">Réclamations clients</div>'));
+  const body = el('<div class="section-body"></div>'); panel.appendChild(body);
+  view.rcFiltre = view.rcFiltre || 'atraiter';
+  const row = el('<div class="add-row" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-start;"></div>');
+  [['atraiter','À traiter'],['toutes','Toutes']].forEach(([k,l])=>row.appendChild(trBtn(l+(k==='atraiter'?' ('+rcAtraiter()+')':' ('+(DATA.reclamations||[]).length+')'), ()=>{ view.rcFiltre = k; render(); }, view.rcFiltre===k)));
+  body.appendChild(row);
+  const list = (DATA.reclamations||[]).filter(r=>view.rcFiltre==='toutes' || r.statut!=='traitee').slice().reverse();
+  if(!list.length){ body.appendChild(el('<div class="empty-msg">'+((DATA.reclamations||[]).length ? 'Aucune réclamation à traiter. 👍' : 'Aucune réclamation pour le moment.')+'</div>')); return; }
+  list.forEach(r=>{
+    const card = el('<div class="rc-card '+r.statut+'"></div>');
+    const cmd = r.commandeId ? (DATA.commandes||[]).find(c=>c.id===r.commandeId) : null;
+    card.innerHTML = '<div class="rc-top"><b>'+esc(r.ref)+'</b> · '+fmtDT(r.date)+' <span class="rc-st '+r.statut+'">'+RC_STATUTS[r.statut]+'</span></div>'
+      +'<div><b>'+esc(r.prenom)+' '+esc(r.nom)+'</b> · <a href="tel:'+esc(String(r.tel).replace(/[^0-9+]/g,''))+'">'+esc(r.tel)+'</a>'+(r.email?' · <a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a>':'')+'</div>'
+      +'<div><b>Motif :</b> '+esc(RC_MOTIFS[r.motif]||r.motif)+(r.commandeRef?' · <b>Commande :</b> '+esc(r.commandeRef)+(cmd?' ('+esc(cmd.client||'')+' · '+esc(cmd.article||'')+')':' <i>(référence introuvable)</i>'):'')+'</div>'
+      +'<div class="rc-note">'+esc(r.note)+'</div>'
+      +(r.traiteLe?'<div style="font-size:12px;">Traitée le '+fmtDT(r.traiteLe)+(r.traitePar?' par '+esc(crPersonName(r.traitePar)):'')+'</div>':'');
+    const acts = el('<div class="rc-acts"></div>');
+    const sel = document.createElement('select'); sel.className = 'cat-act-sel'; Object.keys(RC_STATUTS).forEach(k=>{ const o = document.createElement('option'); o.value = k; o.textContent = RC_STATUTS[k]; if(r.statut===k) o.selected = true; sel.appendChild(o); });
+    const rep = document.createElement('input'); rep.placeholder = 'Note de suivi (appel fait, solution…)'; rep.value = r.reponse||''; rep.className = 'rc-rep';
+    const sv = el('<button class="btn small primary">Enregistrer</button>');
+    sv.onclick = ()=>{ r.statut = sel.value; r.reponse = rep.value; if(r.statut==='traitee' && !r.traiteLe){ r.traiteLe = psNow(); r.traitePar = view.personId; } if(r.statut!=='traitee'){ r.traiteLe = ''; r.traitePar = ''; } saveState('Réclamation '+r.ref+' : '+RC_STATUTS[r.statut]); };
+    acts.appendChild(sel); acts.appendChild(rep); acts.appendChild(sv);
+    if(cmd){ const vb = el('<button class="btn small">Voir la commande</button>'); vb.onclick = ()=>{ view.orderView = cmd.id; render(); }; acts.appendChild(vb); }
+    card.appendChild(acts); body.appendChild(card);
+  });
 }
 
 // ---------- SUIVI CLIENT (sans compte) ----------
@@ -3924,6 +4068,18 @@ function renderAdminScreen(extra){
       t6.onclick = ()=>{ view.todoOpen = true; view.td = {list: av ? 'avalider' : 'toutes', sel:null}; render(); };
       grid.appendChild(t6);
     }
+    if(view.role==='admin'){
+      const n = rcAtraiter(), tot = (DATA.reclamations||[]).length;
+      const t7 = el('<button class="dept-tile rc-tile" style="background:'+(n?'#FFE1DE':'#FFF0F7')+';"></button>');
+      t7.appendChild(el('<div class="dept-ic">'+ICONS.reclam+'</div>'));
+      const tx7 = el('<div></div>');
+      tx7.appendChild(el('<div class="dept-name">Réclamations clients</div>'));
+      tx7.appendChild(el('<div class="dept-sub">Retards et soucis signalés par les clients<br>'+(n?'<b>'+n+' à traiter</b>':'Rien à traiter')+' · '+tot+' au total</div>'));
+      t7.appendChild(tx7);
+      if(n) t7.appendChild(el('<div class="icon-tile-badge">'+n+'</div>'));
+      t7.onclick = ()=>{ view.rcOpen = true; render(); };
+      grid.appendChild(t7);
+    }
     deptList().filter(d=>d.id!=='confection' && d.id!=='tricotage' && d.id!=='personnalisation' && d.id!=='crea').forEach(d=>{
       const n = (DATA.people||[]).filter(p=>deptOf(p)===d.id && p.active!==false).length;
       const t2 = el('<button class="dept-tile" style="background:#BFD2FF;"></button>');
@@ -3974,7 +4130,7 @@ function renderAdminScreen(extra){
     {key:'acces', label:'Gérer les accès', badge: (DATA.people||[]).length}
   ];
   const iconGrid = el('<div class="icon-grid"></div>');
-  tiles.filter(it=>!isCrea || CREA_KEYS.indexOf(it.key)>=0).forEach(it=>{
+  tiles.filter(it=>(!isCrea || CREA_KEYS.indexOf(it.key)>=0) && (it.key!=='reclam' || view.role==='admin')).forEach(it=>{
     const isOpen = !!view.adminOpen[it.key];
     const tile = el('<button class="icon-tile'+(isOpen?' active':'')+'"></button>');
     tile.appendChild(el('<div class="icon-tile-ic">'+ICONS[it.key]+'</div>'));
