@@ -630,6 +630,23 @@ button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
 .pop-nav .pop-chip{border:0;cursor:pointer}
 .pop-nav .pop-nav-c{background:var(--pop-coral);transform:rotate(-2deg)}
 .pop-cats{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:22px;align-items:start}
+.pop-cats.one{grid-template-columns:1fr;max-width:620px;margin-left:auto;margin-right:auto}
+.pop-choose{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:26px}
+.pop-choice{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:34px 24px 26px;border:3px solid var(--pop-navy);border-radius:26px;box-shadow:10px 10px 0 var(--pop-navy);cursor:pointer;font-family:inherit;color:var(--pop-navy);transition:transform .12s, box-shadow .12s}
+.pop-choice:hover{transform:translate(-3px,-3px);box-shadow:13px 13px 0 var(--pop-navy)}
+.pop-choice:active{transform:translate(4px,4px);box-shadow:5px 5px 0 var(--pop-navy)}
+.pop-choice.c{background:#FFC933}.pop-choice.t{background:#37D6A5}
+.pc-ic{width:96px;height:96px;border-radius:50%;background:#fff;border:3px solid var(--pop-navy);display:flex;align-items:center;justify-content:center;box-shadow:4px 4px 0 var(--pop-navy)}
+.pc-ic svg{width:60px;height:60px}
+.pc-t{font:900 28px/1 'Arial Black',Arial,sans-serif;letter-spacing:-.02em}
+.pc-s{font:700 14px Arial,sans-serif;opacity:.85}
+.pc-go{margin-top:4px;background:var(--pop-navy);color:#fff;border-radius:99px;padding:8px 18px;font:800 14px Arial,sans-serif}
+.pop-sphead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.pop-sphead .pop-cat-tag{margin:0;display:inline-flex;align-items:center;gap:8px}
+.tg-ic svg{width:22px;height:22px;display:block}
+.pop-back{background:#fff;border:3px solid var(--pop-navy);border-radius:99px;padding:7px 14px;font:800 13px Arial,sans-serif;color:var(--pop-navy);cursor:pointer;box-shadow:3px 3px 0 var(--pop-navy)}
+.pop-nav .pop-chip.on{outline:3px solid #fff;outline-offset:-6px}
+@media(max-width:860px){.pop-choose{grid-template-columns:1fr;gap:22px}.pc-ic{width:76px;height:76px}.pc-ic svg{width:46px;height:46px}.pc-t{font-size:23px}.pop-choice{padding:24px 18px 20px}}
 .pop-col{position:relative;scroll-margin-top:12px}
 .pop-cat-tag{display:inline-block;font:900 14px 'Arial Black',Arial,sans-serif;letter-spacing:.08em;border:3px solid var(--pop-navy);border-radius:99px;padding:7px 16px;margin:0 0 12px;box-shadow:4px 4px 0 var(--pop-navy);color:var(--pop-navy)}
 .pop-cat-tag.c{background:#FFC933}.pop-cat-tag.t{background:#37D6A5}
@@ -1852,19 +1869,34 @@ function renderLogin(){
   const head = el('<div class="pop-head"></div>');
   const logoWrap = el('<div></div>'); logoWrap.appendChild(logoEl(64, false));
   head.appendChild(logoWrap);
+  const trackFirst = !!(view.trackId || view.trackCrId || view.trackPsId);
+  if(trackFirst && !view.homeSpace) view.homeSpace = 'client';      // client arrivé par un QR : son suivi directement
+  const sp = view.homeSpace || '';
   { const nav = el('<div class="pop-nav"></div>');
-    const b1 = el('<button class="pop-chip pop-nav-c">Espace client</button>'); b1.onclick = ()=>{ const t = document.getElementById('esp-client'); if(t) t.scrollIntoView({behavior:'smooth', block:'start'}); };
-    const b2 = el('<button class="pop-chip">Espace équipe ✂</button>'); b2.onclick = ()=>{ const t = document.getElementById('esp-team'); if(t) t.scrollIntoView({behavior:'smooth', block:'start'}); };
+    const b1 = el('<button class="pop-chip pop-nav-c'+(sp==='client'?' on':'')+'">Espace client</button>'); b1.onclick = ()=>{ view.homeSpace = 'client'; render(); };
+    const b2 = el('<button class="pop-chip'+(sp==='team'?' on':'')+'">Espace équipe ✂</button>'); b2.onclick = ()=>{ view.homeSpace = 'team'; render(); };
     nav.appendChild(b1); nav.appendChild(b2); head.appendChild(nav); }
   wrap.appendChild(head);
-  const trackFirst = !!(view.trackId || view.trackCrId || view.trackPsId);
-  // deux espaces sur la même page : client (suivi + réclamation) et équipe (connexion)
-  const cats = el('<div class="pop-cats"></div>');
-  const colC = el('<div class="pop-col" id="esp-client"><div class="pop-cat-tag c">ESPACE CLIENT</div></div>');
-  colC.appendChild(renderTrackBlock());
-  colC.appendChild(renderReclamBlock());
-  const colT = el('<div class="pop-col" id="esp-team"><div class="pop-cat-tag t">ESPACE ÉQUIPE</div></div>');
-  cats.appendChild(colC); cats.appendChild(colT);
+  // accueil : deux grandes cases, on clique pour ouvrir l'espace
+  const choose = el('<div class="pop-choose"></div>');
+  const cC = el('<button class="pop-choice c pop-choose-c"><div class="pc-ic">'+HOME_IC.client+'</div><div class="pc-t">Espace client</div><div class="pc-s">Suivre ma commande · faire une réclamation</div><div class="pc-go">Entrer →</div></button>');
+  cC.onclick = ()=>{ view.homeSpace = 'client'; render(); window.scrollTo(0,0); };
+  const cT = el('<button class="pop-choice t pop-choose-t"><div class="pc-ic">'+HOME_IC.team+'</div><div class="pc-t">Espace équipe</div><div class="pc-s">Connexion des employés avec leur code</div><div class="pc-go">Entrer →</div></button>');
+  cT.onclick = ()=>{ view.homeSpace = 'team'; render(); window.scrollTo(0,0); setTimeout(()=>{ const i = document.querySelector('.login-form input'); if(i) i.focus(); }, 60); };
+  choose.appendChild(cC); choose.appendChild(cT);
+  const cats = el('<div class="pop-cats one"></div>');
+  const back = ()=>{ const b = el('<button class="pop-back">← Retour à l\u2019accueil</button>'); b.onclick = ()=>{ view.homeSpace = null; view.trackId = null; view.trackCrId = null; view.trackPsId = null; render(); window.scrollTo(0,0); }; return b; };
+  const colC = el('<div class="pop-col" id="esp-client"></div>');
+  const colT = el('<div class="pop-col" id="esp-team"></div>');
+  if(sp==='client'){
+    const hd = el('<div class="pop-sphead"></div>'); hd.appendChild(back()); hd.appendChild(el('<div class="pop-cat-tag c"><span class="tg-ic">'+HOME_IC.client+'</span>ESPACE CLIENT</div>')); colC.appendChild(hd);
+    colC.appendChild(renderTrackBlock());
+    colC.appendChild(renderReclamBlock());
+    cats.appendChild(colC);
+  } else if(sp==='team'){
+    const hd = el('<div class="pop-sphead"></div>'); hd.appendChild(back()); hd.appendChild(el('<div class="pop-cat-tag t"><span class="tg-ic">'+HOME_IC.team+'</span>ESPACE ÉQUIPE</div>')); colT.appendChild(hd);
+    cats.appendChild(colT);
+  } else wrap.appendChild(choose);
   wrap.appendChild(cats);
   const grid = el('<div class="pop-grid pop-about"></div>');
   const hero = el('<div class="pop-hero"></div>');
@@ -1872,7 +1904,7 @@ function renderLogin(){
   hero.appendChild(el('<p class="pop-lead">'+esc(DATA.companyTitle||'Suivi de production')+' : découpe, confection, emballage, stock. Suis tout, gagne tes étoiles et fais passer les commandes prioritaires en premier.</p>'));
   hero.appendChild(el('<div class="pop-steps"><div class="s"><i style="background:#FF5A4D">1</i>Découpe</div><div class="s"><i style="background:#2f6bff">2</i>Confection</div><div class="s"><i style="background:#37D6A5;color:#001D51">3</i>Emballage</div><div class="s"><i style="background:#001D51">4</i>Stock</div></div>'));
   grid.appendChild(hero);
-  if(trackFirst) grid.style.display = 'none';
+  if(sp) grid.style.display = 'none';
   const w2 = el('<div class="pop-ticket"></div>');
   w2.appendChild(el('<div class="pop-star">Note<br>5★<br>auto</div>'));
   w2.appendChild(el('<h2>Ton billet<br>d\'entrée</h2>'));
@@ -1924,13 +1956,18 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 80 · espace client et réclamations</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 81 · accueil en deux espaces</div>'));
   colT.appendChild(w2);
+  if(sp!=='team') colT.innerHTML = '';
   wrap.appendChild(grid);
   w.appendChild(wrap);
   return w;
 }
 
+const HOME_IC = {
+  client: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 15l14-7 14 7v16l-14 7-14-7V15Z"/><path d="M8 15l14 7 14-7"/><path d="M22 22v16"/><circle cx="35" cy="33" r="6.5" fill="#fff"/><path d="M39.6 37.6L44 42"/></svg>',
+  team: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="15" r="6"/><path d="M5 38c.8-7.5 5.6-11.5 12-11.5S28.2 30.5 29 38"/><circle cx="33" cy="17" r="5"/><path d="M30.5 26.6c1-.3 1.8-.4 2.5-.4 5.3 0 9.3 3.4 10 9.8"/></svg>'
+};
 // ---------- RÉCLAMATION CLIENT (va directement chez l'admin) ----------
 const RC_MOTIFS = {retard:'Retard de livraison', qualite:'Problème sur la commande (qualité, erreur, quantité)', autre:'Autre'};
 const RC_STATUTS = {nouvelle:'Nouvelle', encours:'En cours', traitee:'Traitée'};
@@ -2126,7 +2163,7 @@ function topbar(title, badgeCount){
   chat.onclick = ()=>{ view.discussionOpen=true; render(); pollMessages(); };
   bar.appendChild(chat);
   const out = el('<button class="link">Se déconnecter</button>');
-  out.onclick = ()=>{ stopScanner(); view.scanModal=false; clearSession(); view.screen='login'; view.role=null; view.personId=null; view.discussionOpen=false; view.todoOpen=false; view.td=null; render(); };
+  out.onclick = ()=>{ stopScanner(); view.scanModal=false; clearSession(); view.homeSpace=null; view.screen='login'; view.role=null; view.personId=null; view.discussionOpen=false; view.todoOpen=false; view.td=null; render(); };
   bar.appendChild(out);
   return bar;
 }
