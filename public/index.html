@@ -567,6 +567,13 @@ button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
 .cr-dot{width:24px;height:24px;border-radius:50%;border:2px solid #001D51;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:0 0 auto}
 .cr-lbl{flex:1}.cr-date{font-size:11px;opacity:.8}
 .cc-box{margin:4px 0 6px}
+.ach-open{display:flex;align-items:center;gap:16px;width:100%;margin:14px 0;padding:18px 20px;border:3px solid #001D51;border-radius:20px;background:#37D6A5;box-shadow:6px 6px 0 #001D51;cursor:pointer;font:600 15px Arial,sans-serif;color:#001D51;text-align:left}
+.ach-open b{font:900 22px 'Arial Black',Arial,sans-serif}
+.ach-ic{width:56px;height:56px;border-radius:50%;background:#fff;border:3px solid #001D51;display:flex;align-items:center;justify-content:center;flex:none}
+.ach-ic svg{width:30px;height:30px}
+.ach-row{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;border:2px solid #001D51;border-radius:12px;padding:9px 12px;margin-bottom:8px;background:#fff;cursor:pointer;font-family:inherit;color:#001D51;box-shadow:3px 3px 0 #001D51}
+.ach-row span{font-size:12px}
+.ach-row.late{background:#FFE1DE}
 .ps-ech{display:inline-block;background:#8B5CF6;color:#fff;border:2px solid #001D51;border-radius:999px;padding:0 8px;font-size:12px;font-weight:800;vertical-align:middle;letter-spacing:.04em}
 .ps-ech.sm{font-size:9px;padding:0 5px;border-width:1.5px}
 .ps-type{margin:0 0 10px}
@@ -1728,8 +1735,8 @@ const STATUS_CLASS = {
 };
 const DEPT_LABEL = {decoupe:"Découpe",confection:"Confection",emballage:"Emballage",stock:"Stock"};
 const DEPT_COLOR = {decoupe:"#6B4226",confection:"#A8492E",emballage:"#8A6D3B",stock:"#3E5C76"};
-const ROLE_LABEL = {admin:"Admin",commercial:"Commercial",decoupe:"Découpe",confection:"Confection",emballage:"Emballage",stock:"Stock",crea:"Créa",superviseur:"Superviseur",tricotage:"Tricotage",personnalisation:"Personnalisation"};
-const ROLE_OPTIONS = ["admin","commercial","decoupe","confection","emballage","stock","crea","superviseur","tricotage","personnalisation"];
+const ROLE_LABEL = {admin:"Admin",commercial:"Commercial",decoupe:"Découpe",confection:"Confection",emballage:"Emballage",stock:"Stock",crea:"Créa",superviseur:"Superviseur",tricotage:"Tricotage",personnalisation:"Personnalisation",acheteur:"Acheteur / Démarcheur"};
+const ROLE_OPTIONS = ["admin","commercial","decoupe","confection","emballage","stock","crea","superviseur","tricotage","personnalisation","acheteur"];
 
 // Configuration Supabase
 const SUPABASE_URL = 'https://dmpzpcvlscrlefedfung.supabase.co';
@@ -1826,6 +1833,7 @@ function render(){
   else if(view.screen==='admin' || view.screen==='crea') app.appendChild(renderAdminScreen());
   else if(view.screen==='trico') app.appendChild(renderStaffDept('tricotage'));
   else if(view.screen==='perso') app.appendChild(renderStaffDept('personnalisation'));
+  else if(view.screen==='achat') app.appendChild(renderAcheteurScreen());
   if(view.modal) app.appendChild(renderModal());
   if(view.personModal) app.appendChild(renderPersonModal());
   if(view.catalogueModal) app.appendChild(renderCatalogueModal());
@@ -1955,6 +1963,7 @@ function renderLogin(){
     view.screen = screenForRole(person.role);
     view.loginId=''; view.loginCode=''; view.loginError='';
     saveSession(person.id);
+    if(person.role==='acheteur'){ view.todoOpen = true; view.td = {list:'jour', sel:null}; }
     if(psMigrateSteps() + crMigrateSteps()) saveToSupabase();
     applyScan();
     render();
@@ -1964,7 +1973,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 82 · échantillons, tâches équipe, responsable créa</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 83 · rôle acheteur démarcheur</div>'));
   colT.appendChild(w2);
   if(sp!=='team') colT.innerHTML = '';
   wrap.appendChild(grid);
@@ -3726,7 +3735,7 @@ function openImport(name, headline, preview, applyLabel, apply){
 }
 function importFail(msg){ alert(msg || 'Impossible de lire ce fichier. Utilise un fichier CSV exporté depuis cette même case comme modèle.'); }
 function num(v){ const n = parseFloat(String(v||'').replace(/\s/g,'').replace(',','.')); return isNaN(n) ? null : n; }
-const ROLE_FROM_TEXT = {admin:'admin', commercial:'commercial', decoupe:'decoupe', confection:'confection', emballage:'emballage', stock:'stock', crea:'crea', superviseur:'superviseur', tricotage:'tricotage', personnalisation:'personnalisation'};
+const ROLE_FROM_TEXT = {admin:'admin', commercial:'commercial', decoupe:'decoupe', confection:'confection', emballage:'emballage', stock:'stock', crea:'crea', superviseur:'superviseur', tricotage:'tricotage', personnalisation:'personnalisation', acheteur:'acheteur', achat:'acheteur', achats:'acheteur', demarcheur:'acheteur'};
 
 // ----- Commandes -----
 function exportCommandesList(list){
@@ -3962,7 +3971,7 @@ function renderImportModal(){
 }
 
 let RO_MODE = false;
-function screenForRole(r){ return r==='admin' ? 'admin' : r==='commercial' ? 'commercial' : (r==='crea'||r==='superviseur') ? 'crea' : r==='tricotage' ? 'trico' : r==='personnalisation' ? 'perso' : 'dept'; }
+function screenForRole(r){ return r==='admin' ? 'admin' : r==='commercial' ? 'commercial' : (r==='crea'||r==='superviseur') ? 'crea' : r==='tricotage' ? 'trico' : r==='personnalisation' ? 'perso' : r==='acheteur' ? 'achat' : 'dept'; }
 const TRI_TILE_CHOICES = [['fil','Stock de fil'],['prod','Production'],['fini','Finition'],['stock','Stock tissu fini'],['vente','Vente tissu fini'],['clients','Clients'],['eval','Évaluation']];
 const PS_TILE_CHOICES = [['board','Tableau de bord'],['cmd','Commandes'],['dtf','DTF'],['broderie','Broderie'],['serigraphie','Sérigraphie'],['conso','Stock consommables'],['devis','Tarifs & devis (prix)'],['clients','Clients'],['eval','Évaluation']];
 function allowedTri(p){ if(p && Array.isArray(p.triTiles) && p.triTiles.length) return p.triTiles.filter(k=>TRI_TILE_CHOICES.some(t=>t[0]===k)); return (p && p.role==='tricotage') ? ['fil','prod','fini','stock'] : []; }
@@ -3975,6 +3984,54 @@ function appendDeptExtras(wrap){
   if(p.role!=='tricotage' && allowedTri(p).length){ wrap.appendChild(el('<div class="section-title" style="margin:14px 0 8px;">Tricotage</div>')); renderTricotage(null, wrap, {allowed:allowedTri(p), embedded:true}); }
   if(p.role!=='crea' && allowedCr(p).length){ wrap.appendChild(el('<div class="section-title" style="margin:14px 0 8px;">Créa</div>')); renderCrea(null, wrap, {allowed:allowedCr(p), embedded:true}); }
   if(p.role!=='personnalisation' && allowedPs(p).length){ wrap.appendChild(el('<div class="section-title" style="margin:14px 0 8px;">Personnalisation</div>')); renderPerso(null, wrap, {allowed:allowedPs(p), embedded:true}); }
+}
+// ---- Espace Acheteur / Démarcheur : il travaille directement depuis ses tâches ----
+function acheteurs(){ return (DATA.people||[]).filter(p=>p.role==='acheteur' && p.active!==false); }
+function renderAcheteurScreen(){
+  const p = currentPerson();
+  const w = el('<div></div>');
+  w.appendChild(topbar('Espace Acheteur / Démarcheur'));
+  const wrap = el('<div class="wrap"></div>');
+  const mine = TD().items.filter(t=>tdIsMine(t));
+  const ouv = mine.filter(t=>t.statut==='ouverte'), ret = ouv.filter(tdLate), att = mine.filter(t=>t.statut==='soumise');
+  const mois = todayISO().slice(0,7);
+  const k = el('<div class="kpi-row"></div>');
+  k.appendChild(el('<div class="kpi'+(ret.length?' alert':'')+'"><div class="num">'+ouv.length+'</div><div class="label">Achats / missions à faire'+(ret.length?' · '+ret.length+' en retard':'')+'</div></div>'));
+  k.appendChild(el('<div class="kpi"><div class="num">'+att.length+'</div><div class="label">En attente de validation</div></div>'));
+  k.appendChild(el('<div class="kpi" style="background:#FFC933;"><div class="num">'+tdPointsOf(view.personId, mois)+'</div><div class="label">Points ce mois-ci</div></div>'));
+  wrap.appendChild(k);
+  const big = el('<button class="ach-open"><span class="ach-ic">'+TD_IC.avalider+'</span><span><b>Ouvrir mes tâches</b><br><small>Achats à faire, démarches, fournisseurs…</small></span></button>');
+  big.onclick = ()=>{ view.todoOpen = true; view.td = {list: ret.length ? 'mes' : 'jour', sel:null}; render(); };
+  wrap.appendChild(big);
+  if(ouv.length){
+    wrap.appendChild(el('<div class="section-title">À faire maintenant</div>'));
+    const body = el('<div class="section-body"></div>');
+    ouv.slice().sort((a,b)=>String(a.echeance||'9999').localeCompare(String(b.echeance||'9999'))).slice(0,8).forEach(t=>{
+      const late = tdLate(t);
+      const r = el('<button class="ach-row'+(late?' late':'')+'"><b>'+esc(t.titre)+'</b><span>'+(t.echeance?'📅 '+esc(tdDueTxt(t))+(late?' · en retard':''):'sans date')+' · '+esc(t.points||0)+' pts'+((t.etapes||[]).length?' · '+t.etapes.filter(s=>s.fait).length+' / '+t.etapes.length+' articles':'')+'</span></button>');
+      r.onclick = ()=>{ view.todoOpen = true; view.td = {list:'mes', sel:t.id}; render(); };
+      body.appendChild(r);
+    });
+    wrap.appendChild(body);
+  } else wrap.appendChild(el('<div class="empty-msg" style="margin-top:12px;">Aucune tâche pour le moment. Les achats à faire que l’admin te donne arrivent ici.</div>'));
+  if(allowedTiles(p).length) wrap.appendChild(renderAdminScreen(true));
+  w.appendChild(wrap);
+  return w;
+}
+// crée une tâche d'achat (une étape par article) pour l'acheteur
+function matTacheAchat(){
+  const al = matAlertes(); if(!al.length){ alert('Aucune fourniture à acheter pour le moment.'); return; }
+  const ach = acheteurs();
+  if(!ach.length){ alert('Aucun compte « Acheteur / Démarcheur » actif. Crée-le d’abord dans « Gérer les accès ».'); return; }
+  let who = ach[0].id;
+  if(ach.length>1){ const names = ach.map((p,i)=>(i+1)+'. '+p.name).join('\n'); const r = prompt('Pour quel acheteur ?\n'+names, '1'); if(r===null) return; const i = Math.max(1, Math.min(ach.length, parseInt(r,10)||1)); who = ach[i-1].id; }
+  const t = tdNew(who);
+  t.titre = 'Achats fournitures — '+al.length+' article'+(al.length>1?'s':'');
+  t.etapes = al.map(x=>{ const besoin = Math.max(0, (x.res||0) - (x.st||0)); const q = besoin>0 ? besoin : (trNum(x.f.seuil) ? Math.max(0, trNum(x.f.seuil) - (x.st||0)) : 0); return {txt: x.f.nom+(q?' : acheter '+fmtQ(q)+' '+(x.f.unite||''):'')+' ('+x.label.toLowerCase()+', stock '+fmtQ(x.st)+')', fait:false}; });
+  t.note = 'Créée depuis les alertes Matières premières le '+fmtDT(psNow())+'.';
+  t.echeance = new Date(Date.now()+2*86400000).toISOString().slice(0,10); t.points = 20; t.important = al.some(x=>x.key==='manque' || x.key==='insuffisant');
+  TD().items.push(t);
+  saveState('Tâche d’achat envoyée à '+tdName(who));
 }
 function renderStaffDept(dep){
   const p = currentPerson();
@@ -9460,7 +9517,9 @@ function renderMatieres(){
     const ban = el('<div class="mat-alert"><b>⚠ '+al.length+' alerte(s) fournitures</b></div>');
     ban.appendChild(el('<div style="font-size:13px;margin-top:4px;">'+al.slice(0,6).map(x=>esc(x.f.nom)+' : <b>'+x.label.toLowerCase()+'</b> (stock '+fmtQ(x.st)+', besoin commandes '+fmtQ(x.res)+')').join(' · ')+(al.length>6?' …':'')+'</div>'));
     const go = el('<button class="btn small" style="margin-top:6px;">Voir</button>'); go.onclick = ()=>{ view.mat.tab='fourn'; render(); };
-    ban.appendChild(go); wrap.appendChild(ban);
+    ban.appendChild(go);
+    if(view.role==='admin'){ const ta = el('<button class="btn small primary" style="margin-top:6px;margin-left:6px;">Envoyer à l\u2019acheteur (tâche d\u2019achat)</button>'); ta.onclick = matTacheAchat; ban.appendChild(ta); }
+    wrap.appendChild(ban);
   }
   const tabs = el('<div class="mat-tabs"></div>');
   [['tissus','Tissus & couleurs', Object.keys(DATA.lists.tissus).length],['tailles','Tailles', DATA.lists.tailles.length],['fourn','Accessoires & fournitures', MAT().fournitures.length]].forEach(([k,l,n])=>{
