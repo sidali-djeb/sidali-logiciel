@@ -2020,7 +2020,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 85 · plusieurs photos au catalogue</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 86 · JB après validation commerciale</div>'));
   colT.appendChild(w2);
   if(sp!=='team') colT.innerHTML = '';
   wrap.appendChild(grid);
@@ -2070,7 +2070,7 @@ function renderClientCommande(){
   const back = el('<button class="pop-back">← Catalogue</button>'); back.onclick = ()=>{ view.clientPage = 'catalogue'; render(); };
   top.appendChild(back); box.appendChild(top);
   if(view.cdSent){
-    box.appendChild(el('<div class="track-box"><div class="reclam-ok" style="font-size:16px;">✓ Votre demande de commande <b>'+esc(view.cdSent.ref)+'</b> ('+view.cdSent.qte+' pièces) est enregistrée.<br>Un commercial vous contacte très vite pour confirmer les détails et le prix.</div><p style="margin-top:10px;">Gardez cette référence : vous pourrez suivre votre commande avec <b>'+esc(view.cdSent.ref)+'</b> dans « Suivre ma commande ».</p></div>'));
+    box.appendChild(el('<div class="track-box"><div class="reclam-ok" style="font-size:16px;">✓ Votre demande <b>'+esc(view.cdSent.ref)+'</b> ('+view.cdSent.qte+' pièces) est enregistrée.<br>Un commercial vous contacte très vite pour valider les détails et le prix.</div><p style="margin-top:10px;">Après validation, votre commande reçoit son numéro <b>JB</b>. Vous pouvez suivre l\u2019avancement avec <b>'+esc(view.cdSent.ref)+'</b> dans « Suivre ma commande ».</p></div>'));
     const again = el('<button class="btn">Voir d’autres produits</button>'); again.onclick = ()=>{ view.cdSent = null; view.clientPage = 'catalogue'; render(); };
     box.appendChild(again); return box;
   }
@@ -2141,12 +2141,12 @@ async function sendDemandeClient(p, f, t){
   if(LOAD_FAILED || BASE===null) return null;
   DATA.demandes = Array.isArray(DATA.demandes) ? DATA.demandes : [];
   const v = k=>String(f[k]||'').trim();
-  const ref = nextReference();
+  const ref = trNextRef('DC', DATA.demandes.filter(x=>/^DC/i.test(String(x.ref||''))), 4);
   const d = {id:'dm_'+Date.now()+Math.floor(Math.random()*1000), ref:ref, date:psNow(), statut:'nouvelle', catalogueId:p.id, article:p.article, tissu:p.tissu||'', photo:'',
     lignes: f.lignes.filter(l=>Object.keys(l.tailles||{}).length).map(l=>({couleur:String(l.couleur||'').trim().toUpperCase(), tailles:Object.assign({}, l.tailles)})), quantite:t,
     nom:v('nom').slice(0,60), prenom:v('prenom').slice(0,60), tel:v('tel').slice(0,20), email:v('email').slice(0,80), boutique:v('boutique').slice(0,80), ville:v('ville').slice(0,60), dateSouhaitee:v('date'), note:v('note').slice(0,1000)};
   DATA.demandes.push(d);
-  const txt = '🛒 Nouvelle demande de commande '+ref+' (site) : '+d.article+' · '+t+' pièces · '+d.prenom+' '+d.nom+(d.boutique?' ('+d.boutique+')':'')+' · '+d.tel+'. À confirmer dans « Demandes clients ».';
+  const txt = '🛒 Nouvelle demande client '+ref+' (site, à valider avant de créer la JB) : '+d.article+' · '+t+' pièces · '+d.prenom+' '+d.nom+(d.boutique?' ('+d.boutique+')':'')+' · '+d.tel+'. À confirmer dans « Demandes clients ».';
   DATA.messages = DATA.messages || [];
   DATA.messages.push({id:'msg_'+Date.now()+'_dm', author:'Demande client', role:'system', personId:'system', alert:true, demId:d.id, text:txt, ts:new Date().toISOString()});
   (DATA.people||[]).filter(x=>x.role==='commercial' && x.active!==false).forEach((x,k)=>DATA.messages.push({id:'msg_'+Date.now()+'_dmc'+k, author:'Demande client', role:'system', personId:'system', to:x.id, demId:d.id, text:txt, ts:new Date().toISOString()}));
@@ -2160,7 +2160,7 @@ function dmAtraiter(){ return (DATA.demandes||[]).filter(d=>d.statut==='nouvelle
 function dmCreerCommande(d){
   const p = (DATA.catalogue||[]).find(x=>x.id===d.catalogueId);
   const c = blankCommande();
-  c.reference = d.ref; c.catalogueId = d.catalogueId||''; c.article = d.article||''; c.tissu = (p && p.tissu) || d.tissu || '';
+  c.reference = nextReference(); c.catalogueId = d.catalogueId||''; c.article = d.article||''; c.tissu = (p && p.tissu) || d.tissu || '';
   c.lignes = (d.lignes||[]).map(l=>({couleur:l.couleur, tailles:Object.assign({}, l.tailles)})); if(!c.lignes.length) c.lignes = [{couleur:'', tailles:{}}];
   c.quantite = d.quantite; c.client = d.boutique || (d.prenom+' '+d.nom).trim(); c.dateLivraisonPrevue = d.dateSouhaitee || '';
   c.notes = 'Demande client '+d.ref+' (site) · '+d.prenom+' '+d.nom+' · '+d.tel+(d.email?' · '+d.email:'')+(d.ville?' · '+d.ville:'')+(d.note?' · '+d.note:'');
@@ -2184,11 +2184,11 @@ function renderDemandesPanel(target){
       +'<div><b>'+esc(d.prenom)+' '+esc(d.nom)+'</b>'+(d.boutique?' · '+esc(d.boutique):'')+(d.ville?' · '+esc(d.ville):'')+' · <a href="tel:'+esc(String(d.tel).replace(/[^0-9+]/g,''))+'">'+esc(d.tel)+'</a>'+(d.email?' · <a href="mailto:'+esc(d.email)+'">'+esc(d.email)+'</a>':'')+'</div>'
       +(d.dateSouhaitee?'<div><b>Livraison souhaitée :</b> '+fmtDate(d.dateSouhaitee)+'</div>':'')
       +(d.note?'<div class="rc-note">'+esc(d.note)+'</div>':'')
-      +(d.statut==='confirmee'?'<div style="font-size:12px;color:#1E7A34;font-weight:800;">✓ Commande '+esc(d.ref)+' créée le '+fmtDT(d.confirmeLe)+(d.confirmePar?' par '+esc(crPersonName(d.confirmePar)):'')+'</div>':'')
+      +(d.statut==='confirmee'?'<div style="font-size:12px;color:#1E7A34;font-weight:800;">✓ Validée → commande '+esc(d.jbRef || ((DATA.commandes||[]).find(c=>c.id===d.cmdId)||{}).reference || '')+' créée le '+fmtDT(d.confirmeLe)+(d.confirmePar?' par '+esc(crPersonName(d.confirmePar)):'')+'</div>':'')
       +(d.statut==='refusee'?'<div style="font-size:12px;color:#A42834;font-weight:800;">Refusée'+(d.motifRefus?' : '+esc(d.motifRefus):'')+'</div>':'');
     if(d.statut==='nouvelle'){
       const acts = el('<div class="rc-acts"></div>');
-      const ok = el('<button class="btn small primary">Créer la commande '+esc(d.ref)+'</button>'); ok.onclick = ()=>dmCreerCommande(d);
+      const ok = el('<button class="btn small primary">Valider → créer la commande (JB automatique)</button>'); ok.onclick = ()=>dmCreerCommande(d);
       const no = el('<button class="btn small" style="color:#A42834;border-color:#A42834;">Refuser</button>'); no.onclick = ()=>{ const m = prompt('Motif du refus (le client ne le voit pas) :', ''); if(m===null) return; d.statut = 'refusee'; d.motifRefus = m; d.refuseLe = psNow(); d.refusePar = view.personId; saveState('Demande '+d.ref+' refusée'); };
       acts.appendChild(ok); acts.appendChild(no); card.appendChild(acts);
     }
@@ -2335,6 +2335,12 @@ function renderTrackResult(box){
     const cr = view.trackPsId ? null : crFindPublic(view.trackCrId, ref);
     if(cr){ box.appendChild(crTrackCard(cr)); return; }
   }
+  let dmLink = null;
+  if(!c && ref){
+    const dm0 = (DATA.demandes||[]).filter(x=>String(x.ref||'').toLowerCase()===ref.toLowerCase()).pop();
+    const cmd0 = dm0 && dm0.statut==='confirmee' ? (DATA.commandes||[]).find(x=>x.id===dm0.cmdId) : null;
+    if(cmd0){ c = cmd0; dmLink = dm0; }
+  }
   if(!c && ref){
     const dm = (DATA.demandes||[]).filter(x=>String(x.ref||'').toLowerCase()===ref.toLowerCase()).pop();
     if(dm){ box.appendChild(el('<div class="track-card"><div style="font-size:22px;font-weight:bold;text-align:center;">'+esc(dm.ref)+'</div><div style="font-size:13px;color:var(--text-soft);text-align:center;margin:2px 0 10px;">'+esc(dm.article)+' · '+esc(dm.quantite)+' pièces</div><div class="track-msg'+(dm.statut==='refusee'?'':' ')+'">'+(dm.statut==='refusee'?'Votre demande n’a pas pu être retenue. Contactez-nous pour en parler.':'✓ Demande reçue le '+fmtDT(dm.date)+'. Elle est en attente de confirmation par un commercial.')+'</div></div>')); return; }
@@ -2347,6 +2353,7 @@ function renderTrackResult(box){
   const allDone = steps.every(x=>x.state==='done');
   const cur = steps.find(x=>x.state!=='done');
   const card = el('<div class="track-card"></div>');
+  if(dmLink) card.appendChild(el('<div class="reclam-ok" style="text-align:center;margin-bottom:8px;">✓ Votre demande '+esc(dmLink.ref)+' est validée : votre numéro de commande est <b>'+esc(c.reference)+'</b></div>'));
   card.appendChild(el('<div style="font-size:22px;font-weight:bold;text-align:center;">'+esc(c.reference)+'</div>'));
   card.appendChild(el('<div style="font-size:13px;color:var(--text-soft);text-align:center;margin:2px 0 10px;">'+esc(c.article)+(c.quantite?' · '+esc(c.quantite)+' pièces':'')+'</div>'));
   card.appendChild(renderJourney(c, steps));
@@ -2362,7 +2369,7 @@ function renderTrackResult(box){
 function renderTrackBlock(){
   const box = el('<div class="track-box"></div>');
   box.appendChild(el('<h2>Suivre ma commande</h2>'));
-  box.appendChild(el('<p>Entrez la référence de votre commande, de votre impression / broderie ou de votre création (ex : JB0001, PS0010, CR001 ou #00108). Pas besoin de compte.</p>'));
+  box.appendChild(el('<p>Entrez la référence de votre commande, de votre demande en ligne, de votre impression / broderie ou de votre création (ex : JB0001, DC0001, PS0010, CR001 ou #00108). Pas besoin de compte.</p>'));
   const row = el('<div class="search-row" style="margin:0 0 8px;"></div>');
   const inp = document.createElement('input');
   inp.placeholder = 'Référence (ex : JB0001 ou PS0010)';
@@ -7255,7 +7262,7 @@ function renderModal(){
     if(data.persoDemande && !(data.persoDemande.techniques||[]).length) delete data.persoDemande;
     if(mode==='create'){
       DATA.commandes.push(data);
-      if(data.demandeId){ const dm = (DATA.demandes||[]).find(x=>x.id===data.demandeId); if(dm){ dm.statut = 'confirmee'; dm.cmdId = data.id; dm.confirmeLe = psNow(); dm.confirmePar = view.personId; if(data.reference!==dm.ref) dm.ref = data.reference; } }
+      if(data.demandeId){ const dm = (DATA.demandes||[]).find(x=>x.id===data.demandeId); if(dm){ dm.statut = 'confirmee'; dm.cmdId = data.id; dm.jbRef = data.reference; dm.confirmeLe = psNow(); dm.confirmePar = view.personId; } }
       psNew = cmdSendPerso(data); if(psNew){ data.persoDemande.envoyeeLe = psNow(); data.persoDemande.psId = psNew.id; data.persoDemande.images = []; }
       view.modal=null;
       saveState('Nouvelle commande ajoutée : '+data.reference+(psNew?' · envoyée en personnalisation ('+psNew.ref+')':''));
