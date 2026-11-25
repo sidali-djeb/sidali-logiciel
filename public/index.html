@@ -567,6 +567,23 @@ button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
 .cr-dot{width:24px;height:24px;border-radius:50%;border:2px solid #001D51;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:0 0 auto}
 .cr-lbl{flex:1}.cr-date{font-size:11px;opacity:.8}
 .cc-box{margin:4px 0 6px}
+.cat-gal{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 10px}
+.cat-gal-it{position:relative;width:96px;height:96px;border:2px solid #001D51;border-radius:12px;overflow:hidden;background:#fff}
+.cat-gal-it.main{border-width:4px;border-color:#FFC933;box-shadow:0 0 0 2px #001D51}
+.cat-gal-it img{width:100%;height:100%;object-fit:cover}
+.cat-gal-main{position:absolute;left:3px;bottom:3px;background:#FFC933;border:1.5px solid #001D51;border-radius:6px;font-size:10px;font-weight:800;padding:0 4px}
+.cat-gal-btn,.cat-gal-x,.cat-gal-mv{position:absolute;border:1.5px solid #001D51;border-radius:50%;width:24px;height:24px;font-size:12px;line-height:1;cursor:pointer;background:#fff;color:#001D51;padding:0}
+.cat-gal-btn{left:3px;bottom:3px;background:#FFC933}
+.cat-gal-x{right:3px;top:3px}
+.cat-gal-mv.l{left:3px;top:3px}
+.cat-thumbs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.cat-thumbs img{width:56px;height:56px;object-fit:cover;border:2px solid #001D51;border-radius:8px;cursor:pointer;opacity:.7}
+.cat-thumbs img.on{opacity:1;border-color:#FFC933;box-shadow:0 0 0 2px #001D51}
+.ccat-img{position:relative}
+.ccat-nb{position:absolute;right:6px;bottom:6px;background:#001D51;color:#fff;border-radius:99px;padding:2px 8px;font-size:11px;font-weight:800}
+.ccmd-gal{flex:0 0 auto}
+.ccmd-big{width:160px;height:160px;object-fit:cover;border:3px solid #001D51;border-radius:14px;cursor:zoom-in;display:block}
+.ccmd-head{align-items:flex-start;flex-wrap:wrap}
 .ach-open{display:flex;align-items:center;gap:16px;width:100%;margin:14px 0;padding:18px 20px;border:3px solid #001D51;border-radius:20px;background:#37D6A5;box-shadow:6px 6px 0 #001D51;cursor:pointer;font:600 15px Arial,sans-serif;color:#001D51;text-align:left}
 .ach-open b{font:900 22px 'Arial Black',Arial,sans-serif}
 .ach-ic{width:56px;height:56px;border-radius:50%;background:#fff;border:3px solid #001D51;display:flex;align-items:center;justify-content:center;flex:none}
@@ -660,7 +677,7 @@ button.mat-chip:hover,.mat-namebtn:hover,.mat-sizebtn:hover{background:#FFC933}
 .ccat-ref{font-size:12px;opacity:.8}
 .ccat-card .btn{margin-top:auto}
 .ccmd-head{display:flex;gap:12px;align-items:center}
-.ccmd-head img{width:84px;height:84px;object-fit:cover;border:3px solid var(--pop-navy);border-radius:14px}
+.ccmd-head > img{width:84px;height:84px;object-fit:cover;border:3px solid var(--pop-navy);border-radius:14px}
 .ccmd-line{border:2px solid var(--pop-navy);border-radius:12px;padding:8px 10px;margin:8px 0;background:#FFF6E6}
 .ccmd-line .rf label,.ccmd-size label{display:block;font:800 11px Arial,sans-serif;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
 .ccmd-line input{width:100%;box-sizing:border-box;border:2px solid var(--pop-navy);border-radius:10px;padding:8px;font:700 15px Arial,sans-serif;background:#fff}
@@ -1719,7 +1736,9 @@ function resizeImageFileJpeg(file, maxDim, quality){
   });
 }
 function dataUrlToImage(url){ return new Promise((resolve, reject)=>{ const img = new Image(); img.onload = ()=>resolve(img); img.onerror = ()=>reject(new Error('img')); img.src = url; }); }
-function photoBytes(){ return (DATA.catalogue||[]).reduce((a,p)=>a+(p.photo?String(p.photo).length:0),0); }
+const CAT_MAX_PHOTOS = 8;
+function catPhotos(p){ if(!p) return []; if(Array.isArray(p.photos) && p.photos.filter(Boolean).length) return p.photos.filter(Boolean); return p.photo ? [p.photo] : []; }
+function photoBytes(){ return (DATA.catalogue||[]).reduce((a,p)=>a+catPhotos(p).reduce((x,u)=>x+String(u).length,0),0); }
 function fmtMo(n){ return (n/1048576).toLocaleString('fr-FR',{maximumFractionDigits:2})+' Mo'; }
 async function optimizeCatalogPhotos(btn, info){
   const list = (DATA.catalogue||[]).filter(p=>p.photo && String(p.photo).indexOf('data:image')===0);
@@ -1731,7 +1750,7 @@ async function optimizeCatalogPhotos(btn, info){
     try{
       const img = await dataUrlToImage(p.photo);
       const out = canvasToJpeg(img, 480, 0.72);
-      if(out.length < p.photo.length){ p.photo = out; changed++; }
+      if(out.length < p.photo.length){ if(Array.isArray(p.photos) && p.photos[0]===p.photo) p.photos[0] = out; p.photo = out; changed++; }
     }catch(e){}
   }
   const after = photoBytes();
@@ -2001,7 +2020,7 @@ function renderLogin(){
   codeInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
   form.appendChild(btn);
   w2.appendChild(form);
-  w2.appendChild(el('<div class="pop-ver">Version 84 · catalogue client et demandes</div>'));
+  w2.appendChild(el('<div class="pop-ver">Version 85 · plusieurs photos au catalogue</div>'));
   colT.appendChild(w2);
   if(sp!=='team') colT.innerHTML = '';
   wrap.appendChild(grid);
@@ -2033,7 +2052,7 @@ function renderClientCatalogue(){
     if(!list.length){ grid.appendChild(el('<div class="empty-msg">Aucun produit.</div>')); return; }
     list.forEach(p=>{
       const c = el('<div class="ccat-card"></div>');
-      c.appendChild(el(p.photo ? '<div class="ccat-img"><img src="'+p.photo+'" alt=""></div>' : '<div class="ccat-img ccat-noimg">'+HOME_IC.client+'</div>'));
+      { const ph = catPhotos(p); c.appendChild(el(ph.length ? '<div class="ccat-img"><img src="'+ph[0]+'" alt="">'+(ph.length>1?'<span class="ccat-nb">'+ph.length+' photos</span>':'')+'</div>' : '<div class="ccat-img ccat-noimg">'+HOME_IC.client+'</div>')); }
       c.appendChild(el('<div class="ccat-name">'+esc(p.article)+'</div>'));
       c.appendChild(el('<div class="ccat-ref">'+esc(p.refPatron||'')+((p.tailles||[]).length?' · '+esc(p.tailles.join(' ')):'')+'</div>'));
       const b = el('<button class="btn primary">Commander</button>'); b.onclick = ()=>{ view.clientPage = 'commande'; view.cdProd = p.id; view.cd = null; view.cdSent = null; render(); window.scrollTo(0,0); };
@@ -2060,7 +2079,15 @@ function renderClientCommande(){
   const coul = clientCouleurs(p);
   const f = view.cd = view.cd || {lignes:[{couleur:coul[0]||'', tailles:{}}]};
   const card = el('<div class="track-box ccmd"></div>');
-  card.appendChild(el('<div class="ccmd-head">'+(p.photo?'<img src="'+p.photo+'" alt="">':'')+'<div><div class="ccat-name" style="font-size:20px;">'+esc(p.article)+'</div><div class="ccat-ref">'+esc(p.refPatron||'')+'</div></div></div>'));
+  { const ph = catPhotos(p);
+    const hd = el('<div class="ccmd-head"><div><div class="ccat-name" style="font-size:20px;">'+esc(p.article)+'</div><div class="ccat-ref">'+esc(p.refPatron||'')+'</div></div></div>');
+    if(ph.length){
+      const g = el('<div class="ccmd-gal"></div>');
+      const big = el('<img class="ccmd-big" src="'+ph[0]+'" alt="">'); big.onclick = ()=>psOpenImg(big.src); g.appendChild(big);
+      if(ph.length>1){ const th = el('<div class="cat-thumbs"></div>'); ph.forEach((u,i)=>{ const t = el('<img src="'+u+'" class="'+(i===0?'on':'')+'" alt="">'); t.onclick = ()=>{ big.src = u; th.querySelectorAll('img').forEach(x=>x.classList.remove('on')); t.classList.add('on'); }; th.appendChild(t); }); g.appendChild(th); }
+      hd.insertBefore(g, hd.firstChild);
+    }
+    card.appendChild(hd); }
   card.appendChild(el('<h2 style="margin-top:12px;">1. Couleurs et quantités</h2>'));
   const tot = el('<div class="ccmd-tot"></div>');
   const total = ()=>f.lignes.reduce((a,l)=>a+Object.values(l.tailles||{}).reduce((x,v)=>x+(Number(v)||0),0),0);
@@ -5030,10 +5057,12 @@ function renderCatalogueView(){
   const overlay = el('<div class="modal-overlay"></div>');
   const m = el('<div class="modal cat-view"></div>');
   m.appendChild(el('<h2>'+esc(p.article||'Produit')+'</h2>'));
-  if(p.photo){
-    const img = document.createElement('img'); img.src = p.photo; img.className='cat-view-photo'; img.title='Ouvrir la photo en grand';
-    img.onclick = ()=>window.open(p.photo,'_blank');
+  if(catPhotos(p).length){
+    const ph = catPhotos(p);
+    const img = document.createElement('img'); img.src = ph[0]; img.className='cat-view-photo'; img.title='Ouvrir la photo en grand';
+    img.onclick = ()=>psOpenImg(img.src);
     m.appendChild(img);
+    if(ph.length>1){ const th = el('<div class="cat-thumbs"></div>'); ph.forEach((u,i)=>{ const t = el('<img src="'+u+'" class="'+(i===0?'on':'')+'" alt="">'); t.onclick = ()=>{ img.src = u; th.querySelectorAll('img').forEach(x=>x.classList.remove('on')); t.classList.add('on'); }; th.appendChild(t); }); m.appendChild(th); }
   } else {
     m.appendChild(el('<div class="cat-view-photo cat-view-nophoto">Pas de photo</div>'));
   }
@@ -5200,33 +5229,29 @@ function renderCatalogueModal(){
   });
   m.appendChild(sizeWrap);
 
-  m.appendChild(el('<label style="display:block;font-size:11px;color:var(--text-soft);margin-bottom:6px;">Photo du produit</label>'));
-  const photoRow = el('<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;"></div>');
-  const photoPreview = document.createElement('div');
-  photoPreview.style.cssText = 'width:64px;height:64px;border-radius:8px;border:1px solid var(--border);background:var(--bg);overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
-  if(data.photo){
-    const img = document.createElement('img'); img.src=data.photo; img.style.cssText='width:100%;height:100%;object-fit:cover;';
-    photoPreview.appendChild(img);
+  // photos du produit : plusieurs, la 1re est celle qui s'affiche en premier
+  data.photos = catPhotos(data).slice(); data.photo = data.photos[0] || '';
+  m.appendChild(el('<label style="display:block;font-size:11px;color:var(--text-soft);margin-bottom:6px;">Photos du produit ('+data.photos.length+' / '+CAT_MAX_PHOTOS+') — la photo ★ est celle qui s’affiche en premier</label>'));
+  const gal = el('<div class="cat-gal"></div>');
+  data.photos.forEach((u,i)=>{
+    const b = el('<div class="cat-gal-it'+(i===0?' main':'')+'"><img src="'+u+'" alt=""></div>');
+    if(i===0) b.appendChild(el('<span class="cat-gal-main">★ Principale</span>'));
+    else { const mk = el('<button class="cat-gal-btn" title="Mettre en premier">★</button>'); mk.onclick = ()=>{ data.photos.splice(i,1); data.photos.unshift(u); data.photo = data.photos[0]; render(); }; b.appendChild(mk); }
+    const rm = el('<button class="cat-gal-x" title="Retirer">✕</button>'); rm.onclick = ()=>{ data.photos.splice(i,1); data.photo = data.photos[0] || ''; render(); }; b.appendChild(rm);
+    if(i>0){ const lt = el('<button class="cat-gal-mv l" title="Avancer">◀</button>'); lt.onclick = ()=>{ const t = data.photos[i-1]; data.photos[i-1] = u; data.photos[i] = t; data.photo = data.photos[0]; render(); }; b.appendChild(lt); }
+    gal.appendChild(b);
+  });
+  m.appendChild(gal);
+  if(data.photos.length < CAT_MAX_PHOTOS){
+    const photoInput = document.createElement('input'); photoInput.type='file'; photoInput.accept='image/*'; photoInput.multiple = true; photoInput.style.marginBottom = '12px';
+    photoInput.onchange = async ()=>{
+      const fs = Array.from(photoInput.files||[]); const room = CAT_MAX_PHOTOS - data.photos.length;
+      if(fs.length>room) alert('Maximum '+CAT_MAX_PHOTOS+' photos : seules les '+room+' premières sont ajoutées.');
+      for(const f of fs.slice(0, room)){ try{ data.photos.push(await resizeImageFileJpeg(f, 640, 0.72)); }catch(e){ alert('Impossible de charger : '+f.name); } }
+      data.photo = data.photos[0] || ''; render();
+    };
+    m.appendChild(photoInput);
   }
-  photoRow.appendChild(photoPreview);
-  const photoCtrls = el('<div></div>');
-  const photoInput = document.createElement('input'); photoInput.type='file'; photoInput.accept='image/*';
-  photoInput.onchange = async ()=>{
-    const f = photoInput.files[0];
-    if(!f) return;
-    try{
-      data.photo = await resizeImageFileJpeg(f, 480, 0.72);
-      render();
-    }catch(e){ alert("Impossible de charger cette image."); }
-  };
-  photoCtrls.appendChild(photoInput);
-  if(data.photo){
-    const rmBtn = el('<button class="btn small" style="margin-left:8px;">Retirer</button>');
-    rmBtn.onclick = ()=>{ data.photo=''; render(); };
-    photoCtrls.appendChild(rmBtn);
-  }
-  photoRow.appendChild(photoCtrls);
-  m.appendChild(photoRow);
 
   const actions = el('<div class="actions"></div>');
   const cancel = el('<button class="btn">Annuler</button>');
@@ -9122,7 +9147,7 @@ function crToCatalogue(x, opts){
   opts = opts || {};
   DATA.catalogue = DATA.catalogue || [];
   const t0 = (x.tissus||[]).find(t=>t.tissu) || {};
-  const entry = {id:'prod_'+Date.now(), article:String(x.nom||'').trim().toUpperCase(), tissu:String(t0.tissu||'').trim().toUpperCase(), tailles:(x.tailles||[]).slice(), photo:(x.images||[])[0]||'', refPatron:'', consoMoyenne:t0.conso||'', consoUnite:t0.unite||'kg', creeLe:new Date().toISOString(), creaRef:x.ref, patron:x.refPatron||''};
+  const entry = {id:'prod_'+Date.now(), article:String(x.nom||'').trim().toUpperCase(), tissu:String(t0.tissu||'').trim().toUpperCase(), tailles:(x.tailles||[]).slice(), photo:(x.images||[])[0]||'', photos:(x.images||[]).slice(0, CAT_MAX_PHOTOS), refPatron:'', consoMoyenne:t0.conso||'', consoUnite:t0.unite||'kg', creeLe:new Date().toISOString(), creaRef:x.ref, patron:x.refPatron||''};
   { const ex = x.catalogueId ? (DATA.catalogue||[]).find(p=>p.id===x.catalogueId) : null;
     const libre = r=>r && !(DATA.catalogue||[]).some(p=>p.id!==x.catalogueId && catNormRef(p.refPatron)===catNormRef(r));
     entry.refPatron = (ex && ex.refPatron) ? ex.refPatron : (libre(x.refProduit) ? x.refProduit : (x.refProduit='', nextCatRef()));
